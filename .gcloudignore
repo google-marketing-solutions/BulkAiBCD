@@ -1,0 +1,11 @@
+.git/
+.idea/
+.vscode/
+*.log
+target/
+ui/node_modules/
+ui/dist/
+ui/.angular/
+ui/coverage/
+ui/cypress/screenshots/
+ui/cypress/videos/

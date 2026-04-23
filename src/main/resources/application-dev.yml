@@ -1,0 +1,32 @@
+google:
+  cloud:
+    project:
+      id: ${GOOGLE_CLOUD_PROJECT:bulkaibcd-local}
+    location: us-central1
+    tasks:
+      queue: bulkaibcd-queue
+      service-account: dev-runtime@bulkaibcd-local.iam.gserviceaccount.com
+    model:
+      name: gemini-1.5-flash
+
+spring:
+  autoconfigure:
+    exclude:
+      - com.google.cloud.spring.autoconfigure.storage.GcpStorageAutoConfiguration
+  cloud:
+    gcp:
+      firestore:
+        project-id: ${GOOGLE_CLOUD_PROJECT:bulkaibcd-local}
+        host-port: ${FIRESTORE_EMULATOR_HOST:localhost:8081}
+        emulator:
+          enabled: true
+      credentials:
+        encoded-key: ""
+
+app:
+  backend-url: http://localhost:8080
+  uploads-bucket: ${UPLOADS_BUCKET:bulkaibcd-uploads-local}
+
+logging:
+  level:
+    com.bulkaibcd: DEBUG

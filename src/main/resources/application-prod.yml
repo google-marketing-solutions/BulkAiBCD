@@ -1,0 +1,20 @@
+google:
+  cloud:
+    project:
+      id: ${GOOGLE_CLOUD_PROJECT}
+    location: ${GOOGLE_CLOUD_LOCATION:us-central1}
+    tasks:
+      queue: ${CLOUD_TASKS_QUEUE}
+      service-account: ${CLOUD_TASKS_SERVICE_ACCOUNT}
+    model:
+      name: ${GEMINI_MODEL:gemini-2.5-flash}
+
+spring:
+  cloud:
+    gcp:
+      firestore:
+        project-id: ${GOOGLE_CLOUD_PROJECT}
+
+app:
+  backend-url: ${APP_BACKEND_URL}
+  uploads-bucket: ${UPLOADS_BUCKET:bulkaibcd-uploads-${GOOGLE_CLOUD_PROJECT}}

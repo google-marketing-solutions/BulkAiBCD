@@ -1,0 +1,15 @@
+target/
+ui/node_modules/
+ui/dist/
+ui/.angular/
+ui/cypress/screenshots/
+ui/cypress/videos/
+.git/
+.idea/
+.vscode/
+*.log
+
+# Terraform state
+infra/.terraform/
+infra/terraform.tfstate*
+infra/terraform.tfvars
