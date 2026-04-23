@@ -12,7 +12,8 @@ terraform {
     }
   }
 
-  # Uncomment + create the bucket once before `terraform init -migrate-state`
+  # Local state by default. For multi-deployer setups, uncomment the backend
+  # block below, create the bucket out-of-band, and run `terraform init -migrate-state`.
   # backend "gcs" {
   #   bucket = "bulkaibcd-tfstate-YOUR_PROJECT_ID"
   #   prefix = "infra"

@@ -70,9 +70,14 @@ resource "google_service_account_iam_member" "runtime_actas_self" {
   member             = "serviceAccount:${google_service_account.runtime.email}"
 }
 
-# ----- IAP service agent: invoke Cloud Run ----------------------------------
+# ----- IAP service agent + Cloud Run invokers -------------------------------
+# These IAM bindings target the Cloud Run service — which only exists *after*
+# Cloud Build's first deploy. install.sh runs Terraform twice: first pass with
+# cloud_run_deployed=false (skips these), then Cloud Build submit, then a
+# second pass with cloud_run_deployed=true (creates them).
 
 resource "google_cloud_run_service_iam_member" "iap_invoker" {
+  count    = var.cloud_run_deployed ? 1 : 0
   location = var.region
   project  = var.project_id
   service  = var.service_name
@@ -81,6 +86,7 @@ resource "google_cloud_run_service_iam_member" "iap_invoker" {
 }
 
 resource "google_cloud_run_service_iam_member" "runtime_invoker" {
+  count    = var.cloud_run_deployed ? 1 : 0
   location = var.region
   project  = var.project_id
   service  = var.service_name
@@ -88,14 +94,33 @@ resource "google_cloud_run_service_iam_member" "runtime_invoker" {
   member   = "serviceAccount:${google_service_account.runtime.email}"
 }
 
-# ----- IAP-gated user access -------------------------------------------------
+# ----- IAP-gated user access (dormant by default) ---------------------------
+# Creating this binding *enables* IAP on the Cloud Run service. With IAP live,
+# Cloud Tasks' OIDC callbacks to /api/v2/worker/* get blocked by the login
+# gate. Only flip var.enable_iap_gate=true once the LB + URL-map routing for
+# worker endpoints is in place (follow-up).
 
 resource "google_iap_web_cloud_run_service_iam_member" "users" {
-  for_each = toset(var.iap_users)
+  for_each = (var.cloud_run_deployed && var.enable_iap_gate) ? toset(var.iap_users) : toset([])
 
-  project              = var.project_id
-  location             = var.region
+  project                = var.project_id
+  location               = var.region
   cloud_run_service_name = var.service_name
-  role                 = "roles/iap.httpsResourceAccessor"
-  member               = "user:${each.value}"
+  role                   = "roles/iap.httpsResourceAccessor"
+  member                 = "user:${each.value}"
+}
+
+# ----- Plain IAM access (the path actually in use today) --------------------
+# --no-allow-unauthenticated is set on the Cloud Run service. The runtime SA's
+# run.invoker (above) keeps Cloud Tasks working; teammates need run.invoker
+# granted per-user to hit the URL via `gcloud run services proxy`.
+
+resource "google_cloud_run_service_iam_member" "user_invokers" {
+  for_each = var.cloud_run_deployed ? toset(var.iap_users) : toset([])
+
+  location = var.region
+  project  = var.project_id
+  service  = var.service_name
+  role     = "roles/run.invoker"
+  member   = "user:${each.value}"
 }

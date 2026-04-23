@@ -18,6 +18,18 @@ output "cloud_tasks_queue" {
   value       = google_cloud_tasks_queue.worker.name
 }
 
+# ----- Firebase Web config (consumed by install.sh to bake into Angular) ----
+
+output "firebase_web_config" {
+  description = "Public Firebase config the UI bundle reads from firebase-config.json."
+  value = {
+    apiKey     = data.google_firebase_web_app_config.bulkaibcd.api_key
+    authDomain = data.google_firebase_web_app_config.bulkaibcd.auth_domain
+    projectId  = var.project_id
+    appId      = google_firebase_web_app.bulkaibcd.app_id
+  }
+}
+
 output "next_steps" {
   description = "Commands to run after `terraform apply` succeeds."
   value       = <<EOT
