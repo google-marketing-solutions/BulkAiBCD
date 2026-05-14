@@ -1,0 +1,54 @@
+substitutions:
+  _REGION: us-central1
+  _REPO: bulkaibcd
+  _IMAGE: bulkaibcd
+  _SERVICE: bulkaibcd
+  # Defaults derive from ${PROJECT_ID} so a fresh project works without overrides.
+  # install.sh passes the real runtime SA email + bucket name via --substitutions
+  # so these defaults are only used if someone invokes gcloud builds submit by hand.
+  _RUNTIME_SA: bulkaibcd-runtime@${PROJECT_ID}.iam.gserviceaccount.com
+  _CLOUD_TASKS_QUEUE: bulkaibcd-queue
+  _UPLOADS_BUCKET: bulkaibcd-uploads-${PROJECT_ID}
+  # First deploy: leave _APP_BACKEND_URL empty. After Cloud Run mints a URL,
+  # resubmit this build with --substitutions=_APP_BACKEND_URL=<service-url> so
+  # the Cloud Tasks OIDC audience points at the actual service origin.
+  _APP_BACKEND_URL: ""
+
+steps:
+  - id: Build
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_IMAGE}:${BUILD_ID}
+      - -t
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_IMAGE}:latest
+      - .
+
+  - id: Push
+    name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - --all-tags
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_IMAGE}
+
+  - id: Deploy
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_SERVICE}
+      - --image=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_IMAGE}:${BUILD_ID}
+      - --region=${_REGION}
+      - --platform=managed
+      - --no-allow-unauthenticated
+      - --service-account=${_RUNTIME_SA}
+      - --set-env-vars=SPRING_PROFILES_ACTIVE=prod,GOOGLE_CLOUD_PROJECT=${PROJECT_ID},GOOGLE_CLOUD_LOCATION=${_REGION},CLOUD_TASKS_QUEUE=${_CLOUD_TASKS_QUEUE},CLOUD_TASKS_SERVICE_ACCOUNT=${_RUNTIME_SA},APP_BACKEND_URL=${_APP_BACKEND_URL},UPLOADS_BUCKET=${_UPLOADS_BUCKET}
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+images:
+  - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_IMAGE}:${BUILD_ID}
+  - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_IMAGE}:latest

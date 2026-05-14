@@ -1,0 +1,31 @@
+# Maven
+/target/
+*.class
+
+# Angular / Node
+/ui/node_modules/
+/ui/dist/
+/ui/.angular/
+/ui/cypress/screenshots/
+/ui/cypress/videos/
+/ui/cypress/downloads/
+
+# firebase-config.json is committed with empty defaults; install.sh overwrites
+# it with real Firebase Web App config for deploys. The real (filled-in) file
+# should not be re-committed; use `git update-index --assume-unchanged` locally
+# if you fill it for dev.
+
+# Terraform local state
+/infra/.terraform/
+/infra/terraform.tfstate
+/infra/terraform.tfstate.backup
+/infra/terraform.tfvars
+*.tfplan
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+*.log
