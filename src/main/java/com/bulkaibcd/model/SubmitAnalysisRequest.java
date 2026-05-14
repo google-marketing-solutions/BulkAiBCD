@@ -2,10 +2,12 @@ package com.bulkaibcd.model;
 
 import java.util.List;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class SubmitAnalysisRequest {
@@ -17,6 +19,7 @@ public class SubmitAnalysisRequest {
   private List<VideoInput> videos;
 
   @Data
+  @Builder
   @NoArgsConstructor
   @AllArgsConstructor
   public static class VideoInput {
