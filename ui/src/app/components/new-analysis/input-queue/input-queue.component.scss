@@ -1,0 +1,141 @@
+:host {
+  display: block;
+}
+
+.queue-card {
+  background: #e8f0fe;
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  min-height: 480px;
+}
+
+.queue-title {
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0 0 12px 0;
+}
+
+.video-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  max-height: 360px;
+  padding-right: 4px;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.group-header {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.72);
+  user-select: none;
+
+  &:hover { background: rgba(26, 115, 232, 0.08); }
+  &:focus-visible { outline: 2px solid #1a73e8; outline-offset: 2px; }
+
+  .chevron {
+    color: rgba(0, 0, 0, 0.55);
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+
+  .source-icon {
+    color: #1a73e8;
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+
+  .group-label { flex: 1; }
+
+  .group-count {
+    background: rgba(26, 115, 232, 0.12);
+    color: #1a73e8;
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+}
+
+.group-items {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-left: 8px;
+}
+
+.video-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+
+  .thumb {
+    width: 56px;
+    height: 32px;
+    flex: 0 0 auto;
+    background: #c8d3e6;
+    border-radius: 4px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    mat-icon {
+      color: rgba(0, 0, 0, 0.4);
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  .video-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 14px;
+  }
+}
+
+.empty-state {
+  flex: 1;
+}
+
+.footer-note {
+  margin: 16px 0 8px 0;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.clear-all-container {
+  display: flex;
+  justify-content: flex-end;
+}

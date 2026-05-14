@@ -1,0 +1,73 @@
+:host {
+  display: block;
+  padding: 16px 0;
+}
+
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+mat-form-field {
+  width: 100%;
+}
+
+button {
+  width: fit-content;
+}
+
+.warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background-color: #e1f5fe;
+  color: #01579b;
+  border-radius: 4px;
+  font-size: 14px;
+
+  mat-icon {
+    color: #0288d1;
+    font-size: 20px;
+    height: 20px;
+    width: 20px;
+  }
+}
+
+.id-type-radio-group {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+}
+
+.campaign-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.campaign-name-filter {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  .match-type {
+    width: 180px;
+  }
+  .name-input {
+    flex: 1;
+  }
+}
+
+.filter-group-label {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.status-radio-group {
+  display: flex;
+  gap: 16px;
+}

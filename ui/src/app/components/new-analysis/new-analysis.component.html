@@ -1,0 +1,50 @@
+<h2 class="page-title">Start a New Analysis</h2>
+
+<div class="content-wrapper">
+  <div class="left-panel mat-elevation-z1">
+    <div class="top-row">
+      <mat-form-field appearance="outline" class="brand-name">
+        <mat-label>Brand Name</mat-label>
+        <input matInput required [formControl]="brandName">
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="marketing-objective">
+        <mat-label>Marketing Objective</mat-label>
+        <mat-select [formControl]="marketingObjective">
+          <mat-option value="core_unknown">Core/Unknown</mat-option>
+          <mat-option value="awareness">Awareness</mat-option>
+          <mat-option value="consideration">Consideration</mat-option>
+          <mat-option value="conversion">Conversion</mat-option>
+          <mat-option value="brand_building">Brand Building</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <h3 class="section-title">Select Video Source</h3>
+    <app-video-input-tabs
+      [currentCount]="videos().length"
+      (filesAdded)="addFiles($event)"
+    ></app-video-input-tabs>
+
+    <app-analysis-config [control]="analysisType"></app-analysis-config>
+  </div>
+
+  <div class="right-panel">
+    <app-input-queue
+      [videos]="videos()"
+      (deleteVideo)="removeVideo($event)"
+      (clearAll)="clearVideos()"
+    ></app-input-queue>
+  </div>
+</div>
+
+<div class="run-button-container">
+  <button
+    mat-flat-button
+    color="primary"
+    (click)="runAnalysis()"
+    [disabled]="videos().length === 0 || brandName.invalid || submitting()"
+  >
+    <mat-icon>play_arrow</mat-icon>
+    Run Analysis ({{ videos().length }} Videos)
+  </button>
+</div>

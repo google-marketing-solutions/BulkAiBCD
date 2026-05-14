@@ -1,0 +1,13 @@
+<div class="config-card">
+  <h3>Configuration: Analysis Parameters</h3>
+  <mat-radio-group aria-label="Select analysis parameters" class="radio-group" [formControl]="control()">
+    <div class="radio-option">
+      <mat-radio-button value="standard">Standard Analysis</mat-radio-button>
+      <mat-icon matTooltip="Select this for a deeper analysis with more parameters">help_outline</mat-icon>
+    </div>
+    <div class="radio-option">
+      <mat-radio-button value="light">Light Analysis</mat-radio-button>
+      <mat-icon matTooltip="Select this for a quick analysis with fewer parameters">help_outline</mat-icon>
+    </div>
+  </mat-radio-group>
+</div>

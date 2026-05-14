@@ -1,0 +1,40 @@
+:host {
+  display: block;
+  margin-top: 24px;
+}
+
+.config-card {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  padding: 16px 20px;
+}
+
+h3 {
+  font-size: 15px;
+  font-weight: 500;
+  margin: 0 0 12px 0;
+
+  a {
+    color: #1a73e8;
+  }
+}
+
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  mat-icon {
+    color: rgba(0, 0, 0, 0.4);
+    font-size: 18px;
+    height: 18px;
+    width: 18px;
+    cursor: help;
+  }
+}

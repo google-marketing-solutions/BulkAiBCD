@@ -1,0 +1,41 @@
+<div class="form-section" [formGroup]="idForm">
+  <mat-radio-group formControlName="idType" aria-label="Select ID type" class="id-type-radio-group">
+    <mat-radio-button value="customerId">Customer IDs</mat-radio-button>
+    <mat-radio-button value="campaignId">Campaign IDs</mat-radio-button>
+  </mat-radio-group>
+  <mat-form-field appearance="outline">
+    <mat-label>{{placeholderText}}</mat-label>
+    <input matInput formControlName="idValue">
+  </mat-form-field>
+  @if(idType?.value === 'campaignId') {
+    <div class="campaign-filters">
+      <div class="campaign-name-filter">
+        <mat-form-field appearance="outline" class="match-type">
+          <mat-label>Match</mat-label>
+          <mat-select formControlName="campaignNameMatchType">
+            <mat-option value="contains">Contains</mat-option>
+            <mat-option value="startsWith">Starts with</mat-option>
+            <mat-option value="endsWith">Ends with</mat-option>
+            <mat-option value="doesNotContain">Does not contain</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="name-input">
+          <mat-label>Campaign Name</mat-label>
+          <input matInput formControlName="campaignName">
+        </mat-form-field>
+      </div>
+      <div class="campaign-status-filter">
+        <div class="filter-group-label">Campaign Status</div>
+        <mat-radio-group formControlName="campaignStatus" aria-label="Select campaign status" class="status-radio-group">
+          <mat-radio-button value="active">Active</mat-radio-button>
+          <mat-radio-button value="all">All</mat-radio-button>
+        </mat-radio-group>
+      </div>
+    </div>
+  }
+  <button mat-flat-button color="primary" [disabled]="idForm.invalid" (click)="fetchAndAdd()">Fetch and Add IDs to queue</button>
+</div>
+<div class="warning">
+  <mat-icon>info</mat-icon>
+  <span>Constraint: Analysis scoped to max 250 videos (top 25 most recent per 10 most recent campaigns).</span>
+</div>

@@ -1,0 +1,25 @@
+<div
+  class="upload-box"
+  (click)="fileUploadInput.click()"
+  (dragover)="onDragOver($event)"
+  (dragleave)="onDragLeave($event)"
+  (drop)="onDrop($event)"
+  [class.dragover]="isDragOver"
+>
+  <mat-icon>upload</mat-icon>
+  <div>Drag and drop files here or click to upload</div>
+  <input type="file" multiple accept="video/*" (change)="onFileSelected($event)" #fileUploadInput hidden>
+</div>
+
+<div *ngIf="progress().length > 0" class="upload-progress">
+  <div *ngFor="let p of progress()" class="upload-progress-row" [class]="p.state">
+    <span class="filename">{{ p.name }}</span>
+    <mat-progress-bar mode="determinate" [value]="p.percent"></mat-progress-bar>
+    <span class="percent">{{ p.state === 'done' ? '\u2713' : p.state === 'error' ? '\u2717' : (p.percent + '%') }}</span>
+  </div>
+</div>
+
+<div class="constraint-banner">
+  <mat-icon>info</mat-icon>
+  <span>Constraint: Max 25 videos. Each video max 8 minutes / 360MB.</span>
+</div>

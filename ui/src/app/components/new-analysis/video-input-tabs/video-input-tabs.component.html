@@ -1,0 +1,30 @@
+<mat-tab-group mat-stretch-tabs="false" mat-align-tabs="start">
+  <mat-tab>
+    <ng-template mat-tab-label>
+      <mat-icon class="tab-icon">upload</mat-icon>
+      Upload Files
+    </ng-template>
+    <app-file-upload (filesAdded)="filesAdded.emit($event)"></app-file-upload>
+  </mat-tab>
+  <mat-tab>
+    <ng-template mat-tab-label>
+      <mat-icon class="tab-icon">badge</mat-icon>
+      Use IDs
+    </ng-template>
+    <app-id-input (filesAdded)="filesAdded.emit($event)"></app-id-input>
+  </mat-tab>
+  <mat-tab>
+    <ng-template mat-tab-label>
+      <mat-icon class="tab-icon">link</mat-icon>
+      Youtube URLs
+    </ng-template>
+    <app-url-input [currentCount]="currentCount()" (filesAdded)="filesAdded.emit($event)"></app-url-input>
+  </mat-tab>
+  <mat-tab>
+    <ng-template mat-tab-label>
+      <mat-icon class="tab-icon">add_to_drive</mat-icon>
+      Drive URL
+    </ng-template>
+    <app-drive-input (filesAdded)="filesAdded.emit($event)"></app-drive-input>
+  </mat-tab>
+</mat-tab-group>

@@ -1,0 +1,41 @@
+<div class="queue-card">
+  <h3 class="queue-title">Videos to be Processed ({{ videos().length }})</h3>
+  <div class="video-list" *ngIf="videos().length > 0; else empty">
+    <div *ngFor="let group of groups()" class="group">
+      <button
+        type="button"
+        class="group-header"
+        (click)="toggleGroup(group.key)"
+        [attr.aria-expanded]="!isCollapsed(group.key)"
+      >
+        <mat-icon class="chevron">{{ isCollapsed(group.key) ? 'chevron_right' : 'expand_more' }}</mat-icon>
+        <mat-icon class="source-icon">{{ group.icon }}</mat-icon>
+        <span class="group-label">{{ group.label }}</span>
+        <span class="group-count">{{ group.items.length }}</span>
+      </button>
+      <div class="group-items" *ngIf="!isCollapsed(group.key)">
+        <div *ngFor="let item of group.items" class="video-item">
+          <div class="thumb">
+            <img *ngIf="item.thumbnailUrl; else fallback" [src]="item.thumbnailUrl" [alt]="item.name">
+            <ng-template #fallback>
+              <mat-icon>movie</mat-icon>
+            </ng-template>
+          </div>
+          <span class="video-name" [title]="item.name">{{ item.name }}</span>
+          <button mat-icon-button aria-label="Remove video" (click)="onDeleteVideo(item.originalIndex)">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <ng-template #empty>
+    <div class="empty-state"></div>
+  </ng-template>
+  <p class="footer-note">Analysis will begin once the videos are uploaded and processed.</p>
+  <div class="clear-all-container">
+    <button mat-stroked-button (click)="onClearAll()" [disabled]="videos().length === 0">
+      Clear All
+    </button>
+  </div>
+</div>
