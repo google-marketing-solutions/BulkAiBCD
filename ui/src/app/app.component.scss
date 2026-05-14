@@ -1,0 +1,52 @@
+.app-header {
+  padding: 24px 32px 8px 32px;
+
+  .title-block {
+    h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 500;
+      letter-spacing: -0.2px;
+    }
+    .subtitle {
+      margin: 4px 0 0 0;
+      color: rgba(0, 0, 0, 0.6);
+      font-size: 14px;
+    }
+  }
+}
+
+.app-tabs {
+  margin: 0 32px;
+
+  // Tighter, left-aligned tabs (Material defaults are big and centered).
+  ::ng-deep .mat-mdc-tab-link-container,
+  ::ng-deep .mdc-tab-bar {
+    justify-content: flex-start !important;
+  }
+
+  ::ng-deep .mdc-tab {
+    height: 40px !important;
+    min-width: 0 !important;
+    padding: 0 16px !important;
+    flex-grow: 0 !important;
+  }
+
+  ::ng-deep .mdc-tab__text-label {
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.1px !important;
+  }
+
+  .tab-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+}
+
+.app-main {
+  padding: 16px 32px 32px 32px;
+}

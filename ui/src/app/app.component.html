@@ -1,0 +1,21 @@
+<header class="app-header">
+  <div class="title-block">
+    <h1>Bulk AiBCD Analysis Tool</h1>
+    <p class="subtitle">Self-service platform for managing video analysis inputs and outputs</p>
+  </div>
+</header>
+<nav mat-tab-nav-bar [tabPanel]="tabPanel" class="app-tabs">
+  <a mat-tab-link routerLink="/" routerLinkActive #rlaNew="routerLinkActive" [routerLinkActiveOptions]="{exact: true}" [active]="rlaNew.isActive">
+    <mat-icon class="tab-icon">add</mat-icon>
+    New Analysis
+  </a>
+  <a mat-tab-link routerLink="/list" routerLinkActive #rlaList="routerLinkActive" [active]="rlaList.isActive">
+    <mat-icon class="tab-icon">list_alt</mat-icon>
+    List Analyses
+  </a>
+</nav>
+<mat-tab-nav-panel #tabPanel>
+  <main class="app-main">
+    <router-outlet></router-outlet>
+  </main>
+</mat-tab-nav-panel>
