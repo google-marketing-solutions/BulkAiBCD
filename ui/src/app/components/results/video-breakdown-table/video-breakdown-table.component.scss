@@ -1,0 +1,88 @@
+:host {
+  display: block;
+}
+
+.video-breakdown-table {
+  width: 100%;
+
+  th, td { padding: 12px 8px; }
+
+  th {
+    color: rgba(0, 0, 0, 0.6);
+    font-weight: 500;
+    font-size: 12px;
+  }
+
+  td { font-size: 13px; }
+
+  .thumb {
+    width: 80px;
+    height: 45px;
+    background: #d6e3f5;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+
+    img { width: 100%; height: 100%; object-fit: cover; }
+    mat-icon { color: rgba(0, 0, 0, 0.4); }
+  }
+
+  .video-name {
+    display: inline-block;
+    max-width: 320px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: rgba(0, 0, 0, 0.85);
+  }
+
+  a { color: #1a73e8; text-decoration: underline; }
+
+  .source-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: #e8f0fe;
+    color: #1a73e8;
+    font-size: 12px;
+    font-weight: 500;
+
+    mat-icon {
+      font-size: 14px;
+      height: 14px;
+      width: 14px;
+    }
+  }
+
+  .status-completed { color: #188038; font-weight: 500; }
+  .status-processing { color: #d56e0c; font-weight: 500; }
+  .status-failed {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #c5221f;
+    font-weight: 500;
+
+    mat-icon {
+      font-size: 16px;
+      height: 16px;
+      width: 16px;
+    }
+  }
+
+  .score-red    { color: #c5221f; font-weight: 600; }
+  .score-orange { color: #d56e0c; font-weight: 600; }
+  .score-yellow { color: #f29900; font-weight: 600; }
+  .score-green  { color: #188038; font-weight: 600; }
+  .score-missing { color: rgba(0, 0, 0, 0.35); font-weight: 500; }
+}
+
+.table-empty {
+  text-align: center;
+  padding: 32px;
+  color: rgba(0, 0, 0, 0.55);
+}

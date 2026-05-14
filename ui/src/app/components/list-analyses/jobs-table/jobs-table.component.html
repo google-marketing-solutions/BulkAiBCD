@@ -1,0 +1,95 @@
+<div *ngIf="loading$ | async" class="jobs-loading">
+  <mat-spinner diameter="32"></mat-spinner>
+</div>
+
+<div *ngIf="error$ | async as error" class="jobs-error" role="alert">
+  {{ error }}
+</div>
+
+<table mat-table [dataSource]="(dataSource$ | async) ?? []">
+  <ng-container matColumnDef="analysisName">
+    <th mat-header-cell *matHeaderCellDef>JOB NAME</th>
+    <td mat-cell *matCellDef="let element">{{ element.analysisName }}</td>
+  </ng-container>
+
+  <ng-container matColumnDef="analysisType">
+    <th mat-header-cell *matHeaderCellDef>ANALYSIS TYPE</th>
+    <td mat-cell *matCellDef="let element">{{ element.analysisType }}</td>
+  </ng-container>
+
+  <ng-container matColumnDef="status">
+    <th mat-header-cell *matHeaderCellDef>STATUS</th>
+    <td mat-cell *matCellDef="let element">
+      <div *ngIf="element.status === 'Completed'" class="status-chip completed">
+        <mat-icon>check_circle</mat-icon>
+        Completed
+      </div>
+      <div *ngIf="element.status === 'Processing'" class="status-chip processing">
+        <mat-icon>autorenew</mat-icon>
+        Processing
+      </div>
+      <div *ngIf="element.status === 'Cancelled'" class="status-chip cancelled">
+        <mat-icon>cancel</mat-icon>
+        Cancelled
+      </div>
+    </td>
+  </ng-container>
+
+  <ng-container matColumnDef="dateCreated">
+    <th mat-header-cell *matHeaderCellDef>DATE CREATED</th>
+    <td mat-cell *matCellDef="let element">
+      {{ element.dateCreated | date: 'yyyy-MM-dd HH:mm:ss' }}
+    </td>
+  </ng-container>
+
+  <ng-container matColumnDef="action">
+    <th mat-header-cell *matHeaderCellDef>ACTION</th>
+    <td mat-cell *matCellDef="let element">
+      <button
+        *ngIf="element.status === 'Completed'"
+        mat-flat-button
+        color="primary"
+        [routerLink]="['/list', 'results', element.analysisId]"
+      >
+        <mat-icon>bar_chart</mat-icon>
+        View Report
+      </button>
+      <span *ngIf="element.status === 'Processing'" class="in-progress">
+        <mat-spinner diameter="16" mode="indeterminate"></mat-spinner>
+        In Progress
+      </span>
+    </td>
+  </ng-container>
+
+  <ng-container matColumnDef="manage">
+    <th mat-header-cell *matHeaderCellDef class="manage-col">MANAGE</th>
+    <td mat-cell *matCellDef="let element" class="manage-col">
+      <button
+        *ngIf="element.status === 'Processing'"
+        mat-icon-button
+        color="warn"
+        matTooltip="Cancel analysis"
+        aria-label="Cancel analysis"
+        (click)="cancel(element)"
+      >
+        <mat-icon>stop_circle</mat-icon>
+      </button>
+      <button
+        *ngIf="element.status !== 'Processing'"
+        mat-icon-button
+        matTooltip="Delete analysis"
+        aria-label="Delete analysis"
+        (click)="delete(element)"
+      >
+        <mat-icon>delete_outline</mat-icon>
+      </button>
+    </td>
+  </ng-container>
+
+  <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+  <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+</table>
+
+<div *ngIf="!(loading$ | async) && ((dataSource$ | async)?.length ?? 0) === 0" class="jobs-empty">
+  No analyses yet. Start one from the "New Analysis" tab.
+</div>

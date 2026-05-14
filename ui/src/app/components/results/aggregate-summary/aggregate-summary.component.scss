@@ -1,0 +1,42 @@
+:host {
+  display: block;
+  margin-bottom: 24px;
+}
+
+.summary-card {
+  background: #e8f0fe;
+  border-radius: 8px;
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+
+  .text-block {
+    h3 {
+      margin: 0 0 8px 0;
+      font-size: 18px;
+      font-weight: 500;
+      color: #1967d2;
+    }
+    .row {
+      margin: 6px 0;
+      color: rgba(0, 0, 0, 0.78);
+      font-size: 14px;
+    }
+    .score {
+      font-weight: 600;
+      margin-left: 4px;
+    }
+  }
+
+  .trix-button {
+    flex-shrink: 0;
+    mat-icon { margin-right: 6px; }
+  }
+}
+
+.score-red    { color: #c5221f; }
+.score-orange { color: #d56e0c; }
+.score-yellow { color: #f29900; }
+.score-green  { color: #188038; }

@@ -1,0 +1,41 @@
+<div class="results-header">
+  <h2 class="report-title">
+    <span class="brand">{{ analysis()?.brandName || analysis()?.analysisName || '—' }}</span> -
+    Report | {{ formattedDate() }}
+    <span
+      *ngIf="analysis()?.analysisType as at"
+      class="type-badge"
+      [class.type-light]="at === 'light'"
+    >
+      {{ at === 'light' ? 'Light Analysis' : 'Standard Analysis' }}
+    </span>
+  </h2>
+  <div class="header-actions">
+    <span *ngIf="refreshing()" class="refreshing-hint">
+      <mat-spinner diameter="14"></mat-spinner>
+      updating…
+    </span>
+    <button mat-stroked-button color="primary" class="back-button" routerLink="/list">
+      <mat-icon>arrow_back</mat-icon>
+      Back to List Analyses
+    </button>
+  </div>
+</div>
+
+<div *ngIf="loading()" class="loading-state">
+  <mat-spinner diameter="32"></mat-spinner>
+</div>
+
+<div *ngIf="error() as err" class="error-state" role="alert">{{ err }}</div>
+
+<ng-container *ngIf="!loading() && !error()">
+  <app-aggregate-summary
+    [videos]="videos()"
+    [analysisId]="analysisId"
+    [marketingObjective]="analysis()?.marketingObjective ?? ''"
+  ></app-aggregate-summary>
+  <app-aggregate-report
+    [analysisId]="analysisId"
+    [videos]="videos()"
+  ></app-aggregate-report>
+</ng-container>

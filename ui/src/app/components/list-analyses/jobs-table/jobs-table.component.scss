@@ -1,0 +1,86 @@
+:host {
+  display: block;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+table {
+  width: 100%;
+}
+
+tr:hover {
+  background-color: #f5f5f5;
+}
+
+th {
+  background-color: #f9f9f9;
+}
+
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+
+  mat-icon {
+    font-size: 16px;
+    height: 16px;
+    width: 16px;
+    margin-right: 6px;
+  }
+
+  &.completed {
+    background-color: #e6f4ea;
+    color: #137333;
+  }
+
+  &.processing {
+    background-color: #fef7e0;
+    color: #e37400;
+  }
+
+  &.cancelled {
+    background-color: #f1f3f4;
+    color: rgba(0, 0, 0, 0.55);
+  }
+}
+
+.manage-col {
+  width: 72px;
+  text-align: right;
+  padding-right: 16px;
+}
+
+button[mat-flat-button] {
+  border-radius: 8px;
+}
+
+.in-progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(0, 0, 0, 0.65);
+  font-size: 13px;
+  font-weight: 500;
+
+  mat-spinner {
+    flex-shrink: 0;
+  }
+}
+
+.jobs-loading {
+  display: flex;
+  justify-content: center;
+  padding: 32px;
+}
+
+.jobs-error {
+  background: #fce8e6;
+  color: #c5221f;
+  padding: 12px 16px;
+  margin: 12px;
+  border-radius: 8px;
+}

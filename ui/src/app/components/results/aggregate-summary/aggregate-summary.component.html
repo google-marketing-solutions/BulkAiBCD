@@ -1,0 +1,21 @@
+<div class="summary-card">
+  <div class="text-block">
+    <h3>High-Level Summary</h3>
+    <p class="row">
+      Avg. Overall Score: <span class="score" [ngClass]="scoreClass(avgScore())">{{ avgScore() }}</span>
+    </p>
+    <p class="row">Marketing Objective: {{ objectiveLabel() }}</p>
+  </div>
+  <button
+    mat-flat-button
+    color="primary"
+    class="trix-button"
+    (click)="openDetailedSpreadsheet()"
+    [disabled]="!analysisId() || generating()"
+    matTooltip="Open a per-video Google Sheet in your Drive with ABCD scores"
+  >
+    <mat-spinner *ngIf="generating()" diameter="16"></mat-spinner>
+    <mat-icon *ngIf="!generating()">open_in_new</mat-icon>
+    {{ generating() ? 'Opening\u2026' : 'Detailed Spreadsheet' }}
+  </button>
+</div>

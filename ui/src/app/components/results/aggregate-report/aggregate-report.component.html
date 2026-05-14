@@ -1,0 +1,22 @@
+<div class="aggregate-report-header">
+  <h2>Video Breakdown Table ({{ videos.length }} {{ videos.length === 1 ? 'asset' : 'assets' }})</h2>
+  <button
+    mat-flat-button
+    color="primary"
+    [disabled]="generating() || selected().length === 0"
+    (click)="generatePitchDeck()"
+    [matTooltip]="
+      selected().length === 0
+        ? 'Select one or more videos to include in the deck'
+        : 'Generate a Google Slides pitch deck for the selected videos'
+    "
+  >
+    <mat-spinner *ngIf="generating()" diameter="16"></mat-spinner>
+    <mat-icon *ngIf="!generating()">slideshow</mat-icon>
+    {{ generating() ? 'Generating\u2026' : 'Pitch Deck (' + selected().length + ')' }}
+  </button>
+</div>
+<app-video-breakdown-table
+  [videos]="videos"
+  (selectionChanged)="onSelectionChanged($event)"
+></app-video-breakdown-table>
