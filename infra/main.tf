@@ -40,7 +40,6 @@ resource "google_project_service" "apis" {
     # Firebase + Identity Platform so the installer can auto-provision the
     # Google sign-in provider without the deployer clicking through a Console form.
     "firebase.googleapis.com",
-    "firebasemanagement.googleapis.com",
     "identitytoolkit.googleapis.com",
   ])
   service            = each.value
