@@ -105,7 +105,6 @@ gcloud services enable \
   sheets.googleapis.com \
   iap.googleapis.com \
   firebase.googleapis.com \
-  firebasemanagement.googleapis.com \
   identitytoolkit.googleapis.com \
   --project="${PROJECT}" --quiet
 

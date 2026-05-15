@@ -7,7 +7,7 @@ own Drive.
 
 ## One-click deploy
 
-[![Open in Cloud Shell](https://gstatic.com/cloudssh/images/open-btn.svg)](https://shell.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https://professional-services.googlesource.com/solutions/bulkaibcd&cloudshell_workspace=.)
+[![Open in Cloud Shell](https://gstatic.com/cloudssh/images/open-btn.svg)](https://shell.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https://github.com/google-marketing-solutions/BulkAiBCD&cloudshell_workspace=.)
 
 Clicking the button opens Cloud Shell with this repo cloned and gcloud pre-authenticated.
 Then run:
