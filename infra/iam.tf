@@ -76,15 +76,6 @@ resource "google_service_account_iam_member" "runtime_actas_self" {
 # cloud_run_deployed=false (skips these), then Cloud Build submit, then a
 # second pass with cloud_run_deployed=true (creates them).
 
-resource "google_cloud_run_service_iam_member" "iap_invoker" {
-  count    = var.cloud_run_deployed ? 1 : 0
-  location = var.region
-  project  = var.project_id
-  service  = var.service_name
-  role     = "roles/run.invoker"
-  member   = "serviceAccount:${local.iap_service_sa}"
-}
-
 resource "google_cloud_run_service_iam_member" "runtime_invoker" {
   count    = var.cloud_run_deployed ? 1 : 0
   location = var.region
@@ -100,15 +91,6 @@ resource "google_cloud_run_service_iam_member" "runtime_invoker" {
 # gate. Only flip var.enable_iap_gate=true once the LB + URL-map routing for
 # worker endpoints is in place (follow-up).
 
-resource "google_iap_web_cloud_run_service_iam_member" "users" {
-  for_each = (var.cloud_run_deployed && var.enable_iap_gate) ? toset(var.iap_users) : toset([])
-
-  project                = var.project_id
-  location               = var.region
-  cloud_run_service_name = var.service_name
-  role                   = "roles/iap.httpsResourceAccessor"
-  member                 = "user:${each.value}"
-}
 
 # ----- Plain IAM access (the path actually in use today) --------------------
 # --no-allow-unauthenticated is set on the Cloud Run service. The runtime SA's
