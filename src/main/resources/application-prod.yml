@@ -7,7 +7,7 @@ google:
       queue: ${CLOUD_TASKS_QUEUE}
       service-account: ${CLOUD_TASKS_SERVICE_ACCOUNT}
     model:
-      name: ${GEMINI_MODEL:gemini-2.5-flash}
+      name: ${GEMINI_MODEL:gemini-2.5-pro}
 
 spring:
   cloud:

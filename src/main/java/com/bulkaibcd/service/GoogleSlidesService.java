@@ -135,9 +135,12 @@ public class GoogleSlidesService {
         requests.add(replaceAll("RECOM_" + (i + 1), ""));
       }
 
-      // Per-feature bullet flip: template starts with {@code ○ <feature>} lines
-      // for anything that might or might not be detected; for each feature in
-      // the detected list, flip the bullet character to {@code ●}.
+      // 1. Reset "dirty" checked bullets on the template slide to unchecked first
+      for (String feature : allFeatures) {
+        requests.add(replaceAll("● " + feature, "○ " + feature));
+      }
+
+      // 2. Per-feature bullet flip: flip ○ to ● for anything that was actively detected!
       for (String feature : allFeatures) {
         if (detected.contains(feature)) {
           requests.add(replaceAll("○ " + feature, "● " + feature));
@@ -148,6 +151,11 @@ public class GoogleSlidesService {
           .presentations()
           .batchUpdate(
               presentationId, new BatchUpdatePresentationRequest().setRequests(requests))
+          .execute();
+
+      drive
+          .permissions()
+          .create(presentationId, new Permission().setType("anyone").setRole("reader"))
           .execute();
 
       log.info(

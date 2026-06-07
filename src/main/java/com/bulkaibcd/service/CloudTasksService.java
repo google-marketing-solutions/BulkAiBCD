@@ -34,26 +34,52 @@ public class CloudTasksService {
   @Value("${app.backend-url}")
   private String backendUrl;
 
+  private final TaskQueueAdapter taskQueueAdapter;
+
   public void enqueueTask(String endpoint, String payload) throws IOException {
-    try (CloudTasksClient client = CloudTasksClient.create()) {
-      String queuePath = QueueName.of(projectId, location, queueId).toString();
+    enqueueTask(endpoint, payload, null, null);
+  }
 
-      HttpRequest.Builder httpRequestBuilder =
-          HttpRequest.newBuilder()
-              .setUrl(backendUrl + endpoint)
-              .setHttpMethod(HttpMethod.POST)
-              .putHeaders("Content-Type", "application/json")
-              .setOidcToken(
-                  OidcToken.newBuilder().setServiceAccountEmail(serviceAccountEmail).build());
+  public void enqueueTask(String endpoint, String payload, String taskSuffix, Integer delaySeconds) throws IOException {
+    String queuePath = QueueName.of(projectId, location, queueId).toString();
 
-      if (payload != null) {
-        httpRequestBuilder.setBody(ByteString.copyFrom(payload, StandardCharsets.UTF_8));
-      }
+    HttpRequest.Builder httpRequestBuilder =
+        HttpRequest.newBuilder()
+            .setUrl(backendUrl + endpoint)
+            .setHttpMethod(HttpMethod.POST)
+            .putHeaders("Content-Type", "application/json")
+            .setOidcToken(
+                OidcToken.newBuilder().setServiceAccountEmail(serviceAccountEmail).build());
 
-      Task task = Task.newBuilder().setHttpRequest(httpRequestBuilder.build()).build();
+    if (payload != null) {
+      httpRequestBuilder.setBody(ByteString.copyFrom(payload, StandardCharsets.UTF_8));
+    }
 
-      client.createTask(queuePath, task);
-      log.info("Task enqueued to {}", endpoint);
+    Task.Builder taskBuilder = Task.newBuilder()
+        .setHttpRequest(httpRequestBuilder.build())
+        .setDispatchDeadline(com.google.protobuf.Duration.newBuilder().setSeconds(600).build());
+
+    if (taskSuffix != null && !taskSuffix.isEmpty()) {
+      String taskName = String.format("projects/%s/locations/%s/queues/%s/tasks/%s",
+          projectId, location, queueId, taskSuffix);
+      taskBuilder.setName(taskName);
+    }
+
+    if (delaySeconds != null && delaySeconds > 0) {
+      java.time.Instant scheduledTime = java.time.Instant.now().plusSeconds(delaySeconds);
+      com.google.protobuf.Timestamp timestamp = com.google.protobuf.Timestamp.newBuilder()
+          .setSeconds(scheduledTime.getEpochSecond())
+          .setNanos(scheduledTime.getNano())
+          .build();
+      taskBuilder.setScheduleTime(timestamp);
+    }
+
+    try {
+      taskQueueAdapter.createTask(queuePath, taskBuilder.build());
+      log.info("Task enqueued to {} with suffix: {}, delay: {}s", endpoint, taskSuffix, delaySeconds);
+    } catch (com.google.api.gax.rpc.AlreadyExistsException e) {
+      log.warn("Task with suffix {} already exists. Skipping duplicate enqueue request.", taskSuffix);
     }
   }
 }
+

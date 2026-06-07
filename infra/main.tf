@@ -96,19 +96,19 @@ resource "google_artifact_registry_repository" "images" {
 # ----- Cloud Tasks queue -----------------------------------------------------
 
 resource "google_cloud_tasks_queue" "worker" {
-  name     = var.queue_id
+  name     = "${var.queue_id}"
   location = var.region
 
   rate_limits {
     max_dispatches_per_second = 5
-    max_concurrent_dispatches = 50
+    max_concurrent_dispatches = 10
   }
 
   retry_config {
-    max_attempts  = 3
+    max_attempts  = 8
     min_backoff   = "5s"
     max_backoff   = "60s"
-    max_doublings = 3
+    max_doublings = 5
   }
 
   depends_on = [google_project_service.apis]
@@ -179,3 +179,4 @@ data "google_firebase_web_app_config" "bulkaibcd" {
 # be enabled entirely through Terraform — no Firebase Console toggle required.
 # install.sh verifies after apply and falls back to a deep-link-to-Console if
 # GCIP rejects the credentials (see plan Phase 6 step 5).
+

@@ -11,6 +11,7 @@ import com.google.api.services.slides.v1.Slides;
 import com.google.api.services.slides.v1.SlidesScopes;
 import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.GoogleCredentials;
+import com.google.cloud.tasks.v2.CloudTasksClient;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.List;
@@ -28,6 +29,11 @@ import org.springframework.context.annotation.Configuration;
 public class GoogleApiConfig {
 
   private static final String APP_NAME = "bulkaibcd";
+
+  @Bean
+  public CloudTasksClient cloudTasksClient() throws IOException {
+    return CloudTasksClient.create();
+  }
 
   @Bean
   public Drive driveService() throws IOException {

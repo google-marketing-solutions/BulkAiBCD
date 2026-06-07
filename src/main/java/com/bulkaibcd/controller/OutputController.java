@@ -131,7 +131,20 @@ public class OutputController {
 
   @GetMapping("/videos/{analysisId}")
   public Flux<VideoMetadataEntity> getVideos(@PathVariable String analysisId) {
-    return videoMetadataRepository.findByAnalysisId(analysisId);
+    return videoMetadataRepository.findByAnalysisId(analysisId)
+        .map(v -> {
+          // Strip out massive raw visual tracking JSON strings to prevent UI tab OOM
+          v.setShot(null);
+          v.setText(null);
+          v.setSpeech(null);
+          v.setLogo(null);
+          v.setObjects(null);
+          v.setFace(null);
+          v.setPerson(null);
+          v.setLabelName(null);
+          v.setExplicit(null);
+          return v;
+        });
   }
 
   /**
@@ -148,8 +161,10 @@ public class OutputController {
   public Mono<ResponseEntity<Map<String, Object>>> generateDeck(
       @PathVariable String analysisId,
       @RequestHeader(name = USER_TOKEN_HEADER, required = false) String userAccessToken,
+      @RequestHeader(name = "X-Drive-Access-Token", required = false) String legacyAccessToken,
       @RequestBody(required = false) Map<String, Object> payload) {
-    if (userAccessToken == null || userAccessToken.isBlank()) {
+    String token = (userAccessToken != null && !userAccessToken.isBlank()) ? userAccessToken : legacyAccessToken;
+    if (token == null || token.isBlank()) {
       return Mono.just(
           ResponseEntity.badRequest().body(Map.of("error", "missing_token")));
     }
@@ -188,7 +203,7 @@ public class OutputController {
                                   int adherence = avg(video);
                                   PitchDeckParams params =
                                       PitchDeckParams.builder()
-                                          .userAccessToken(userAccessToken)
+                                          .userAccessToken(token)
                                           .brandName(analysis.getBrandName())
                                           .videoTitle(videoTitle)
                                           .videoUrl(video.getVideoUrl())
@@ -233,8 +248,10 @@ public class OutputController {
   @PostMapping("/report/{analysisId}")
   public Mono<ResponseEntity<Map<String, String>>> generateSpreadsheetReport(
       @PathVariable String analysisId,
-      @RequestHeader(name = USER_TOKEN_HEADER, required = false) String userAccessToken) {
-    if (userAccessToken == null || userAccessToken.isBlank()) {
+      @RequestHeader(name = USER_TOKEN_HEADER, required = false) String userAccessToken,
+      @RequestHeader(name = "X-Drive-Access-Token", required = false) String legacyAccessToken) {
+    String token = (userAccessToken != null && !userAccessToken.isBlank()) ? userAccessToken : legacyAccessToken;
+    if (token == null || token.isBlank()) {
       return Mono.just(ResponseEntity.badRequest().body(Map.of("error", "missing_token")));
     }
     GoogleSpreadsheetService svc = spreadsheetServiceProvider.getIfAvailable();
@@ -242,7 +259,7 @@ public class OutputController {
       return Mono.just(
           ResponseEntity.status(503).body(Map.of("error", "sheets_service_unavailable")));
     }
-    return Mono.fromCallable(() -> svc.generateSheetInUserDrive(analysisId, userAccessToken))
+    return Mono.fromCallable(() -> svc.generateSheetInUserDrive(analysisId, token))
         .subscribeOn(Schedulers.boundedElastic())
         .map(url -> ResponseEntity.ok(Map.of("sheetUrl", url)))
         .onErrorResume(
@@ -264,10 +281,10 @@ public class OutputController {
         .switchIfEmpty(Mono.error(new IllegalArgumentException("video_not_found: " + videoId)));
   }
 
-  private static String resolveVideoTitle(VideoMetadataEntity videoMetadata) {
-    if (videoMetadata.getAssetName() != null && !videoMetadata.getAssetName().isBlank()) return videoMetadata.getAssetName();
-    if (videoMetadata.getVideoName() != null && !videoMetadata.getVideoName().isBlank()) return videoMetadata.getVideoName();
-    return videoMetadata.getVideoId();
+  private static String resolveVideoTitle(VideoMetadataEntity v) {
+    if (v.getAssetName() != null && !v.getAssetName().isBlank()) return v.getAssetName();
+    if (v.getVideoName() != null && !v.getVideoName().isBlank()) return v.getVideoName();
+    return v.getVideoId();
   }
 
   private static int avg(VideoMetadataEntity v) {
@@ -293,7 +310,7 @@ public class OutputController {
   private static String humanizeObjective(String raw) {
     if (raw == null || raw.isBlank()) return "";
     return switch (raw) {
-      case "core_unknown" -> "Core/Unknown";
+      case "core_unknown" -> "Core / Unknown";
       case "awareness" -> "Awareness";
       case "consideration" -> "Consideration";
       case "conversion" -> "Conversion";

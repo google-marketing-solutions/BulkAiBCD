@@ -44,6 +44,8 @@ public class InputController {
   @PostMapping("/submit")
   public Mono<ResponseEntity<String>> submitAnalysis(@RequestBody SubmitAnalysisRequest request) {
     String analysisId = UUID.randomUUID().toString();
+    log.info("Input: Received submission. Generated analysisId: {}, requesterId: {}", analysisId,
+        request.getRequesterId());
     Timestamp now = Timestamp.now();
 
     AnalysisRequestEntity parent =
@@ -64,6 +66,7 @@ public class InputController {
 
     return analysisRequestRepository
         .save(parent)
+        .doOnSuccess(p -> log.info("Input: Analysis entity saved to DB: {}", analysisId))
         .then(persistVideos(analysisId, videos))
         .then(Mono.defer(() -> enqueuePrepare(analysisId)))
         .onErrorResume(
@@ -71,6 +74,7 @@ public class InputController {
   }
 
   private Mono<Void> persistVideos(String analysisId, List<SubmitAnalysisRequest.VideoInput> videos) {
+    log.info("Input: Persisting {} video entries for analysisId: {}", videos.size(), analysisId);
     return Flux.fromIterable(videos)
         .flatMap(
             videoInput -> {
@@ -86,15 +90,19 @@ public class InputController {
                       .sourceType(videoInput.getSourceType())
                       .gcsObjectId(videoInput.getGcsObjectId())
                       .build();
-              return videoInputRepository.save(entity);
+              return videoInputRepository.save(entity)
+                  .doOnSuccess(
+                      v -> log.info("Input: Saved VideoInputEntity: {} for video {}", v.getId(), v.getVideoName()));
             })
         .then();
   }
 
   private Mono<ResponseEntity<String>> enqueuePrepare(String analysisId) {
     try {
+      String payload = "{\"analysisId\": \"" + analysisId + "\"}";
+      log.info("Input: Enqueuing prepare task for {}. Payload: {}", analysisId, payload);
       cloudTasksService.enqueueTask(
-          "/api/v2/worker/prepare", "{\"analysisId\": \"" + analysisId + "\"}");
+          "/api/v2/worker/prepare", payload);
       return Mono.just(ResponseEntity.ok(analysisId));
     } catch (IOException e) {
       return Mono.error(e);
@@ -146,13 +154,13 @@ public class InputController {
                         "videos",
                         resolved.stream()
                             .map(
-                                resolvedFile ->
+                            resolvedFile ->
                                     Map.of(
-                                        "videoName", resolvedFile.name() == null ? "" : resolvedFile.name(),
-                                        "videoUrl",
-                                        resolvedFile.webViewLink() == null ? url : resolvedFile.webViewLink(),
-                                        "thumbnailUrl",
-                                        resolvedFile.thumbnailLink() == null ? "" : resolvedFile.thumbnailLink()))
+                                "videoName", resolvedFile.name() == null ? "" : resolvedFile.name(),
+                                            "videoUrl",
+                                resolvedFile.webViewLink() == null ? url : resolvedFile.webViewLink(),
+                                            "thumbnailUrl",
+                                resolvedFile.thumbnailLink() == null ? "" : resolvedFile.thumbnailLink()))
                             .toList())))
         .onErrorResume(
             err -> {
@@ -234,7 +242,8 @@ public class InputController {
                               videoMetadata -> {
                                 if (!"COMPLETED".equals(videoMetadata.getStatus())) {
                                   videoMetadata.setStatus("CANCELLED");
-                                  if (videoMetadata.getErrorMessage() == null) videoMetadata.setErrorMessage("cancelled by user");
+                                  if (videoMetadata.getErrorMessage() == null)
+                                    videoMetadata.setErrorMessage("cancelled by user");
                                   return videoMetadataRepository.save(videoMetadata);
                                 }
                                 return Mono.just(videoMetadata);
@@ -254,26 +263,23 @@ public class InputController {
   @DeleteMapping("/{analysisId}")
   public Mono<ResponseEntity<String>> deleteAnalysis(@PathVariable String analysisId) {
     UploadUrlService uploads = uploadUrlServiceProvider.getIfAvailable();
-    Mono<Void> deleteInputs =
-        videoInputRepository
-            .findByAnalysisId(analysisId)
-            .flatMap(
-                videoInputEntity -> {
-                  if (uploads != null
-                      && videoInputEntity.getGcsObjectId() != null
-                      && !videoInputEntity.getGcsObjectId().isEmpty()) {
-                    uploads.delete(videoInputEntity.getGcsObjectId());
-                  }
-                  return videoInputRepository.deleteById(videoInputEntity.getId());
-                })
-            .then();
-    Mono<Void> deleteMetadata =
-        videoMetadataRepository
-            .findByAnalysisId(analysisId)
-            .flatMap(videoMetadata -> videoMetadataRepository.deleteById(videoMetadata.getId()))
-            .then();
-    return deleteInputs
-        .then(deleteMetadata)
+
+    // Stream video inputs and perform throttled, sharded GCS and DB deletions
+    return videoInputRepository.findByAnalysisId(analysisId)
+        .flatMap(
+            videoInputEntity -> {
+              return Mono.fromCallable(() -> {
+                if (uploads != null
+                    && videoInputEntity.getGcsObjectId() != null
+                    && !videoInputEntity.getGcsObjectId().isEmpty()) {
+                  uploads.delete(videoInputEntity.getGcsObjectId());
+                }
+                return videoInputEntity;
+              })
+              .subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic())
+              .flatMap(input -> videoInputRepository.deleteById(input.getId())
+                  .then(videoMetadataRepository.deleteById(input.getId())));
+            }, 8)
         .then(analysisRequestRepository.deleteById(analysisId))
         .thenReturn(ResponseEntity.ok("DELETED"));
   }

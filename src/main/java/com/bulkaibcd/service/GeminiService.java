@@ -26,7 +26,7 @@ public class GeminiService {
   @Value("${google.cloud.location:us-central1}")
   private String location;
 
-  @Value("${google.cloud.model.name:gemini-2.5-flash}")
+  @Value("${google.cloud.model.name:gemini-2.5-pro}")
   private String modelName;
 
   private static final String VIDEO_MIME_TYPE = "video/mp4";

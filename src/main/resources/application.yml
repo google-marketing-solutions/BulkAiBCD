@@ -3,6 +3,12 @@ spring:
     active: ${SPRING_PROFILES_ACTIVE:dev}
   application:
     name: bulkaibcd
+  webflux:
+    reactive:
+      async-timeout: 600000
+  mvc:
+    async:
+      request-timeout: 600000
 
 server:
   port: ${PORT:8080}

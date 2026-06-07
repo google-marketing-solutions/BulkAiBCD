@@ -42,6 +42,7 @@ steps:
       - --image=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_IMAGE}:${BUILD_ID}
       - --region=${_REGION}
       - --platform=managed
+      - --timeout=600s
       - --no-allow-unauthenticated
       - --service-account=${_RUNTIME_SA}
       - --set-env-vars=SPRING_PROFILES_ACTIVE=prod,GOOGLE_CLOUD_PROJECT=${PROJECT_ID},GOOGLE_CLOUD_LOCATION=${_REGION},CLOUD_TASKS_QUEUE=${_CLOUD_TASKS_QUEUE},CLOUD_TASKS_SERVICE_ACCOUNT=${_RUNTIME_SA},APP_BACKEND_URL=${_APP_BACKEND_URL},UPLOADS_BUCKET=${_UPLOADS_BUCKET}

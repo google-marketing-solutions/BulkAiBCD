@@ -1,0 +1,513 @@
+[
+  {
+    "parameter_id": "a_heartbeat_story_arc",
+    "core": 1,
+    "awareness": 1,
+    "consideration": 1,
+    "action": 1
+  },
+  {
+    "parameter_id": "a_fast_pacing_full",
+    "core": 1,
+    "awareness": 1,
+    "consideration": 1,
+    "action": 1
+  },
+  {
+    "parameter_id": "a_fast_pacing_early",
+    "core": 1,
+    "awareness": 1,
+    "consideration": 1,
+    "action": 1
+  },
+  {
+    "parameter_id": "a_tight_framing",
+    "core": 1,
+    "awareness": 1,
+    "consideration": 1,
+    "action": 1
+  },
+  {
+    "parameter_id": "a_tight_framing_early",
+    "core": 1,
+    "awareness": 1,
+    "consideration": 1,
+    "action": 1
+  },
+  {
+    "parameter_id": "a_has_sound",
+    "core": 1,
+    "awareness": 1,
+    "consideration": 1,
+    "action": 1
+  },
+  {
+    "parameter_id": "a_has_music",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "a_sound_effects",
+    "core": 1,
+    "awareness": 1,
+    "consideration": 1,
+    "action": 0
+  },
+  {
+    "parameter_id": "a_human_voice",
+    "core": 0,
+    "awareness": 1,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "a_voice_over",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "a_dialogue_single",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "a_dialogue_multiple",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "a_direct_camera",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "a_has_supers",
+    "core": 1,
+    "awareness": 1,
+    "consideration": 1,
+    "action": 1
+  },
+  {
+    "parameter_id": "a_supers_combined",
+    "core": 1,
+    "awareness": 1,
+    "consideration": 1,
+    "action": 1
+  },
+  {
+    "parameter_id": "a_supers_audio_augment",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "a_supers_audio_match",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "a_large_supers",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "a_bright_colors",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "a_high_contrast",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "b_brand_display",
+    "core": 1,
+    "awareness": 1,
+    "consideration": 1,
+    "action": 0
+  },
+  {
+    "parameter_id": "b_brand_early",
+    "core": 0,
+    "awareness": 1,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "b_brand_late",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "b_brand_overlaid",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "b_brand_in_situation",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "b_brand_visual_nonconsecutive",
+    "core": 0,
+    "awareness": 1,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "b_large_brand_logo",
+    "core": 1,
+    "awareness": 1,
+    "consideration": 1,
+    "action": 0
+  },
+  {
+    "parameter_id": "b_brand_mention",
+    "core": 1,
+    "awareness": 1,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "b_brand_mention_see_say",
+    "core": 0,
+    "awareness": 1,
+    "consideration": 1,
+    "action": 0
+  },
+  {
+    "parameter_id": "b_brand_mention_late",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "b_brand_mention_early",
+    "core": 0,
+    "awareness": 1,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "b_brand_mention_see_say_early",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "b_jingle",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "b_brand_elements",
+    "core": 1,
+    "awareness": 1,
+    "consideration": 1,
+    "action": 0
+  },
+  {
+    "parameter_id": "b_product_visualized",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 1,
+    "action": 1
+  },
+  {
+    "parameter_id": "b_product_visualized_early",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 1,
+    "action": 1
+  },
+  {
+    "parameter_id": "b_product_visualized_late",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 1,
+    "action": 0
+  },
+  {
+    "parameter_id": "b_product_closeup",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 1,
+    "action": 0
+  },
+  {
+    "parameter_id": "b_product_extreme_closeup",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 0,
+    "action": 1
+  },
+  {
+    "parameter_id": "b_product_mention_combined",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 1,
+    "action": 1
+  },
+  {
+    "parameter_id": "b_product_mention_speech",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "b_product_mention_speech_early",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "b_product_mention_speech_late",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "b_product_mention_text",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "b_product_focus",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 0,
+    "action": 1
+  },
+  {
+    "parameter_id": "c_people_overall",
+    "core": 1,
+    "awareness": 1,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "c_people_early",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "c_closeup_people",
+    "core": 1,
+    "awareness": 1,
+    "consideration": 1,
+    "action": 0
+  },
+  {
+    "parameter_id": "c_early_faces",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "c_people_using_product",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 1,
+    "action": 1
+  },
+  {
+    "parameter_id": "c_product_context",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 1,
+    "action": 1
+  },
+  {
+    "parameter_id": "c_focused_messaging",
+    "core": 1,
+    "awareness": 1,
+    "consideration": 1,
+    "action": 1
+  },
+  {
+    "parameter_id": "c_single_feature_benefit",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "c_casual_language",
+    "core": 1,
+    "awareness": 1,
+    "consideration": 1,
+    "action": 1
+  },
+  {
+    "parameter_id": "c_expression_benefits",
+    "core": 1,
+    "awareness": 1,
+    "consideration": 1,
+    "action": 1
+  },
+  {
+    "parameter_id": "c_competitive_claim",
+    "core": 0,
+    "awareness": 1,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "c_benefit_visualization",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 1,
+    "action": 1
+  },
+  {
+    "parameter_id": "c_emotions",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "c_humor",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "c_delight",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "c_character_driven",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "d_call_to_action_supers",
+    "core": 1,
+    "awareness": 1,
+    "consideration": 1,
+    "action": 1
+  },
+  {
+    "parameter_id": "d_audio_cta",
+    "core": 1,
+    "awareness": 1,
+    "consideration": 1,
+    "action": 1
+  },
+  {
+    "parameter_id": "d_relevant_call_to_action",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "d_purchase_incentive",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "d_special_offer_text",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "d_special_offer_speech",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "d_price_text",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "d_price_speech",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "d_free_text",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "d_free_speech",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "d_path_to_purchase",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 0,
+    "action": 0
+  },
+  {
+    "parameter_id": "d_search_bar",
+    "core": 0,
+    "awareness": 0,
+    "consideration": 0,
+    "action": 0
+  }
+]

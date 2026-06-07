@@ -117,6 +117,7 @@ public class DriveIngestService {
    * convention already used for browser-uploaded files.
    */
   public String ingest(String driveUrl) throws IOException {
+    log.info("Service: Starting ingestion for Drive URL: {}", driveUrl);
     String fileId = parseFileId(driveUrl);
     if (fileId == null) {
       throw new IllegalArgumentException("Unrecognized Drive URL: " + driveUrl);
