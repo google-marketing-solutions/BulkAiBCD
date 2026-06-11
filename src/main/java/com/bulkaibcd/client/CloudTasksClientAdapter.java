@@ -1,4 +1,4 @@
-package com.bulkaibcd.service;
+package com.bulkaibcd.client;
 
 import com.google.cloud.tasks.v2.CloudTasksClient;
 import com.google.cloud.tasks.v2.Task;

@@ -1,4 +1,4 @@
-package com.bulkaibcd.service;
+package com.bulkaibcd.client;
 
 import com.google.cloud.vertexai.VertexAI;
 import com.google.cloud.vertexai.api.Content;
@@ -13,12 +13,13 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
-@Service
+/** Client gateway responsible for encapsulating Vertex AI GenerativeModel operations. */
+@Component
 @Slf4j
 @RequiredArgsConstructor
-public class GeminiService {
+public class GeminiClient {
 
   @Value("${google.cloud.project.id}")
   private String projectId;

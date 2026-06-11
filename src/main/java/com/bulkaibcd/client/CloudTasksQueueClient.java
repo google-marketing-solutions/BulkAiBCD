@@ -1,23 +1,27 @@
-package com.bulkaibcd.service;
+package com.bulkaibcd.client;
 
-import com.google.cloud.tasks.v2.CloudTasksClient;
+import com.google.api.gax.rpc.AlreadyExistsException;
 import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.cloud.tasks.v2.HttpRequest;
 import com.google.cloud.tasks.v2.OidcToken;
 import com.google.cloud.tasks.v2.QueueName;
 import com.google.cloud.tasks.v2.Task;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.Duration;
+import com.google.protobuf.Timestamp;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
-@Service
+/** Client gateway responsible for encapsulating Cloud Tasks API operations. */
+@Component
 @Slf4j
 @RequiredArgsConstructor
-public class CloudTasksService {
+public class CloudTasksQueueClient {
 
   @Value("${google.cloud.project.id}")
   private String projectId;
@@ -40,7 +44,8 @@ public class CloudTasksService {
     enqueueTask(endpoint, payload, null, null);
   }
 
-  public void enqueueTask(String endpoint, String payload, String taskSuffix, Integer delaySeconds) throws IOException {
+  public void enqueueTask(String endpoint, String payload, String taskSuffix, Integer delaySeconds)
+      throws IOException {
     String queuePath = QueueName.of(projectId, location, queueId).toString();
 
     HttpRequest.Builder httpRequestBuilder =
@@ -55,31 +60,41 @@ public class CloudTasksService {
       httpRequestBuilder.setBody(ByteString.copyFrom(payload, StandardCharsets.UTF_8));
     }
 
-    Task.Builder taskBuilder = Task.newBuilder()
-        .setHttpRequest(httpRequestBuilder.build())
-        .setDispatchDeadline(com.google.protobuf.Duration.newBuilder().setSeconds(600).build());
+    Task.Builder taskBuilder =
+        Task.newBuilder()
+            .setHttpRequest(httpRequestBuilder.build())
+            .setDispatchDeadline(Duration.newBuilder().setSeconds(600).build());
 
     if (taskSuffix != null && !taskSuffix.isEmpty()) {
-      String taskName = String.format("projects/%s/locations/%s/queues/%s/tasks/%s",
-          projectId, location, queueId, taskSuffix);
+      String taskName =
+          String.format(
+              "projects/%s/locations/%s/queues/%s/tasks/%s",
+              projectId, location, queueId, taskSuffix);
       taskBuilder.setName(taskName);
     }
 
     if (delaySeconds != null && delaySeconds > 0) {
-      java.time.Instant scheduledTime = java.time.Instant.now().plusSeconds(delaySeconds);
-      com.google.protobuf.Timestamp timestamp = com.google.protobuf.Timestamp.newBuilder()
-          .setSeconds(scheduledTime.getEpochSecond())
-          .setNanos(scheduledTime.getNano())
-          .build();
+      Instant scheduledTime = Instant.now().plusSeconds(delaySeconds);
+      Timestamp timestamp =
+          Timestamp.newBuilder()
+              .setSeconds(scheduledTime.getEpochSecond())
+              .setNanos(scheduledTime.getNano())
+              .build();
       taskBuilder.setScheduleTime(timestamp);
     }
 
     try {
       taskQueueAdapter.createTask(queuePath, taskBuilder.build());
-      log.info("Task enqueued to {} with suffix: {}, delay: {}s", endpoint, taskSuffix, delaySeconds);
-    } catch (com.google.api.gax.rpc.AlreadyExistsException e) {
-      log.warn("Task with suffix {} already exists. Skipping duplicate enqueue request.", taskSuffix);
+      log.info(
+          "CloudTasksQueueClient: Task enqueued to {} with suffix: {}, delay: {}s",
+          endpoint,
+          taskSuffix,
+          delaySeconds);
+    } catch (AlreadyExistsException e) {
+      log.warn(
+          "CloudTasksQueueClient: Task with suffix {} already exists. Skipping duplicate enqueue"
+              + " request.",
+          taskSuffix);
     }
   }
 }
-

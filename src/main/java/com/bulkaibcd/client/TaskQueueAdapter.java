@@ -1,4 +1,4 @@
-package com.bulkaibcd.service;
+package com.bulkaibcd.client;
 
 import com.google.cloud.tasks.v2.Task;
 import java.io.IOException;
