@@ -118,14 +118,35 @@ banner "Terraform — pass 1 (everything except Cloud Run IAM)"
 # first pass. They get applied in pass 2 after Cloud Build creates the service.
 
 UPLOADS_BUCKET="bulkaibcd-uploads-${PROJECT}"
-cat > infra/terraform.tfvars <<EOF
+QUEUE_ID="bulkaibcd-queue"
+
+# Check if Cloud Run service already exists (for redeployments)
+EXISTING_URL="$(gcloud run services describe bulkaibcd --region="${REGION}" --project="${PROJECT}" --format='value(status.url)' 2>/dev/null || true)"
+
+if [[ -n "${EXISTING_URL}" ]]; then
+  info "Found existing Cloud Run service: ${EXISTING_URL}"
+  cat > infra/terraform.tfvars <<EOF
 project_id           = "${PROJECT}"
 region               = "${REGION}"
 support_email        = "${ACTIVE_ACCOUNT}"
 iap_users            = ["${ACTIVE_ACCOUNT}"]
 uploads_bucket_name  = "${UPLOADS_BUCKET}"
-cloud_run_deployed   = false
+queue_id             = "${QUEUE_ID}"
+cloud_run_deployed   = true
+cors_origins         = ["${EXISTING_URL}", "http://localhost:4200", "http://localhost:8080"]
 EOF
+else
+  cat > infra/terraform.tfvars <<EOF
+project_id           = "${PROJECT}"
+region               = "${REGION}"
+support_email        = "${ACTIVE_ACCOUNT}"
+iap_users            = ["${ACTIVE_ACCOUNT}"]
+uploads_bucket_name  = "${UPLOADS_BUCKET}"
+queue_id             = "${QUEUE_ID}"
+cloud_run_deployed   = false
+cors_origins         = ["http://localhost:4200", "http://localhost:8080"]
+EOF
+fi
 info "Wrote infra/terraform.tfvars"
 
 terraform -chdir=infra init -upgrade -input=false
@@ -174,7 +195,7 @@ banner "Cloud Build — first pass (creates the Cloud Run service)"
 gcloud builds submit \
   --config=cloudbuild.yaml \
   --project="${PROJECT}" \
-  --substitutions="_REGION=${REGION},_RUNTIME_SA=${RUNTIME_SA},_UPLOADS_BUCKET=${UPLOADS_BUCKET}"
+  --substitutions="_REGION=${REGION},_RUNTIME_SA=${RUNTIME_SA},_UPLOADS_BUCKET=${UPLOADS_BUCKET},_CLOUD_TASKS_QUEUE=${QUEUE_ID}"
 
 CLOUD_RUN_URL="$(gcloud run services describe bulkaibcd --region="${REGION}" --project="${PROJECT}" --format='value(status.url)' 2>/dev/null || true)"
 [[ -n "${CLOUD_RUN_URL}" ]] || fail "Cloud Run service URL not available after first deploy."
@@ -184,12 +205,19 @@ info "Cloud Run URL: ${CLOUD_RUN_URL}"
 banner "Terraform — pass 2 (IAP + Cloud Run IAM bindings + CORS for the real URL)"
 # -----------------------------------------------------------------------------
 
-sed -i 's/cloud_run_deployed   = false/cloud_run_deployed   = true/' infra/terraform.tfvars
-# Append the Cloud Run URL to the uploads-bucket CORS origins now that it exists.
-CLOUD_RUN_HOST="${CLOUD_RUN_URL#https://}"
-cat >> infra/terraform.tfvars <<EOF
-cors_origins = ["${CLOUD_RUN_URL}", "http://localhost:4200", "http://localhost:8080"]
+# Cleanly rewrite terraform.tfvars with the live Cloud Run URL
+cat > infra/terraform.tfvars <<EOF
+project_id           = "${PROJECT}"
+region               = "${REGION}"
+support_email        = "${ACTIVE_ACCOUNT}"
+iap_users            = ["${ACTIVE_ACCOUNT}"]
+uploads_bucket_name  = "${UPLOADS_BUCKET}"
+queue_id             = "${QUEUE_ID}"
+cloud_run_deployed   = true
+cors_origins         = ["${CLOUD_RUN_URL}", "http://localhost:4200", "http://localhost:8080"]
 EOF
+info "Updated infra/terraform.tfvars with live Cloud Run URL"
+
 terraform -chdir=infra apply -auto-approve -input=false
 
 # -----------------------------------------------------------------------------
@@ -199,7 +227,7 @@ banner "Cloud Build — second pass (wires APP_BACKEND_URL for Cloud Tasks)"
 gcloud builds submit \
   --config=cloudbuild.yaml \
   --project="${PROJECT}" \
-  --substitutions="_REGION=${REGION},_RUNTIME_SA=${RUNTIME_SA},_UPLOADS_BUCKET=${UPLOADS_BUCKET},_APP_BACKEND_URL=${CLOUD_RUN_URL}"
+  --substitutions="_REGION=${REGION},_RUNTIME_SA=${RUNTIME_SA},_UPLOADS_BUCKET=${UPLOADS_BUCKET},_APP_BACKEND_URL=${CLOUD_RUN_URL},_CLOUD_TASKS_QUEUE=${QUEUE_ID}"
 
 # -----------------------------------------------------------------------------
 banner "Done"

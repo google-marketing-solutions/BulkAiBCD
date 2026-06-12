@@ -14,7 +14,6 @@ class VideoMetadataEntityTest {
             .analysisId("ana-1")
             .videoId("vid-1")
             .status("COMPLETED")
-            .attempts(2)
             .errorMessage(null)
             .brand("Acme")
             .product("Widget")
@@ -36,14 +35,7 @@ class VideoMetadataEntityTest {
     assertThat(entity.getAnalysisId()).isEqualTo("ana-1");
     assertThat(entity.getVideoId()).isEqualTo("vid-1");
     assertThat(entity.getStatus()).isEqualTo("COMPLETED");
-    assertThat(entity.getAttempts()).isEqualTo(2);
     assertThat(entity.getBrand()).isEqualTo("Acme");
     assertThat(entity.getExplicit()).isEqualTo("false");
-  }
-
-  @Test
-  void defaultAttemptsIsZero() {
-    VideoMetadataEntity entity = new VideoMetadataEntity();
-    assertThat(entity.getAttempts()).isZero();
   }
 }

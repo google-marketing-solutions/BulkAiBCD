@@ -35,10 +35,6 @@ const YOUTUBE_URL_PATTERN =
     >
       Validate and Add URLs to queue
     </button>
-    <div class="constraint-banner">
-      <mat-icon>info</mat-icon>
-      <span>Constraint: Max 25 YouTube URLs.</span>
-    </div>
   `,
   styleUrl: './url-input.component.scss',
   imports: [

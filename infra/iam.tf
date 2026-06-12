@@ -37,6 +37,8 @@ locals {
   builder_project_roles = [
     "roles/run.admin",
     "roles/logging.logWriter",
+    "roles/storage.admin",
+    "roles/artifactregistry.writer",
   ]
   builder_project_role_pairs = {
     for pair in setproduct(local.builder_sas, local.builder_project_roles) :
