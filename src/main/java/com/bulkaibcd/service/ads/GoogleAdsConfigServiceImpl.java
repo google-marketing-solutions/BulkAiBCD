@@ -1,4 +1,4 @@
-package com.bulkaibcd.service.googleads;
+package com.bulkaibcd.service.ads;
 
 import com.bulkaibcd.model.GoogleAdsConfigDto;
 import com.bulkaibcd.model.GoogleAdsStatusDto;

@@ -180,9 +180,16 @@ if [[ -z "${PROVIDER_STATUS}" ]]; then
   echo
   echo "   1. Open: https://console.firebase.google.com/project/${PROJECT}/authentication/providers"
   echo "   2. Click 'Google' → toggle Enable → Save."
-  echo "   3. Press Enter here."
   echo
-  read -r -p "   Press Enter when done: " _
+  echo "   3. Configure the OAuth Consent Screen scopes in GCP Console:"
+  echo "      a. Open: https://console.cloud.google.com/auth/scopes?project=${PROJECT}"
+  echo "      b. Click 'Add or Remove Scopes'."
+  echo "      c. Add/enable the following scopes:"
+  echo "         - https://www.googleapis.com/auth/drive"
+  echo "         - https://www.googleapis.com/auth/spreadsheets"
+  echo "      d. Save the changes."
+  echo
+  read -r -p "   Press Enter when both steps are done: " _
 fi
 
 # -----------------------------------------------------------------------------
@@ -239,22 +246,52 @@ Bulk AiBCD is deployed at:
 
    ${CLOUD_RUN_URL}
 
-The service is IAM-gated (not IAP yet — see README for the follow-up on
-path-based IAP routing that works with Cloud Tasks). To use it now, run this
-from your workstation in a terminal:
+By default, the Cloud Run service is IAM-gated (private). You can choose one of the following options to grant access to others:
+
+=============================================================================
+OPTION 1: Make the app PUBLIC (Anyone with the link can access it)
+=============================================================================
+Run this command in your terminal:
+
+   gcloud run services add-iam-policy-binding bulkaibcd \\
+     --region=${REGION} \\
+     --project=${PROJECT} \\
+     --member=allUsers \\
+     --role=roles/run.invoker
+
+Once run, anyone can access the app directly at:
+   ${CLOUD_RUN_URL}
+
+=============================================================================
+OPTION 2: Keep the app PRIVATE & grant access to a specific teammate
+=============================================================================
+1. Grant your teammate permissions (both Viewer and Invoker are required to run the proxy and access the app):
+
+   # A. Grant Viewer role so they can run the proxy command
+   gcloud run services add-iam-policy-binding bulkaibcd \\
+     --region=${REGION} \\
+     --project=${PROJECT} \\
+     --member=user:teammate@example.com \\
+     --role=roles/run.viewer
+
+   # B. Grant Invoker role so they can access/invoke the app
+   gcloud run services add-iam-policy-binding bulkaibcd \\
+     --region=${REGION} \\
+     --project=${PROJECT} \\
+     --member=user:teammate@example.com \\
+     --role=roles/run.invoker
+
+2. Your teammate must then run the proxy command in their own terminal:
 
    gcloud run services proxy bulkaibcd --region=${REGION} --project=${PROJECT}
 
-Then open http://localhost:8080 in a browser. On the first Pitch Deck or
-Detailed Spreadsheet click, Firebase Auth asks for permission to save files
-to your Drive — approve once and the deck / sheet opens in a new tab.
+3. How they access the app:
+   - If using Google Cloud Shell: Click the "Web Preview" button (top right) -> "Preview on port 8080" to open their unique secure URL.
+   - If running locally: Open http://localhost:8080 in their browser.
 
-To grant proxy access to a teammate:
-
-   gcloud run services add-iam-policy-binding bulkaibcd \\
-     --region=${REGION} --project=${PROJECT} \\
-     --member=user:teammate@example.com \\
-     --role=roles/run.invoker
+=============================================================================
+First-Time Sign In Setup:
+On the first Pitch Deck or Detailed Spreadsheet click, Firebase Auth will ask for permission to save files to your Google Drive. Approve this once, and the document will open in a new tab.
 
 To redeploy after code changes, re-run this script.
 
