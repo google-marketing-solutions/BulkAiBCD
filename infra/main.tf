@@ -1,11 +1,15 @@
 provider "google" {
   project = var.project_id
   region  = var.region
+  billing_project = var.project_id
+  user_project_override = true
 }
 
 provider "google-beta" {
   project = var.project_id
   region  = var.region
+  billing_project = var.project_id
+  user_project_override = true
 }
 
 data "google_project" "this" {
@@ -92,19 +96,19 @@ resource "google_artifact_registry_repository" "images" {
 # ----- Cloud Tasks queue -----------------------------------------------------
 
 resource "google_cloud_tasks_queue" "worker" {
-  name     = var.queue_id
+  name     = "${var.queue_id}"
   location = var.region
 
   rate_limits {
     max_dispatches_per_second = 5
-    max_concurrent_dispatches = 50
+    max_concurrent_dispatches = 10
   }
 
   retry_config {
-    max_attempts  = 3
+    max_attempts  = 8
     min_backoff   = "5s"
     max_backoff   = "60s"
-    max_doublings = 3
+    max_doublings = 5
   }
 
   depends_on = [google_project_service.apis]
@@ -146,26 +150,6 @@ resource "google_storage_bucket" "uploads" {
   depends_on = [google_project_service.apis]
 }
 
-# ----- IAP: OAuth brand + client --------------------------------------------
-#
-# The OAuth brand is the consent-screen record (one per project). The IAP
-# client provides the client_id / client_secret we reuse for Firebase Auth's
-# Google provider below, so the installer can wire everything up without
-# requiring a Cloud Console click to create a Web OAuth client.
-
-resource "google_iap_brand" "bulkaibcd" {
-  support_email     = var.support_email
-  application_title = "Bulk AiBCD"
-  project           = var.project_id
-
-  depends_on = [google_project_service.apis]
-}
-
-resource "google_iap_client" "bulkaibcd" {
-  display_name = "${var.service_name}-web"
-  brand        = google_iap_brand.bulkaibcd.name
-}
-
 # ----- Firebase project + Web App -------------------------------------------
 
 resource "google_firebase_project" "bulkaibcd" {
@@ -196,26 +180,3 @@ data "google_firebase_web_app_config" "bulkaibcd" {
 # install.sh verifies after apply and falls back to a deep-link-to-Console if
 # GCIP rejects the credentials (see plan Phase 6 step 5).
 
-resource "google_identity_platform_config" "bulkaibcd" {
-  project = var.project_id
-
-  sign_in {
-    allow_duplicate_emails = false
-
-    email {
-      enabled = false
-    }
-  }
-
-  depends_on = [google_firebase_project.bulkaibcd]
-}
-
-resource "google_identity_platform_default_supported_idp_config" "google" {
-  project       = var.project_id
-  enabled       = true
-  idp_id        = "google.com"
-  client_id     = google_iap_client.bulkaibcd.client_id
-  client_secret = google_iap_client.bulkaibcd.secret
-
-  depends_on = [google_identity_platform_config.bulkaibcd]
-}

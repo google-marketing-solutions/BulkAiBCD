@@ -71,5 +71,6 @@ variable "cors_origins" {
   type        = list(string)
   default = [
     "http://localhost:4200",
+    "http://localhost:8080",
   ]
 }

@@ -24,7 +24,6 @@ public class VideoMetadataEntity {
   private String thumbnailUrl;
   private String sourceType;
   private String status;
-  private int attempts;
   private String errorMessage;
 
   // ABCD scoring (0-100). Nullable until the corresponding Gemini prompt returns.
@@ -37,10 +36,15 @@ public class VideoMetadataEntity {
 
   /**
    * Names of ABCD features Gemini detected in this video (e.g. "early_brand_presence",
-   * "clear_cta"). Consumed by the pitch-deck template to flip the {@code ○} placeholder
-   * bullets to {@code ●} for detected items.
+   * "clear_cta"). Consumed by the pitch-deck template to flip the {@code ○} placeholder bullets to
+   * {@code ●} for detected items.
    */
+  private List<String> relevantFeatures;
+
   private List<String> features;
+  private List<String> notDetected;
+  private List<NotDetectedFeatureEntity> notDetectedFeatures;
+  private String recommendations;
 
   private String brand;
   private String product;

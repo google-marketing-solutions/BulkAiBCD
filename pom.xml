@@ -17,6 +17,7 @@
     <java.version>17</java.version>
     <spring-cloud-gcp.version>5.0.0</spring-cloud-gcp.version>
     <spring-cloud.version>2023.0.0</spring-cloud.version>
+    <lombok.version>1.18.46</lombok.version>
   </properties>
   <dependencies>
     <dependency>
@@ -39,6 +40,11 @@
       <groupId>com.google.cloud</groupId>
       <artifactId>google-cloud-vertexai</artifactId>
       <version>1.17.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.cloud</groupId>
+      <artifactId>google-cloud-aiplatform</artifactId>
+      <version>3.53.0</version>
     </dependency>
     <dependency>
       <groupId>com.google.cloud</groupId>
@@ -143,7 +149,30 @@
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <annotationProcessorPaths>
+            <path>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok</artifactId>
+              <version>${lombok.version}</version>
+            </path>
+          </annotationProcessorPaths>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <forkCount>0</forkCount>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
+        <configuration>
+          <forkCount>0</forkCount>
+        </configuration>
         <executions>
           <execution>
             <goals>

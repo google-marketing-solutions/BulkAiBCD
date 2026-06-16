@@ -14,7 +14,7 @@ RUN mvn dependency:go-offline
 COPY src ./src
 # Copy the built frontend to spring boot static resources
 COPY --from=frontend-build /app/ui/dist/bulkaibcd/browser src/main/resources/static
-RUN mvn package -DskipTests
+RUN mvn package -Dmaven.test.skip=true
 
 # Stage 3: Run the application
 FROM docker.io/library/eclipse-temurin:17-jre-jammy

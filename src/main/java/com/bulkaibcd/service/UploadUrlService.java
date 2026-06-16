@@ -1,8 +1,8 @@
 package com.bulkaibcd.service;
 
+import com.bulkaibcd.client.GcsClient;
 import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.HttpMethod;
-import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.Storage.SignUrlOption;
 import java.net.URL;
 import java.util.Map;
@@ -18,7 +18,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class UploadUrlService {
 
-  private final Storage storage;
+  private final GcsClient gcsClient;
 
   @Value("${app.uploads-bucket}")
   private String bucket;
@@ -35,13 +35,15 @@ public class UploadUrlService {
             .build();
 
     URL signed =
-        storage.signUrl(
+        gcsClient.signUrl(
             blobInfo,
             15,
             TimeUnit.MINUTES,
             SignUrlOption.httpMethod(HttpMethod.PUT),
             SignUrlOption.withExtHeaders(
-                Map.of("Content-Type", contentType == null ? "application/octet-stream" : contentType)),
+                Map.of(
+                    "Content-Type",
+                    contentType == null ? "application/octet-stream" : contentType)),
             SignUrlOption.withV4Signature());
 
     return new SignedUploadUrl(signed.toString(), bucket + "/" + objectName);
@@ -58,8 +60,8 @@ public class UploadUrlService {
     String b = gcsObjectId.substring(0, slash);
     String o = gcsObjectId.substring(slash + 1);
     try {
-      boolean deleted = storage.delete(b, o);
-      log.info("GCS delete {}/{} -> {}", b, o, deleted);
+      gcsClient.deleteObject(b, o);
+      log.info("GCS delete requested for {}/{}", b, o);
     } catch (Exception e) {
       log.warn("GCS delete failed for {}", gcsObjectId, e);
     }

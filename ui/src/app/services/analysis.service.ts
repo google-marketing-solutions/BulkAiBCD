@@ -87,8 +87,8 @@ export class AnalysisService {
   ): Observable<{sheetUrl: string}> {
     return this.http.post<{sheetUrl: string}>(
       `${this.apiUrl}/output/report/${analysisId}`,
-      null,
-      {headers: new HttpHeaders({'X-Google-Access-Token': driveAccessToken})},
+      {},
+      { headers: new HttpHeaders({ 'X-Drive-Access-Token': driveAccessToken }) },
     );
   }
 
@@ -131,7 +131,7 @@ export class AnalysisService {
     return this.http.post<GeneratedDecksResponse>(
       `${this.apiUrl}/output/generate-deck/${analysisId}`,
       {videoIds},
-      {headers: new HttpHeaders({'X-Google-Access-Token': driveAccessToken})},
+      { headers: new HttpHeaders({ 'X-Drive-Access-Token': driveAccessToken }) },
     );
   }
 }

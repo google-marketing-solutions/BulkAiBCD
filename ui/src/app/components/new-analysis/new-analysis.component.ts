@@ -15,7 +15,6 @@ import {AnalysisConfigComponent} from './analysis-config/analysis-config.compone
 import {InputQueueComponent} from './input-queue/input-queue.component';
 
 const DEFAULT_REQUESTER_ID = 'default-user';
-const MAX_VIDEOS_PER_ANALYSIS = 25;
 
 @Component({
   selector: 'app-new-analysis',
@@ -49,24 +48,7 @@ export class NewAnalysisComponent {
   protected readonly submitting = signal(false);
 
   protected addFiles(files: File[]) {
-    const remaining = MAX_VIDEOS_PER_ANALYSIS - this.videos().length;
-    if (remaining <= 0) {
-      this.snackBar.open(
-        `Queue is full (max ${MAX_VIDEOS_PER_ANALYSIS} videos per analysis).`,
-        'Dismiss',
-        {duration: 5000},
-      );
-      return;
-    }
-    const accepted = files.slice(0, remaining);
-    if (files.length - accepted.length > 0) {
-      this.snackBar.open(
-        `Only ${accepted.length} of ${files.length} added \u2014 max ${MAX_VIDEOS_PER_ANALYSIS} per analysis.`,
-        'Dismiss',
-        {duration: 5000},
-      );
-    }
-    this.videos.update((videos) => [...videos, ...accepted]);
+    this.videos.update((videos) => [...videos, ...files]);
   }
 
   protected removeVideo(index: number) {
