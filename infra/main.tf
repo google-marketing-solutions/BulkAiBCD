@@ -180,3 +180,16 @@ data "google_firebase_web_app_config" "bulkaibcd" {
 # install.sh verifies after apply and falls back to a deep-link-to-Console if
 # GCIP rejects the credentials (see plan Phase 6 step 5).
 
+resource "google_identity_platform_config" "default" {
+  project = var.project_id
+
+  # Explicitly defining the allowed domains for OAuth redirects
+  authorized_domains = [
+    "localhost",
+    "${var.project_id}.firebaseapp.com",
+    "${var.project_id}.web.app",
+    "cloudshell.dev"
+  ]
+
+  depends_on = [google_project_service.apis]
+}

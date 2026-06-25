@@ -1,41 +1,191 @@
-<div class="form-section" [formGroup]="idForm">
-  <mat-radio-group formControlName="idType" aria-label="Select ID type" class="id-type-radio-group">
-    <mat-radio-button value="customerId">Customer IDs</mat-radio-button>
-    <mat-radio-button value="campaignId">Campaign IDs</mat-radio-button>
-  </mat-radio-group>
-  <mat-form-field appearance="outline">
-    <mat-label>{{placeholderText}}</mat-label>
-    <input matInput formControlName="idValue">
-  </mat-form-field>
-  @if(idType?.value === 'campaignId') {
-    <div class="campaign-filters">
-      <div class="campaign-name-filter">
-        <mat-form-field appearance="outline" class="match-type">
-          <mat-label>Match</mat-label>
-          <mat-select formControlName="campaignNameMatchType">
-            <mat-option value="contains">Contains</mat-option>
-            <mat-option value="startsWith">Starts with</mat-option>
-            <mat-option value="endsWith">Ends with</mat-option>
-            <mat-option value="doesNotContain">Does not contain</mat-option>
-          </mat-select>
-        </mat-form-field>
-        <mat-form-field appearance="outline" class="name-input">
-          <mat-label>Campaign Name</mat-label>
-          <input matInput formControlName="campaignName">
-        </mat-form-field>
-      </div>
-      <div class="campaign-status-filter">
-        <div class="filter-group-label">Campaign Status</div>
-        <mat-radio-group formControlName="campaignStatus" aria-label="Select campaign status" class="status-radio-group">
-          <mat-radio-button value="active">Active</mat-radio-button>
-          <mat-radio-button value="all">All</mat-radio-button>
-        </mat-radio-group>
-      </div>
+<div class="google-ads-container">
+
+  <!-- LOADING BACKEND STATUS -->
+  @if (loadingStatus()) {
+    <div class="loading-overlay">
+      <mat-spinner diameter="40"></mat-spinner>
+      <span class="loading-text">Checking Google Ads integration...</span>
     </div>
+  } @else {
+
+    @if (showConfigForm()) {
+      <!-- CONFIGURATION VIEW -->
+      <div class="card config-card" [formGroup]="configForm">
+        <div class="card-header">
+          <div class="title-section">
+            <button mat-icon-button class="back-btn" (click)="toggleConfigForm()" title="Back to Search">
+              <mat-icon>arrow_back</mat-icon>
+            </button>
+            <h2>Configure Google Ads Integration</h2>
+          </div>
+        </div>
+
+        <p class="description">
+          Provide your Google Ads OAuth 2.0 Web Application credentials and Developer Token. 
+          When you click <strong>Authorize & Save</strong>, you will be redirected to Google's consent page to approve access.
+        </p>
+
+        <div class="form-grid">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>OAuth Client ID</mat-label>
+            <input matInput formControlName="clientId" placeholder="Enter your GCP OAuth Client ID">
+            <mat-error>Client ID is required</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>OAuth Client Secret</mat-label>
+            <input matInput type="password" formControlName="clientSecret" placeholder="Enter your GCP OAuth Client Secret">
+            <mat-error>Client Secret is required</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Google Ads Developer Token</mat-label>
+            <input matInput formControlName="developerToken" placeholder="Enter your Google Ads API Developer Token">
+            <mat-error>Developer Token is required</mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="action-row">
+          <button mat-flat-button color="primary" class="action-btn" [disabled]="configForm.invalid" (click)="saveConfigAndAuthorize()">
+            <mat-icon>vpn_key</mat-icon>
+            Authorize & Save
+          </button>
+          @if (isConfigured() && isAuthorized()) {
+            <button mat-stroked-button class="cancel-btn" (click)="toggleConfigForm()">Cancel</button>
+          }
+        </div>
+      </div>
+    } @else {
+      <!-- SEARCH & IMPORT VIEW -->
+      <div class="ads-search-view">
+        <div class="search-header">
+          <!-- <div class="title-section">
+            <mat-icon class="header-icon">campaign</mat-icon>
+            <h2>Import Videos from Google Ads</h2>
+          </div> -->
+        </div>
+          <button mat-stroked-button class="reconfig-btn" (click)="toggleConfigForm()">
+            <mat-icon>settings</mat-icon>
+            Reconfigure Ads
+          </button>
+
+        <div class="search-box" [formGroup]="searchForm">
+          <div class="search-inputs">
+            <!-- Customer ID Dropdown or Input -->
+            <mat-form-field appearance="outline" class="customer-field">
+              <mat-label>Google Ads Customer ID</mat-label>
+              @if (customers().length > 0) {
+                <mat-select formControlName="customerId">
+                  @for (cust of customers(); track cust) {
+                    <mat-option [value]="cust">{{ cust }}</mat-option>
+                  }
+                </mat-select>
+              } @else {
+                <input matInput formControlName="customerId" placeholder="e.g. 1234567890">
+              }
+              <!-- <mat-hint>Select or type the target 10-digit customer account ID</mat-hint> -->
+              <mat-error>Customer ID is required</mat-error>
+            </mat-form-field>
+
+            <!-- Campaign Name Filter -->
+            <div class="campaign-name-filter">
+              <mat-form-field appearance="outline" class="match-type">
+                <mat-label>Match Type</mat-label>
+                <mat-select formControlName="campaignNameMatchType">
+                  <mat-option value="contains">Contains</mat-option>
+                  <mat-option value="startsWith">Starts with</mat-option>
+                  <mat-option value="endsWith">Ends with</mat-option>
+                  <mat-option value="doesNotContain">Does not contain</mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="name-input">
+                <mat-label>Campaign Name Filter</mat-label>
+                <input matInput formControlName="campaignName" placeholder="Search by campaign name (optional)">
+              </mat-form-field>
+            </div>
+
+            <!-- Campaign Status Filter -->
+          </div>
+          <div class="campaign-status-filter">
+              <span class="filter-label">Campaign Status:</span>
+              <mat-radio-group formControlName="campaignStatus" class="status-group">
+                <mat-radio-button value="active">Active Campaigns</mat-radio-button>
+                <mat-radio-button value="all">Active & Paused</mat-radio-button>
+              </mat-radio-group>
+            </div>
+
+          <button mat-flat-button color="primary" class="search-btn" [disabled]="searchForm.invalid || loadingCampaigns()" (click)="searchCampaigns()">
+            @if (loadingCampaigns()) {
+              <mat-spinner diameter="20" class="spinner-inline"></mat-spinner>
+              Searching...
+            } @else {
+              <mat-icon>search</mat-icon>
+              Search Campaigns
+            }
+          </button>
+        </div>
+
+        <!-- CAMPAIGN SEARCH RESULTS -->
+        @if (campaigns().length > 0) {
+          <div class="results-container">
+            <div class="results-header">
+              <h3>Campaigns found ({{ campaigns().length }})</h3>
+              <button mat-button class="select-all-btn" (click)="toggleAllCampaigns()">
+                {{ selectedCampaignIds().length === campaigns().length ? 'Deselect All' : 'Select All' }}
+              </button>
+            </div>
+
+            <div class="campaign-list-wrapper">
+              <mat-selection-list class="campaign-selection-list">
+                @for (camp of campaigns(); track camp.id) {
+                  <mat-list-option 
+                    [selected]="selectedCampaignIds().includes(camp.id)"
+                    (click)="toggleCampaignSelection(camp.id)"
+                    checkboxPosition="before"
+                    class="campaign-option"
+                  >
+                    <div class="campaign-row-content">
+                      <span class="campaign-name">{{ camp.name }}</span>
+                      <span class="campaign-meta">
+                        ID: {{ camp.id }} | Status: 
+                        <span class="status-badge" [class.active]="camp.status === 'ENABLED'">
+                          {{ camp.status }}
+                        </span>
+                      </span>
+                    </div>
+                  </mat-list-option>
+                }
+              </mat-selection-list>
+            </div>
+
+            <div class="action-footer">
+              <button 
+                mat-flat-button 
+                color="accent" 
+                class="import-btn"
+                [disabled]="selectedCampaignIds().length === 0 || fetchingVideos()"
+                (click)="fetchAndAddVideos()"
+              >
+                @if (fetchingVideos()) {
+                  <mat-spinner diameter="20" class="spinner-inline"></mat-spinner>
+                  Fetching Videos...
+                } @else {
+                  <mat-icon>download_for_offline</mat-icon>
+                  Fetch and Add Videos ({{ selectedCampaignIds().length }} Selected)
+                }
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
   }
-  <button mat-flat-button color="primary" [disabled]="idForm.invalid" (click)="fetchAndAdd()">Fetch and Add IDs to queue</button>
-</div>
-<div class="warning">
-  <mat-icon>info</mat-icon>
-  <span>Constraint: Analysis scoped to max 250 videos (top 25 most recent per 10 most recent campaigns).</span>
+
+  <div class="warning-section">
+    <mat-icon class="warning-icon">info</mat-icon>
+    <div class="warning-text">
+      <strong>How it works:</strong> The selected campaigns are scanned for active YouTube Video Ads. Any discovered videos are automatically resolved, fetched, and added directly to your video queue as high-quality YouTube sources for ABCD scoring.
+    </div>
+  </div>
 </div>
