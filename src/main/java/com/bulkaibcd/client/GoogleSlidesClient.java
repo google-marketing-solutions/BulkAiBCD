@@ -139,12 +139,12 @@ public class GoogleSlidesClient {
     String analysisSlideID;
     String missingFeaturesSlideId = initialSlides.get(5).getObjectId();
 
-    if ("standard".equals(analysisType)) {
-      analysisSlideID = initialSlides.get(4).getObjectId();
-      removingSlideId = initialSlides.get(3).getObjectId();
-    } else {
+    if ("light".equals(analysisType)) {
       analysisSlideID = initialSlides.get(3).getObjectId();
       removingSlideId = initialSlides.get(4).getObjectId();
+    } else {
+      analysisSlideID = initialSlides.get(4).getObjectId();
+      removingSlideId = initialSlides.get(3).getObjectId();
     }
 
     int videosCount = videos.size();

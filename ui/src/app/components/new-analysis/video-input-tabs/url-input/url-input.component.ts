@@ -8,6 +8,8 @@ import {MatSnackBar, MatSnackBarModule} from '@angular/material/snack-bar';
 
 const YOUTUBE_URL_PATTERN =
   /^https?:\/\/(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[A-Za-z0-9_-]+/;
+const YOUTUBE_SHORT_PATTERN =
+  /^https?:\/\/(www\.)?youtube\.com\/shorts\/[A-Za-z0-9_-]+/;
 
 @Component({
   selector: 'app-url-input',
@@ -67,6 +69,7 @@ export class UrlInputComponent {
     const invalid: string[] = [];
     for (const line of lines) {
       if (YOUTUBE_URL_PATTERN.test(line)) valid.push(line);
+      else if (YOUTUBE_SHORT_PATTERN.test(line)) valid.push(line);
       else invalid.push(line);
     }
     if (invalid.length > 0) {

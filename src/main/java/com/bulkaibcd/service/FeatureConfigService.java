@@ -67,8 +67,9 @@ public class FeatureConfigService {
   public List<FeatureParameter> getFeaturesByType(String type) {
     if (type == null)
       return Collections.emptyList();
+    final String ftype = type.equals("custom") ? "standard" : type;
     return allFeatures.stream()
-        .filter(f -> type.equalsIgnoreCase(f.getType()))
+        .filter(f -> ftype.equalsIgnoreCase(f.getType()))
         .collect(Collectors.toList());
   }
 
