@@ -15,6 +15,7 @@ import {AnalysisConfigComponent} from './analysis-config/analysis-config.compone
 import {InputQueueComponent} from './input-queue/input-queue.component';
 
 const DEFAULT_REQUESTER_ID = 'default-user';
+const MAX_VIDEOS_PER_ANALYSIS = 25;
 
 @Component({
   selector: 'app-new-analysis',
@@ -44,11 +45,29 @@ export class NewAnalysisComponent {
   protected readonly brandName = new FormControl('', [Validators.required]);
   protected readonly marketingObjective = new FormControl('core_unknown');
   protected readonly analysisType = new FormControl<string | null>('standard');
+  protected readonly customFeatures = new FormControl<string[] | null>([]);
   protected readonly videos = signal<File[]>([]);
   protected readonly submitting = signal(false);
 
   protected addFiles(files: File[]) {
-    this.videos.update((videos) => [...videos, ...files]);
+    const remaining = MAX_VIDEOS_PER_ANALYSIS - this.videos().length;
+    if (remaining <= 0) {
+      this.snackBar.open(
+        `Queue is full (max ${MAX_VIDEOS_PER_ANALYSIS} videos per analysis).`,
+        'Dismiss',
+        {duration: 5000},
+      );
+      return;
+    }
+    const accepted = files.slice(0, remaining);
+    if (files.length - accepted.length > 0) {
+      this.snackBar.open(
+        `Only ${accepted.length} of ${files.length} added \u2014 max ${MAX_VIDEOS_PER_ANALYSIS} per analysis.`,
+        'Dismiss',
+        {duration: 5000},
+      );
+    }
+    this.videos.update((videos) => [...videos, ...accepted]);
   }
 
   protected removeVideo(index: number) {
@@ -81,6 +100,7 @@ export class NewAnalysisComponent {
         requesterId: DEFAULT_REQUESTER_ID,
         analysisName: this.brandName.value ?? '',
         analysisType: this.analysisType.value ?? 'standard',
+        customFeatures: this.customFeatures.value ?? [],
         brandName: this.brandName.value ?? '',
         marketingObjective: this.marketingObjective.value ?? 'core_unknown',
         videos,

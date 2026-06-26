@@ -26,6 +26,7 @@ export interface AnalysisRequest {
   brandName?: string;
   marketingObjective?: string;
   videos?: VideoInputPayload[];
+  customFeatures?: string[];
 }
 
 export interface VideoMetadata {

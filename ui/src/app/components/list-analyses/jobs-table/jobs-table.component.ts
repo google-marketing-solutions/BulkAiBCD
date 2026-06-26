@@ -1,5 +1,6 @@
+import {MatDialog, MatDialogModule} from '@angular/material/dialog';
 import {AsyncPipe, CommonModule, DatePipe} from '@angular/common';
-import {ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject} from '@angular/core';
+import {ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit, TemplateRef, ViewChild} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {MatButtonModule} from '@angular/material/button';
 import {MatIconModule} from '@angular/material/icon';
@@ -8,7 +9,7 @@ import {MatSnackBar, MatSnackBarModule} from '@angular/material/snack-bar';
 import {MatTableModule} from '@angular/material/table';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {RouterModule} from '@angular/router';
-import {BehaviorSubject, Subscription, catchError, of, tap, timer} from 'rxjs';
+import {BehaviorSubject, catchError, of, Subscription, tap, timer} from 'rxjs';
 
 import {AnalysisRequest, AnalysisService} from '../../../services/analysis.service';
 
@@ -20,6 +21,7 @@ export interface Job {
   analysisType: string;
   status: JobStatus;
   dateCreated: Date | null;
+  customFeatures: string[];
 }
 
 const DEFAULT_REQUESTER_ID = 'default-user';
@@ -42,12 +44,14 @@ const POLL_MS = 5000;
     RouterModule,
     DatePipe,
     AsyncPipe,
+    MatDialogModule,
   ],
 })
 export class JobsTableComponent implements OnInit {
   private readonly analysisService = inject(AnalysisService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly dialog = inject(MatDialog);
 
   readonly displayedColumns: string[] = [
     'analysisName',
@@ -64,6 +68,9 @@ export class JobsTableComponent implements OnInit {
 
   private pollSub: Subscription | null = null;
 
+ @ViewChild('featuresDialogTemplate')
+  featuresDialogTemplate!: TemplateRef<string[]>;
+
   ngOnInit() {
     this.loading$.next(true);
     this.reload();
@@ -77,7 +84,7 @@ export class JobsTableComponent implements OnInit {
       .listAnalyses(DEFAULT_REQUESTER_ID)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((rows) => {
+        tap((rows: AnalysisRequest[]) => {
           const jobs = rows.map(toJob);
           this.dataSource$.next(jobs);
           this.loading$.next(false);
@@ -95,6 +102,13 @@ export class JobsTableComponent implements OnInit {
         }),
       )
       .subscribe();
+  }
+
+  openFeaturesDialog(features: string[]) {
+    this.dialog.open(this.featuresDialogTemplate, {
+      data: features,
+      width: '700px'
+    });
   }
 
   private schedulePoll(jobs: Job[]) {
@@ -154,6 +168,7 @@ function toJob(row: AnalysisRequest): Job {
     analysisType: row.analysisType,
     status: statusOf(row.analysisStatus),
     dateCreated: row.createdAt ? new Date(row.createdAt) : null,
+    customFeatures: row.customFeatures ?? [],
   };
 }
 
