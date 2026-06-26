@@ -62,8 +62,7 @@ public class GoogleSheetsClient {
   public byte[] generateXlsxBytes(String analysisId) throws IOException {
     AnalysisRequestEntity analysis = analysisRequestRepository.findById(analysisId).block();
     if (analysis == null) throw new IOException("Analysis not found: " + analysisId);
-    String analysisType =
-        analysis.getAnalysisType() == null ? "standard" : analysis.getAnalysisType();
+    String analysisType = analysis.getAnalysisType();
 
     List<VideoMetadataEntity> videos =
         videoMetadataRepository.findByAnalysisId(analysisId).collectList().block();

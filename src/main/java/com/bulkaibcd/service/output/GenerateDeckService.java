@@ -43,85 +43,9 @@ public class GenerateDeckService
   private final ObjectProvider<GoogleSlidesClient> slidesServiceProvider;
   private final FeatureConfigService featureConfigService;
 
-  private static final int MAX_PARALLEL_DECKS = 4;
-
   private static final DateTimeFormatter DATE_FMT =
       DateTimeFormatter.ofPattern("MMM d, yyyy").withZone(ZoneOffset.UTC);
 
-  private static final List<String> ALL_FEATURES =
-      List.of(
-          "(A) Starting Strong",
-          "(B) Brand Visual (3+ Times)",
-          "(C) Product Context",
-          "(C) Clear Messaging",
-          "(C) Single Message",
-          "(C) Casual Language",
-          "(C) Expression of Benefit",
-          "(C) Competitive Claim",
-          "(C) Visualization of Benefit",
-          "(C) Emotions",
-          "(C) Humor",
-          "(C) Delight",
-          "(D) Call-to-Action (Text)",
-          "(D) Call-to-Action (Speech)",
-          "(D) Relevant Call-to-Action",
-          "(D) Purchase Incentive (Limited Time/Quantities)",
-          "(D) Special Offer (Text)",
-          "(D) Special Offer (Speech)",
-          "(D) Price (Text)",
-          "(D) Price (Speech)",
-          "(D) Power of Free (Text)",
-          "(D) Power of Free (Speech)",
-          "(D) Path to Purchase",
-          "(D) Search Bar",
-          "(B) Brand Logo (Large)",
-          "(B) Brand Mention (Speech)",
-          "(B) Brand Mention (Speech) (See & Say)",
-          "(B) Brand Mention (Speech) (Last 5s)",
-          "(B) Brand Mention (Speech) (First 5s)",
-          "(B) Brand Mention (Speech) (See & Say) (First 5s)",
-          "(B) Brand Mnemonic",
-          "(B) Multiple Brand Elements",
-          "(B) Product Visual",
-          "(B) Product Visual (First 5s)",
-          "(B) Product Visual (Last 5s)",
-          "(B) Product Visual (Close-up)",
-          "(B) Product Visual (Extreme Close-up)",
-          "(B) Product Mention (Speech or Text)",
-          "(B) Product Mention (Speech)",
-          "(B) Product Mention (Speech) (First 5s)",
-          "(B) Product Mention (Speech) (Last 5s)",
-          "(B) Product Mention (Text)",
-          "(B) Product Focus",
-          "(C) Presence of People",
-          "(C) Presence of People (First 5s)",
-          "(C) Presence of People (Close-up)",
-          "(C) Visible Face (First 5s)",
-          "(C) Product Interaction",
-          "(A) Quick Pacing",
-          "(A) Quick Pacing (First 5s)",
-          "(A) Tight Framing",
-          "(A) Tight Framing (First 5s)",
-          "(A) Sound On",
-          "(A) Music",
-          "(A) Sound Effects",
-          "(A) Voice",
-          "(A) Voice-Over",
-          "(A) Dialogue (1-Person)",
-          "(A) Dialogue (2+ People)",
-          "(A) Direct to Camera",
-          "(A) Supers",
-          "(A) Supers with Audio",
-          "(A) Supers with Audio (Augmented)",
-          "(A) Supers with Audio (See & Say)",
-          "(A) Large Supers",
-          "(A) Bright Visuals",
-          "(A) High Contrast Visuals",
-          "(B) Brand Visual",
-          "(B) Brand Visual (First 5s)",
-          "(B) Brand Visual (Last 5s)",
-          "(B) Brand Visual (Overlaid)",
-          "(B) Brand Visual (In-situation)");
 
   @Override
   public Mono<ResponseEntity<Map<String, Object>>> execute(GenerateDeckRequest request) {
@@ -172,8 +96,6 @@ public class GenerateDeckService
               return Mono.fromCallable(
                       () -> {
                         String analysisType = analysis.getAnalysisType();
-                        if (analysisType == null || analysisType.contains("custom"))
-                          analysisType = "standard";
                         List<FeatureParameter> allFeaturesObj =
                             featureConfigService.getFeaturesByType(analysisType);
                         List<String> featureNames = new ArrayList<>();
