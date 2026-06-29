@@ -21,8 +21,8 @@ public class DynamicScoringService {
       return switch (mo) {
         case AWARENESS -> r.getAwareness() == 1;
         case CONSIDERATION -> r.getConsideration() == 1;
-        case CONVERSION -> r.getAction() == 1;
-        default -> r.getCore() == 1; // CORE_UNKNOWN, BRAND_BUILDING
+        case ACTION -> r.getAction() == 1;
+        default -> r.getCore() == 1; // CORE_UNKNOWN
       };
     } catch (IllegalArgumentException e) {
       return r.getCore() == 1;

@@ -17,26 +17,20 @@ What is **not** in Terraform:
 
 ## First-time apply
 
-```bash
-cd infra
-terraform init
-terraform plan
-terraform apply
-```
+To deploy the infrastructure, do **not** run Terraform manually. Instead, use the automated installation script from the root of the repository. It handles variable injection, the required two-pass Terraform apply, and the Cloud Build sequence:
 
-Then trigger the first image build (Terraform's `next_steps` output prints the exact command).
+```bash
+cd ..
+./install.sh YOUR_GCP_PROJECT_ID
+```
 
 ## Adding more IAP users
 
-Edit `variables.tf` (or override at apply time):
-
-```bash
-terraform apply -var='iap_users=["you@example.com","teammate@example.com"]'
-```
+Edit `variables.tf` (or add them via `infra/terraform.tfvars` if it was generated), then re-run the `install.sh` script to apply the changes safely.
 
 ## Migrating to remote state (recommended)
 
-After the first successful apply, create a state bucket and switch to it:
+After the first successful apply using `install.sh`, create a state bucket and switch to it:
 
 ```bash
 gcloud storage buckets create gs://bulkaibcd-tfstate-${PROJECT} \
@@ -47,19 +41,4 @@ Uncomment the `backend "gcs"` block in `versions.tf`, then:
 
 ```bash
 terraform init -migrate-state
-```
-
-## Drift between Terraform and the existing imperative `deploy.sh`
-
-The earlier `../deploy.sh` and `../scripts/setup-uploads-bucket.sh` create the same resources. Once Terraform is the source of truth, prefer `terraform apply` and stop using those scripts (they remain useful as documentation of what each resource needs).
-
-If `terraform plan` shows resources as "will be created" that already exist, import them first instead of letting Terraform try to recreate (would conflict):
-
-```bash
-terraform import google_service_account.runtime projects/${PROJECT}/serviceAccounts/bulkaibcd-runtime@${PROJECT}.iam.gserviceaccount.com
-terraform import google_storage_bucket.uploads bulkaibcd-uploads-${PROJECT}
-terraform import google_artifact_registry_repository.images projects/${PROJECT}/locations/us-central1/repositories/bulkaibcd
-terraform import google_cloud_tasks_queue.worker projects/${PROJECT}/locations/us-central1/queues/bulkaibcd-queue
-terraform import 'google_firestore_database.default' projects/${PROJECT}/databases/(default)
-# ... and similar for IAM bindings
 ```

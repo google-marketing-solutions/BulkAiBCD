@@ -44,27 +44,39 @@ gcloud run services proxy bulkaibcd --region=us-central1 --project=YOUR_GCP_PROJ
 # then open http://localhost:8080 in a browser
 ```
 
-To grant a teammate the same access:
+To grant a teammate the same access, they need both Viewer and Invoker roles:
 
 ```bash
+# 1. Grant Viewer role so they can run the proxy command
+gcloud run services add-iam-policy-binding bulkaibcd \
+  --region=us-central1 --project=YOUR_GCP_PROJECT_ID \
+  --member=user:teammate@example.com \
+  --role=roles/run.viewer
+
+# 2. Grant Invoker role so they can access/invoke the app
 gcloud run services add-iam-policy-binding bulkaibcd \
   --region=us-central1 --project=YOUR_GCP_PROJECT_ID \
   --member=user:teammate@example.com \
   --role=roles/run.invoker
 ```
 
-### Planned (IAP-gated, direct URL)
-
-Terraform already provisions the IAP brand, IAP OAuth client, Firebase project, and
-Identity Platform Google provider — all the pieces needed to turn on a direct-URL
-login experience. It's left dormant (`var.enable_iap_gate=false`) because enabling
-IAP today would block Cloud Tasks' OIDC callbacks into `/api/v2/worker/*`. The
-follow-up work is an external HTTPS Load Balancer with URL-map rules that routes
-`/api/v2/worker/*` past IAP while gating everything else. Flip `enable_iap_gate=true`
-after that LB is in place.
 
 ## Redeploying
 
 After code changes, re-run `./install.sh YOUR_GCP_PROJECT_ID` — it's idempotent. Terraform
 will no-op existing resources; Cloud Build rebuilds the container and rolls out a new
 Cloud Run revision.
+
+## Local Development
+
+To run the application locally for development:
+
+1. **Backend (Java/Spring Boot)**:
+   The application uses Maven. You can run the backend server locally using:
+   ```bash
+   mvn spring-boot:run
+   ```
+   *Note: Ensure you have authenticated locally with `gcloud auth application-default login` so the backend can interact with your GCP project resources (Firestore, Cloud Tasks, etc.).*
+
+2. **Frontend (Angular)**:
+   The UI is an Angular project located in the `ui/` folder. Please refer to the [ui/README.md](ui/README.md) for detailed instructions on how to start the frontend development server.

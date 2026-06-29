@@ -11,9 +11,6 @@ public enum MarketingObjective {
   /** Product Consideration campaign objective */
   CONSIDERATION,
 
-  /** Direct Action / Conversion campaign objective */
-  CONVERSION,
-
-  /** Long-term Brand Building campaign objective */
-  BRAND_BUILDING
+  /** Direct Action campaign objective */
+  ACTION
 }
