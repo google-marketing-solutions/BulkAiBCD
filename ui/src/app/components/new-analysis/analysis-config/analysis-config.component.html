@@ -9,5 +9,12 @@
       <mat-radio-button value="light">Light Analysis</mat-radio-button>
       <mat-icon matTooltip="Select this for a quick analysis with fewer parameters">help_outline</mat-icon>
     </div>
+        <div class="radio-option">
+      <mat-radio-button value="custom">Custom Analysis</mat-radio-button>
+      <mat-icon matTooltip="Select specific features for a tailored analysis">help_outline</mat-icon>
+      @if (control().value === 'custom') {
+        <button mat-button color="primary" (click)="openDialog()">Select Features ({{ customFeaturesControl().value?.length || 0 }})</button>
+      }
+    </div>
   </mat-radio-group>
 </div>

@@ -458,7 +458,8 @@ public class BatchPredictionOrchestrator {
 
     String objName =
         parent.getMarketingObjective() == null ? "core_unknown" : parent.getMarketingObjective();
-    String type = parent.getAnalysisType() == null ? "STANDARD" : parent.getAnalysisType();
+    String type = parent.getAnalysisType();
+    List<String> customFeatures = parent.getCustomFeatures();
 
     Map<String, GuidelineRelevance> relevanceMap = featureConfigService.getGuidelineRelevanceMap();
     List<FeatureParameter> targetFeatures = featureConfigService.getFeaturesByType(type);
@@ -509,6 +510,11 @@ public class BatchPredictionOrchestrator {
                           String standardName = featureNamesMap.getOrDefault(fid, fid);
                           if (detected) {
                             detectedFeatureNames.add(standardName);
+                          }
+
+                          if (type.equals("custom")) {
+                            if (customFeatures.contains(standardName)) isRelevant = true;
+                            else isRelevant = false;
                           }
 
                           if (isRelevant) {

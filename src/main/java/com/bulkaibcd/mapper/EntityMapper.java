@@ -24,6 +24,7 @@ public class EntityMapper {
         .analysisStatus(AnalysisStatus.PENDING.name())
         .brandName(request.getBrandName())
         .marketingObjective(request.getMarketingObjective())
+        .customFeatures(request.getCustomFeatures())
         .createdAt(now)
         .updatedAt(now)
         .build();

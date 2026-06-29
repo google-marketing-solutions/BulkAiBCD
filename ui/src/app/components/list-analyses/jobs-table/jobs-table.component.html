@@ -1,20 +1,36 @@
+<!-- Loading State -->
 <div *ngIf="loading$ | async" class="jobs-loading">
   <mat-spinner diameter="32"></mat-spinner>
 </div>
 
+<!-- Error State -->
 <div *ngIf="error$ | async as error" class="jobs-error" role="alert">
   {{ error }}
 </div>
 
+<!-- Main Table -->
 <table mat-table [dataSource]="(dataSource$ | async) ?? []">
+
   <ng-container matColumnDef="analysisName">
     <th mat-header-cell *matHeaderCellDef>JOB NAME</th>
     <td mat-cell *matCellDef="let element">{{ element.analysisName }}</td>
   </ng-container>
 
+  <!-- UPDATED: ANALYSIS TYPE COLUMN -->
   <ng-container matColumnDef="analysisType">
     <th mat-header-cell *matHeaderCellDef>ANALYSIS TYPE</th>
-    <td mat-cell *matCellDef="let element">{{ element.analysisType }}</td>
+    <td mat-cell *matCellDef="let element">
+      <!-- Show clickable link if custom -->
+      <ng-container *ngIf="element.analysisType === 'custom'; else standardType">
+        <a class="custom-link" (click)="openFeaturesDialog(element.customFeatures)" matTooltip="View selected features">
+          Custom
+        </a>
+      </ng-container>
+      <!-- Show plain text for standard/light -->
+      <ng-template #standardType>
+        {{ element.analysisType }}
+      </ng-template>
+    </td>
   </ng-container>
 
   <ng-container matColumnDef="status">
@@ -90,6 +106,23 @@
   <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
 </table>
 
+<!-- Empty State -->
 <div *ngIf="!(loading$ | async) && ((dataSource$ | async)?.length ?? 0) === 0" class="jobs-empty">
   No analyses yet. Start one from the "New Analysis" tab.
 </div>
+
+<!-- NEW: POPUP DIALOG TEMPLATE -->
+<ng-template #featuresDialogTemplate let-features>
+  <h2 mat-dialog-title>Custom Features Selected</h2>
+  <mat-dialog-content>
+    <ul class="features-list" *ngIf="features && features.length > 0; else noFeatures">
+      <li *ngFor="let feature of features">{{ feature }}</li>
+    </ul>
+    <ng-template #noFeatures>
+      <p class="text-muted">No specific features were selected for this analysis.</p>
+    </ng-template>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-button mat-dialog-close>Close</button>
+  </mat-dialog-actions>
+</ng-template>

@@ -6,6 +6,7 @@ import com.google.cloud.spring.data.firestore.Document;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import java.util.List;
 import lombok.NoArgsConstructor;
 
 @Document(collectionName = "analyses")
@@ -21,6 +22,7 @@ public class AnalysisRequestEntity {
   private String analysisStatus;
   private String brandName;
   private String marketingObjective;
+  private List<String> customFeatures;
   private Timestamp createdAt;
   private Timestamp updatedAt;
 }

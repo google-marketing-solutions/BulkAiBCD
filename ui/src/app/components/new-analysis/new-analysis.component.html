@@ -24,7 +24,10 @@
       (filesAdded)="addFiles($event)"
     ></app-video-input-tabs>
 
-    <app-analysis-config [control]="analysisType"></app-analysis-config>
+    <app-analysis-config
+      [control]="analysisType"
+      [customFeaturesControl]="customFeatures"
+    ></app-analysis-config>
   </div>
 
   <div class="right-panel">

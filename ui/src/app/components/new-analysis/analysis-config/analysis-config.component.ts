@@ -1,8 +1,11 @@
-import {ChangeDetectionStrategy, Component, input} from '@angular/core';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, input} from '@angular/core';
 import {FormControl, ReactiveFormsModule} from '@angular/forms';
+import {MatButtonModule} from '@angular/material/button';
+import {MatDialog, MatDialogModule} from '@angular/material/dialog';
 import {MatIconModule} from '@angular/material/icon';
-import {MatRadioModule} from '@angular/material/radio';
+import {MatRadioChange, MatRadioModule} from '@angular/material/radio';
 import {MatTooltipModule} from '@angular/material/tooltip';
+import {CustomFeaturesDialogComponent} from './custom-features-dialog.component';
 
 @Component({
   selector: 'app-analysis-config',
@@ -15,6 +18,8 @@ import {MatTooltipModule} from '@angular/material/tooltip';
     MatIconModule,
     MatTooltipModule,
     ReactiveFormsModule,
+    MatDialogModule,
+    MatButtonModule,
   ],
 })
 export class AnalysisConfigComponent {
@@ -23,4 +28,38 @@ export class AnalysisConfigComponent {
   readonly control = input<FormControl<string | null>>(
     new FormControl<string | null>('standard'),
   );
+
+  readonly customFeaturesControl = input<FormControl<string[] | null>>(
+    new FormControl<string[]>([])
+  );
+
+  private readonly dialog = inject(MatDialog);
+  private readonly cdr = inject(ChangeDetectorRef);
+
+
+  onRadioChange(event: MatRadioChange) {
+    if (event.value === 'custom') {
+      this.openDialog();
+    }
+  }
+
+  openDialog() {
+    const dialogRef = this.dialog.open(CustomFeaturesDialogComponent, {
+      width: '600px',
+      height: '80vh',
+      disableClose: true,
+      hasBackdrop: true,
+      backdropClass: 'blur-backdrop',
+      data: { selectedFeatures: this.customFeaturesControl().value || [] }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.customFeaturesControl().setValue(result);
+      } else if (!this.customFeaturesControl().value?.length) {
+        this.control().setValue('standard');
+      }
+      this.cdr.markForCheck();
+    });
+  }
 }

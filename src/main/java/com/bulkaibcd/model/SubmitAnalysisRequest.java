@@ -16,6 +16,7 @@ public class SubmitAnalysisRequest {
   private String analysisType;
   private String brandName;
   private String marketingObjective;
+  private List<String> customFeatures;
   private List<VideoInput> videos;
 
   @Data
