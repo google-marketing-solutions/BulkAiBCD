@@ -63,12 +63,40 @@ fail()   { printf '\033[1;31m   %s\033[0m\n' "$*" >&2; exit 1; }
 
 tf_out() { terraform -chdir=infra output -raw "$1" 2>/dev/null; }
 
+ensure_terraform_installed() {
+  if command -v terraform >/dev/null 2>&1; then
+    if terraform version 2>&1 | grep -qi "Terraform v"; then
+      return 0
+    fi
+  fi
+  
+  info "Terraform not found or is a dummy wrapper. Attempting to install..."
+  if ! command -v apt-get >/dev/null 2>&1; then
+    fail "apt-get not found. Please install Terraform 1.5+ manually."
+  fi
+  
+  wget -qO - https://apt.releases.hashicorp.com/gpg | sudo gpg --yes --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(grep -oP '(?<=UBUNTU_CODENAME=).*' /etc/os-release || lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list > /dev/null
+  sudo apt-get update -yq >/dev/null
+  sudo apt-get install terraform -yq >/dev/null
+  
+  if ! terraform version 2>&1 | grep -qi "Terraform v"; then
+    fail "Failed to install Terraform. Please install it manually."
+  fi
+  
+  info "Terraform installed successfully."
+  if [[ -n "${CLOUD_SHELL:-}" ]]; then
+    echo 'wget -qO - https://apt.releases.hashicorp.com/gpg | sudo gpg --yes --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg; echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(grep -oP '\''(?<=UBUNTU_CODENAME=).*'\'' /etc/os-release || lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list > /dev/null; sudo apt-get update -yq > /dev/null; sudo apt-get install terraform -yq > /dev/null' >> "$HOME/.customize_environment"
+    info "Saved Terraform installation to ~/.customize_environment"
+  fi
+}
+
 # -----------------------------------------------------------------------------
 banner "Preflight"
 # -----------------------------------------------------------------------------
 
 command -v gcloud >/dev/null 2>&1 || fail "gcloud not found. Use Cloud Shell or install the gcloud CLI."
-command -v terraform >/dev/null 2>&1 || fail "terraform not found. Use Cloud Shell or install Terraform 1.5+."
+ensure_terraform_installed
 
 ACTIVE_ACCOUNT="$(gcloud auth list --filter=status:ACTIVE --format='value(account)' 2>/dev/null | head -n1)"
 [[ -n "${ACTIVE_ACCOUNT}" ]] || fail "No active gcloud auth. Run: gcloud auth login"
