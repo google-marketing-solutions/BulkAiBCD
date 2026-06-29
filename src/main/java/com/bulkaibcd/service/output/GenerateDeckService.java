@@ -182,8 +182,7 @@ public class GenerateDeckService
         case CORE_UNKNOWN -> "Core / Unknown";
         case AWARENESS -> "Awareness";
         case CONSIDERATION -> "Consideration";
-        case CONVERSION -> "Conversion";
-        case BRAND_BUILDING -> "Brand Building";
+        case ACTION -> "Action";
       };
     } catch (IllegalArgumentException e) {
       return raw;

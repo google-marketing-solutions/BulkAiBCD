@@ -57,8 +57,7 @@ export class AggregateSummaryComponent {
       case 'core_unknown': return 'Core/Unknown';
       case 'awareness': return 'Awareness';
       case 'consideration': return 'Consideration';
-      case 'conversion': return 'Conversion';
-      case 'brand_building': return 'Brand Building';
+      case 'action': return 'Action';
       default: return v || '—';
     }
   });
