@@ -40,7 +40,7 @@ export interface VideoBreakdown {
 }
 
 const YOUTUBE_ID =
-  /^https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]+)/;
+  /^https?:\/\/(?:www\.)?(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]+)/;
 
 @Component({
   selector: 'app-video-breakdown-table',

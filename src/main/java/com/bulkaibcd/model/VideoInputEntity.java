@@ -23,6 +23,7 @@ public class VideoInputEntity {
   /** Client-captured JPEG data URL for uploaded local files; null for URL sources. */
   private String thumbnailUrl;
   private String sourceType;
+  private String format;
   private String gcsObjectId;
   private String errorMessage;
 }

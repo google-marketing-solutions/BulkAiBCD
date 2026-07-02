@@ -16,7 +16,8 @@ public class SubmitAnalysisRequest {
   private String analysisType;
   private String brandName;
   private String marketingObjective;
-  private List<String> customFeatures;
+  private List<String> customFeaturesLong;
+  private List<String> customFeaturesShort;
   private List<VideoInput> videos;
 
   @Data
@@ -34,5 +35,7 @@ public class SubmitAnalysisRequest {
     private String gcsObjectId;
     /** Optional client-captured thumbnail (JPEG data URL) for uploaded files. */
     private String thumbnailUrl;
+    /** The format for this specific video (e.g., LONG, SHORT) */
+    private String format;
   }
 }

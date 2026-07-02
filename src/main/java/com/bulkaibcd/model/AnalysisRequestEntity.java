@@ -22,7 +22,8 @@ public class AnalysisRequestEntity {
   private String analysisStatus;
   private String brandName;
   private String marketingObjective;
-  private List<String> customFeatures;
+  private List<String> customFeaturesLong;
+  private List<String> customFeaturesShort;
   private Timestamp createdAt;
   private Timestamp updatedAt;
 }

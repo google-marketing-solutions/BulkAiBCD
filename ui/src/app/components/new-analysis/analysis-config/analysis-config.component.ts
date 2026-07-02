@@ -5,7 +5,7 @@ import {MatDialog, MatDialogModule} from '@angular/material/dialog';
 import {MatIconModule} from '@angular/material/icon';
 import {MatRadioChange, MatRadioModule} from '@angular/material/radio';
 import {MatTooltipModule} from '@angular/material/tooltip';
-import {CustomFeaturesDialogComponent} from './custom-features-dialog.component';
+import {CustomFeaturesDialogComponent} from './custom-features-dialog/custom-features-dialog.component';
 
 @Component({
   selector: 'app-analysis-config',
@@ -29,8 +29,8 @@ export class AnalysisConfigComponent {
     new FormControl<string | null>('standard'),
   );
 
-  readonly customFeaturesControl = input<FormControl<string[] | null>>(
-    new FormControl<string[]>([])
+  readonly customFeaturesControl = input<FormControl<{long: string[], short: string[]} | null>>(
+    new FormControl<{long: string[], short: string[]}>({long: [], short: []})
   );
 
   private readonly dialog = inject(MatDialog);
@@ -50,13 +50,16 @@ export class AnalysisConfigComponent {
       disableClose: true,
       hasBackdrop: true,
       backdropClass: 'blur-backdrop',
-      data: { selectedFeatures: this.customFeaturesControl().value || [] }
+      data: { 
+        selectedFeaturesLong: this.customFeaturesControl().value?.long || [],
+        selectedFeaturesShort: this.customFeaturesControl().value?.short || []
+      }
     });
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
         this.customFeaturesControl().setValue(result);
-      } else if (!this.customFeaturesControl().value?.length) {
+      } else if (!this.customFeaturesControl().value?.long.length && !this.customFeaturesControl().value?.short.length) {
         this.control().setValue('standard');
       }
       this.cdr.markForCheck();

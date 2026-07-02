@@ -3,6 +3,7 @@ package com.bulkaibcd.service.batch;
 import com.bulkaibcd.config.AnalysisConstants;
 import com.bulkaibcd.enums.AnalysisStatus;
 import com.bulkaibcd.enums.SourceType;
+import com.bulkaibcd.enums.VideoFormat;
 import com.bulkaibcd.mapper.EntityMapper;
 import com.bulkaibcd.model.AnalysisRequestEntity;
 import com.bulkaibcd.model.FeatureParameter;
@@ -310,11 +311,13 @@ public class BatchPredictionOrchestrator {
         "BatchPredictionOrchestrator: Starting Phase 2 consolidated batch prediction setup for {}"
             + " videos...",
         videos.size());
-    List<FeatureParameter> targetFeatures = featureConfigService.getFeaturesByType(analysisType);
-    if (targetFeatures.isEmpty()) {
+    List<FeatureParameter> targetFeaturesLong = featureConfigService.getFeaturesByTypeAndFormat(analysisType, VideoFormat.LONG);
+    List<FeatureParameter> targetFeaturesShort = featureConfigService.getFeaturesByTypeAndFormat(analysisType, VideoFormat.SHORT);
+    if (targetFeaturesLong.isEmpty() && targetFeaturesShort.isEmpty()) {
       throw new IllegalArgumentException(
           "No features configured on resource mapper for analysisType: " + analysisType);
     }
+    AnalysisRequestEntity parent = analysisRequestRepository.findById(analysisId).block();
 
     String objectPath = String.format("phase2_batches/%s/input.jsonl", analysisId);
     log.info(
@@ -326,6 +329,15 @@ public class BatchPredictionOrchestrator {
     try (WriteChannel channel =
         gcsStorage.createWriter(uploadsBucket, objectPath, "application/jsonl")) {
       for (VideoMetadataEntity video : videos) {
+        List<FeatureParameter> targetFeatures = VideoFormat.SHORT.name().equalsIgnoreCase(video.getFormat()) ? targetFeaturesShort : targetFeaturesLong;
+        if ("custom".equals(analysisType) && parent != null) {
+          List<String> customFeatures = VideoFormat.SHORT.name().equalsIgnoreCase(video.getFormat()) ? parent.getCustomFeaturesShort() : parent.getCustomFeaturesLong();
+          if (customFeatures == null) customFeatures = new ArrayList<>();
+          List<String> finalCustomFeatures = customFeatures;
+          targetFeatures = targetFeatures.stream()
+              .filter(f -> finalCustomFeatures.contains(f.getName()))
+              .collect(Collectors.toList());
+        }
         String metadataSummary = promptBuilder.createMetadataSummary(video);
         String videoUri = resolveVideoUri(video);
 
@@ -453,15 +465,14 @@ public class BatchPredictionOrchestrator {
     String objName =
         parent.getMarketingObjective() == null ? "core_unknown" : parent.getMarketingObjective();
     String type = parent.getAnalysisType();
-    List<String> customFeatures = parent.getCustomFeatures();
 
     Map<String, GuidelineRelevance> relevanceMap = featureConfigService.getGuidelineRelevanceMap();
-    List<FeatureParameter> targetFeatures = featureConfigService.getFeaturesByType(type);
-    Map<String, String> featureNamesMap =
-        targetFeatures.stream()
-            .collect(
-                Collectors.toMap(
-                    FeatureParameter::getId, FeatureParameter::getName, (n1, n2) -> n1));
+    List<FeatureParameter> targetFeaturesLong = featureConfigService.getFeaturesByTypeAndFormat(type, VideoFormat.LONG);
+    List<FeatureParameter> targetFeaturesShort = featureConfigService.getFeaturesByTypeAndFormat(type, VideoFormat.SHORT);
+    Map<String, String> featureNamesMapLong = targetFeaturesLong.stream()
+            .collect(Collectors.toMap(FeatureParameter::getId, FeatureParameter::getName, (n1, n2) -> n1));
+    Map<String, String> featureNamesMapShort = targetFeaturesShort.stream()
+            .collect(Collectors.toMap(FeatureParameter::getId, FeatureParameter::getName, (n1, n2) -> n1));
 
     videoInputRepository
         .findByAnalysisId(analysisId)
@@ -478,6 +489,11 @@ public class BatchPredictionOrchestrator {
                             || AnalysisStatus.FAILED.name().equals(metadata.getStatus())) {
                           return Mono.<VideoMetadataEntity>empty();
                         }
+
+                        List<FeatureParameter> targetFeatures = VideoFormat.SHORT.name().equalsIgnoreCase(metadata.getFormat()) ? targetFeaturesShort : targetFeaturesLong;
+                        Map<String, String> featureNamesMap = VideoFormat.SHORT.name().equalsIgnoreCase(metadata.getFormat()) ? featureNamesMapShort : featureNamesMapLong;
+                        List<String> customFeatures = VideoFormat.SHORT.name().equalsIgnoreCase(metadata.getFormat()) ? parent.getCustomFeaturesShort() : parent.getCustomFeaturesLong();
+                        if (customFeatures == null) customFeatures = new ArrayList<>();
 
                         Map<String, ParsedFeature> predictions =
                             videoResults.getOrDefault(videoId, new HashMap<>());

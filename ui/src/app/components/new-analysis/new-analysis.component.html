@@ -18,6 +18,14 @@
       </mat-form-field>
     </div>
 
+    <div class="video-format-container">
+      <mat-label class="format-label">Video Format</mat-label>
+      <mat-radio-group [formControl]="format" class="format-radio-group">
+        <mat-radio-button value="LONG">Longer format video</mat-radio-button>
+        <mat-radio-button value="SHORT">Shorter format video (shorts/reels)</mat-radio-button>
+      </mat-radio-group>
+    </div>
+
     <h3 class="section-title">Select Video Source</h3>
     <app-video-input-tabs
       [currentCount]="videos().length"
