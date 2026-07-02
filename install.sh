@@ -265,6 +265,24 @@ gcloud builds submit \
   --substitutions="_REGION=${REGION},_RUNTIME_SA=${RUNTIME_SA},_UPLOADS_BUCKET=${UPLOADS_BUCKET},_APP_BACKEND_URL=${CLOUD_RUN_URL},_CLOUD_TASKS_QUEUE=${QUEUE_ID}"
 
 # -----------------------------------------------------------------------------
+banner "Enforcing CORS on uploads bucket"
+# -----------------------------------------------------------------------------
+
+cat <<EOF > cors.json
+[
+  {
+    "origin": ["*"],
+    "method": ["GET", "PUT", "POST", "HEAD", "OPTIONS", "DELETE"],
+    "responseHeader": ["Content-Type", "x-goog-resumable", "Authorization", "X-Requested-With", "Origin", "Accept", "*"],
+    "maxAgeSeconds": 3600
+  }
+]
+EOF
+gcloud storage buckets update "gs://${UPLOADS_BUCKET}" --cors-file=cors.json
+rm -f cors.json
+info "CORS applied to gs://${UPLOADS_BUCKET}"
+
+# -----------------------------------------------------------------------------
 banner "Done"
 # -----------------------------------------------------------------------------
 

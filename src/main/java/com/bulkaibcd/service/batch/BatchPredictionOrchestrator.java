@@ -38,7 +38,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /** Clean, high-level workflow orchestrator for Vertex AI Batch Prediction jobs. */
@@ -326,22 +325,17 @@ public class BatchPredictionOrchestrator {
 
     try (WriteChannel channel =
         gcsStorage.createWriter(uploadsBucket, objectPath, "application/jsonl")) {
-      for (VideoMetadataEntity v : videos) {
-        String metadataSummary = promptBuilder.createMetadataSummary(v);
-        String videoUri = v.getVideoUrl();
+      for (VideoMetadataEntity video : videos) {
+        String metadataSummary = promptBuilder.createMetadataSummary(video);
+        String videoUri = resolveVideoUri(video);
 
         for (FeatureParameter f : targetFeatures) {
-          String prompt = promptBuilder.generateSingleFeaturePrompt(f, v, metadataSummary);
-          Map<String, String> instanceMeta =
-              Map.of(
-                  "video_uri",
-                  videoUri,
-                  "video_id",
-                  v.getVideoId(),
-                  "feature_id",
-                  f.getId(),
-                  "brand_name",
-                  brandName != null ? brandName : "");
+          String prompt = promptBuilder.generateSingleFeaturePrompt(f, video, metadataSummary);
+          Map<String, String> instanceMeta = new java.util.HashMap<>();
+          instanceMeta.put("video_uri", videoUri != null ? videoUri : "");
+          instanceMeta.put("video_id", video.getVideoId() != null ? video.getVideoId() : "");
+          instanceMeta.put("feature_id", f.getId() != null ? f.getId() : "");
+          instanceMeta.put("brand_name", brandName != null ? brandName : "");
 
           String jsonlInstanceString;
           try {
@@ -592,6 +586,16 @@ public class BatchPredictionOrchestrator {
   }
 
   private static String resolveVideoUri(VideoInputEntity v) {
+    if (v.getGcsObjectId() != null && !v.getGcsObjectId().isEmpty()) {
+      return "gs://" + v.getGcsObjectId();
+    }
+    if (v.getVideoUrl() != null && !v.getVideoUrl().isEmpty()) {
+      return v.getVideoUrl();
+    }
+    return v.getVideoName() == null ? "" : v.getVideoName();
+  }
+
+  private static String resolveVideoUri(VideoMetadataEntity v) {
     if (v.getGcsObjectId() != null && !v.getGcsObjectId().isEmpty()) {
       return "gs://" + v.getGcsObjectId();
     }

@@ -66,6 +66,7 @@ public class EntityMapper {
             .videoId(v.getVideoId())
             .videoName(v.getVideoName())
             .videoUrl(v.getVideoUrl())
+            .gcsObjectId(v.getGcsObjectId())
             .thumbnailUrl(v.getThumbnailUrl())
             .sourceType(v.getSourceType())
             .status(hasError ? AnalysisStatus.COMPLETED.name() : AnalysisStatus.PROCESSING.name());

@@ -20,6 +20,7 @@ public class VideoMetadataEntity {
   private String videoId;
   private String videoName;
   private String videoUrl;
+  private String gcsObjectId;
   /** JPEG data URL captured client-side on upload for local files; null for URL sources. */
   private String thumbnailUrl;
   private String sourceType;

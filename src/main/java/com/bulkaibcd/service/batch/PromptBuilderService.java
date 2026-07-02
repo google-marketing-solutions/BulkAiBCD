@@ -295,7 +295,9 @@ public class PromptBuilderService {
 
   public String createRequestPayloadRow(
       String videoUri, String prompt, String jsonlInstanceString) {
-    Map<String, String> fileData = Map.of("mime_type", MIME_TYPE_VIDEO, "file_uri", videoUri);
+    Map<String, String> fileData = new java.util.HashMap<>();
+    fileData.put("mime_type", MIME_TYPE_VIDEO);
+    fileData.put("file_uri", videoUri != null ? videoUri : "");
     Map<String, Object> filePart = Map.of("file_data", fileData);
     Map<String, Object> textPart = Map.of("text", prompt);
 
@@ -319,7 +321,9 @@ public class PromptBuilderService {
 
   public String createPhase1RequestPayloadRow(
       String videoUri, String prompt, String jsonlInstanceString, boolean isJson) {
-    Map<String, String> fileData = Map.of("mime_type", MIME_TYPE_VIDEO, "file_uri", videoUri);
+    Map<String, String> fileData = new java.util.HashMap<>();
+    fileData.put("mime_type", MIME_TYPE_VIDEO);
+    fileData.put("file_uri", videoUri != null ? videoUri : "");
     Map<String, Object> filePart = Map.of("file_data", fileData);
     Map<String, Object> textPart = Map.of("text", prompt);
     Map<String, Object> contentUser =
