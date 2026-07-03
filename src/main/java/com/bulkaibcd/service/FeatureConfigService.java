@@ -2,6 +2,7 @@ package com.bulkaibcd.service;
 
 import com.bulkaibcd.model.FeatureParameter;
 import com.bulkaibcd.model.GuidelineRelevance;
+import com.bulkaibcd.enums.VideoFormat;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
@@ -65,11 +66,31 @@ public class FeatureConfigService {
   }
 
   public List<FeatureParameter> getFeaturesByType(String type) {
+    return getFeaturesByTypeAndFormat(type, VideoFormat.LONG);
+  }
+
+  public List<FeatureParameter> getFeaturesByTypeWithoutFormat(String type) {
     if (type == null)
       return Collections.emptyList();
     final String ftype = type.equals("custom") ? "standard" : type;
     return allFeatures.stream()
         .filter(f -> ftype.equalsIgnoreCase(f.getType()))
+        .collect(Collectors.toList());
+  }
+
+  public List<FeatureParameter> getFeaturesByTypeAndFormat(String type, VideoFormat format) {
+    if (type == null)
+      return Collections.emptyList();
+    final String ftype = type.equals("custom") ? "standard" : type;
+    final VideoFormat targetFormat = format == null ? VideoFormat.LONG : format;
+    return allFeatures.stream()
+        .filter(f -> ftype.equalsIgnoreCase(f.getType()))
+        .filter(f -> {
+            if (f.getSupportedFormats() == null || f.getSupportedFormats().isEmpty()) {
+                return targetFormat == VideoFormat.LONG;
+            }
+            return f.getSupportedFormats().contains(targetFormat.name());
+        })
         .collect(Collectors.toList());
   }
 

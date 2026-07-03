@@ -509,5 +509,61 @@
     "awareness": 0,
     "consideration": 0,
     "action": 0
+  },
+  {
+    "parameter_id": "a_shorts_production_style",
+    "core": 1,
+    "awareness": 1,
+    "consideration": 1,
+    "action": 1
+  },
+  {
+    "parameter_id": "a_shorts_sfv_adaptation_high",
+    "core": 1,
+    "awareness": 1,
+    "consideration": 1,
+    "action": 1
+  },
+  {
+    "parameter_id": "c_shorts_emoji_usage",
+    "core": 1,
+    "awareness": 1,
+    "consideration": 1,
+    "action": 1
+  },
+  {
+    "parameter_id": "c_shorts_personal_character_talk",
+    "core": 1,
+    "awareness": 1,
+    "consideration": 1,
+    "action": 1
+  },
+  {
+    "parameter_id": "b_shorts_native_brand_context",
+    "core": 1,
+    "awareness": 1,
+    "consideration": 1,
+    "action": 1
+  },
+  {
+    "parameter_id": "c_shorts_personal_character_type",
+    "core": 1,
+    "awareness": 1,
+    "consideration": 1,
+    "action": 1
+  },
+  {
+    "parameter_id": "b_shorts_product_context",
+    "core": 1,
+    "awareness": 1,
+    "consideration": 1,
+    "action": 1
+  },
+  {
+    "parameter_id": "a_shorts_video_format",
+    "core": 1,
+    "awareness": 1,
+    "consideration": 1,
+    "action": 1
   }
 ]

@@ -24,6 +24,7 @@ public class VideoMetadataEntity {
   /** JPEG data URL captured client-side on upload for local files; null for URL sources. */
   private String thumbnailUrl;
   private String sourceType;
+  private String format;
   private String status;
   private String errorMessage;
 

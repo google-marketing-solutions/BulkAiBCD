@@ -13,6 +13,7 @@ import {MatIconModule} from '@angular/material/icon';
 interface QueueItem {
   name: string;
   thumbnailUrl: string | null;
+  format: string;
   // Index into the original, unsorted File[] input — emitted on delete so the
   // parent can splice the right element out.
   originalIndex: number;
@@ -27,7 +28,7 @@ interface QueueGroup {
 
 type SourceKey = 'youtube' | 'drive' | 'file' | 'id' | 'other';
 
-const YOUTUBE_ID = /^https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]+)/;
+const YOUTUBE_ID = /^https?:\/\/(?:www\.)?(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]+)/;
 
 const GROUP_ORDER: SourceKey[] = ['youtube', 'drive', 'file', 'id', 'other'];
 const GROUP_META: Record<SourceKey, {label: string; icon: string}> = {
@@ -111,11 +112,13 @@ function toQueueItem(file: File, originalIndex: number): QueueItem {
         name: file.name,
         thumbnailUrl: `https://i.ytimg.com/vi/${m[1]}/hqdefault.jpg`,
         originalIndex,
+        format: (file as any).format ?? 'LONG',
       };
     }
   }
   const dataUrl = (file as File & {thumbnailDataUrl?: string | null})
     .thumbnailDataUrl;
-  if (dataUrl) return {name: file.name, thumbnailUrl: dataUrl, originalIndex};
-  return {name: file.name, thumbnailUrl: null, originalIndex};
+  const format = (file as any).format ?? 'LONG';
+  if (dataUrl) return {name: file.name, thumbnailUrl: dataUrl, originalIndex, format};
+  return {name: file.name, thumbnailUrl: null, originalIndex, format};
 }

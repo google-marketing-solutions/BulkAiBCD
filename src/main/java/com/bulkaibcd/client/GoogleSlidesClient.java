@@ -44,7 +44,7 @@ public class GoogleSlidesClient {
 
   private static final Pattern YOUTUBE_ID_PATTERN =
       Pattern.compile(
-          "(?:https?:\\/\\/)?(?:www\\.)?(?:youtube\\.com\\/(?:watch\\?v=|embed\\/|v\\/)|youtu\\.be\\/)([\\w-]{11})");
+          "(?:https?:\\/\\/)?(?:www\\.)?(?:youtube\\.com\\/(?:watch\\?v=|embed\\/|v\\/|shorts\\/)|youtu\\.be\\/)([\\w-]{11})");
 
   private static final double DETAIL_WIDTH_EMU = 3.94 * 914400;
   private static final double DETAIL_HEIGHT_EMU = 2.21 * 914400;
