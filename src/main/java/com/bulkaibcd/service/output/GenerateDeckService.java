@@ -97,7 +97,7 @@ public class GenerateDeckService
                       () -> {
                         String analysisType = analysis.getAnalysisType();
                         List<FeatureParameter> allFeaturesObj =
-                            featureConfigService.getFeaturesByType(analysisType);
+                            featureConfigService.getFeaturesByTypeWithoutFormat(analysisType);
                         List<String> featureNames = new ArrayList<>();
                         for (FeatureParameter feature : allFeaturesObj) {
                           featureNames.add(feature.getName());

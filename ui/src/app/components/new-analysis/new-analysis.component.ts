@@ -6,6 +6,7 @@ import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatIconModule} from '@angular/material/icon';
 import {MatInputModule} from '@angular/material/input';
 import {MatSelectModule} from '@angular/material/select';
+import {MatRadioModule} from '@angular/material/radio';
 import {MatSnackBar, MatSnackBarModule} from '@angular/material/snack-bar';
 import {Router} from '@angular/router';
 
@@ -29,6 +30,7 @@ const MAX_VIDEOS_PER_ANALYSIS = 25;
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
+    MatRadioModule,
     VideoInputTabsComponent,
     AnalysisConfigComponent,
     InputQueueComponent,
@@ -44,8 +46,9 @@ export class NewAnalysisComponent {
 
   protected readonly brandName = new FormControl('', [Validators.required]);
   protected readonly marketingObjective = new FormControl('core_unknown');
+  protected readonly format = new FormControl('LONG', [Validators.required]);
   protected readonly analysisType = new FormControl<string | null>('standard');
-  protected readonly customFeatures = new FormControl<string[] | null>([]);
+  protected readonly customFeatures = new FormControl<{long: string[], short: string[]} | null>({long: [], short: []});
   protected readonly videos = signal<File[]>([]);
   protected readonly submitting = signal(false);
 
@@ -60,6 +63,13 @@ export class NewAnalysisComponent {
       return;
     }
     const accepted = files.slice(0, remaining);
+    
+    // Attach current format to the file object
+    const currentFormat = this.format.value ?? 'LONG';
+    accepted.forEach(f => {
+      (f as any).format = currentFormat;
+    });
+
     if (files.length - accepted.length > 0) {
       this.snackBar.open(
         `Only ${accepted.length} of ${files.length} added \u2014 max ${MAX_VIDEOS_PER_ANALYSIS} per analysis.`,
@@ -79,13 +89,14 @@ export class NewAnalysisComponent {
   }
 
   protected runAnalysis() {
-    if (this.brandName.invalid || this.videos().length === 0) return;
+    if (this.brandName.invalid || this.format.invalid || this.videos().length === 0) return;
     this.submitting.set(true);
     const videos: VideoInputPayload[] = this.videos().map((f) => {
       const meta = f as File & {
         sourceUrl?: string;
         gcsObjectId?: string;
         thumbnailDataUrl?: string | null;
+        format?: string;
       };
       return {
         sourceType: detectSourceType(f),
@@ -93,6 +104,7 @@ export class NewAnalysisComponent {
         videoUrl: meta.sourceUrl,
         gcsObjectId: meta.gcsObjectId,
         thumbnailUrl: meta.thumbnailDataUrl ?? undefined,
+        format: meta.format ?? 'LONG',
       };
     });
     this.analysisService
@@ -100,7 +112,8 @@ export class NewAnalysisComponent {
         requesterId: DEFAULT_REQUESTER_ID,
         analysisName: this.brandName.value ?? '',
         analysisType: this.analysisType.value ?? 'standard',
-        customFeatures: this.customFeatures.value ?? [],
+        customFeaturesLong: this.customFeatures.value?.long ?? [],
+        customFeaturesShort: this.customFeatures.value?.short ?? [],
         brandName: this.brandName.value ?? '',
         marketingObjective: this.marketingObjective.value ?? 'core_unknown',
         videos,

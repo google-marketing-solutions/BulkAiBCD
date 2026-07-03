@@ -24,7 +24,8 @@ public class EntityMapper {
         .analysisStatus(AnalysisStatus.PENDING.name())
         .brandName(request.getBrandName())
         .marketingObjective(request.getMarketingObjective())
-        .customFeatures(request.getCustomFeatures())
+        .customFeaturesLong(request.getCustomFeaturesLong())
+        .customFeaturesShort(request.getCustomFeaturesShort())
         .createdAt(now)
         .updatedAt(now)
         .build();
@@ -42,6 +43,7 @@ public class EntityMapper {
         .videoUrl(videoInput.getVideoUrl())
         .thumbnailUrl(videoInput.getThumbnailUrl())
         .sourceType(videoInput.getSourceType())
+        .format(videoInput.getFormat())
         .gcsObjectId(videoInput.getGcsObjectId())
         .build();
   }
@@ -69,6 +71,7 @@ public class EntityMapper {
             .gcsObjectId(v.getGcsObjectId())
             .thumbnailUrl(v.getThumbnailUrl())
             .sourceType(v.getSourceType())
+            .format(v.getFormat())
             .status(hasError ? AnalysisStatus.COMPLETED.name() : AnalysisStatus.PROCESSING.name());
     if (hasError) {
       videoMetadataEntityBuilder

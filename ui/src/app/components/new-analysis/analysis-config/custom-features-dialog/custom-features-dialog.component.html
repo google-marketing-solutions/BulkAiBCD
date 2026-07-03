@@ -1,0 +1,62 @@
+<h2 mat-dialog-title>Select Custom Features</h2>
+
+<mat-dialog-content>
+  <mat-form-field appearance="outline" class="search-bar">
+    <mat-label>Search features...</mat-label>
+    <input matInput [(ngModel)]="searchQuery" placeholder="e.g. Brand Visual">
+  </mat-form-field>
+
+  <mat-tab-group (selectedIndexChange)="onTabChange($event)">
+    <mat-tab label="Long Format">
+      <div class="tab-actions">
+        <mat-checkbox [checked]="isAllLongSelected()" (change)="toggleAllLong($event.checked)">
+          Select All Long Features
+        </mat-checkbox>
+      </div>
+      <div class="grid-container">
+        <ng-container *ngTemplateOutlet="featureCategory; context: {$implicit: 'Attract (A)', items: getFiltered(longGroups['A']), type: 'long'}"></ng-container>
+        <ng-container *ngTemplateOutlet="featureCategory; context: {$implicit: 'Brand (B)', items: getFiltered(longGroups['B']), type: 'long'}"></ng-container>
+        <ng-container *ngTemplateOutlet="featureCategory; context: {$implicit: 'Connect (C)', items: getFiltered(longGroups['C']), type: 'long'}"></ng-container>
+        <ng-container *ngTemplateOutlet="featureCategory; context: {$implicit: 'Direct (D)', items: getFiltered(longGroups['D']), type: 'long'}"></ng-container>
+      </div>
+    </mat-tab>
+    <mat-tab label="Shorts Format">
+      <div class="tab-actions">
+        <mat-checkbox [checked]="isAllShortsSelected()" (change)="toggleAllShorts($event.checked)">
+          Select All Shorts Features
+        </mat-checkbox>
+      </div>
+      <div class="grid-container">
+        <ng-container *ngTemplateOutlet="featureCategory; context: {$implicit: 'Attract (A)', items: getFiltered(shortsGroups['A']), type: 'short'}"></ng-container>
+        <ng-container *ngTemplateOutlet="featureCategory; context: {$implicit: 'Brand (B)', items: getFiltered(shortsGroups['B']), type: 'short'}"></ng-container>
+        <ng-container *ngTemplateOutlet="featureCategory; context: {$implicit: 'Connect (C)', items: getFiltered(shortsGroups['C']), type: 'short'}"></ng-container>
+        <ng-container *ngTemplateOutlet="featureCategory; context: {$implicit: 'Direct (D)', items: getFiltered(shortsGroups['D']), type: 'short'}"></ng-container>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+
+  <ng-template #featureCategory let-title let-items="items" let-type="type">
+    <div class="category-box">
+      <h3>{{ title }}</h3>
+      <div class="features-list">
+        <mat-checkbox *ngFor="let feature of items"
+                      [checked]="type === 'long' ? isSelectedLong(feature) : isSelectedShort(feature)"
+                      (change)="type === 'long' ? toggleFeatureLong(feature, $event.checked) : toggleFeatureShort(feature, $event.checked)">
+          {{ feature }}
+        </mat-checkbox>
+        <div *ngIf="items.length === 0" class="no-results">
+          No features match "{{ searchQuery }}"
+        </div>
+      </div>
+    </div>
+  </ng-template>
+
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <div class="selection-count">
+    {{ selectedFeaturesLong.size }} Long, {{ selectedFeaturesShort.size }} Shorts
+  </div>
+  <button mat-button (click)="onCancel()">Cancel</button>
+  <button mat-flat-button color="primary" (click)="onSave()">Save</button>
+</mat-dialog-actions>

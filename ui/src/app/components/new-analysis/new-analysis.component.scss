@@ -31,6 +31,23 @@
     }
   }
 
+  .video-format-container {
+    margin: 16px 0;
+    
+    .format-label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: rgba(0, 0, 0, 0.6);
+    }
+    
+    .format-radio-group {
+      display: flex;
+      flex-direction: row;
+      gap: 16px;
+    }
+  }
+
   .section-title {
     font-size: 16px;
     font-weight: 500;

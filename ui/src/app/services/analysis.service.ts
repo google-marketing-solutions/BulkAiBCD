@@ -9,6 +9,7 @@ export interface VideoInputPayload {
   videoUrl?: string;
   gcsObjectId?: string;
   thumbnailUrl?: string;
+  format?: string;
 }
 
 export interface SignedUploadUrl {
@@ -26,7 +27,8 @@ export interface AnalysisRequest {
   brandName?: string;
   marketingObjective?: string;
   videos?: VideoInputPayload[];
-  customFeatures?: string[];
+  customFeaturesLong?: string[];
+  customFeaturesShort?: string[];
 }
 
 export interface VideoMetadata {
@@ -37,6 +39,7 @@ export interface VideoMetadata {
   videoUrl?: string;
   thumbnailUrl?: string;
   sourceType?: string;
+  format?: string;
   status: string;
   errorMessage?: string;
   aScore?: number | null;

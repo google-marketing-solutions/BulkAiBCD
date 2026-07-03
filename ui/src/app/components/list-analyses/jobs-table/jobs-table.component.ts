@@ -168,7 +168,7 @@ function toJob(row: AnalysisRequest): Job {
     analysisType: row.analysisType,
     status: statusOf(row.analysisStatus),
     dateCreated: row.createdAt ? new Date(row.createdAt) : null,
-    customFeatures: row.customFeatures ?? [],
+    customFeatures: [...(row.customFeaturesLong || []), ...(row.customFeaturesShort || [])],
   };
 }
 

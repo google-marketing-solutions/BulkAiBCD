@@ -1,11 +1,4 @@
 <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="start">
-  <mat-tab>
-    <ng-template mat-tab-label>
-      <mat-icon class="tab-icon">upload</mat-icon>
-      Upload Files
-    </ng-template>
-    <app-file-upload (filesAdded)="filesAdded.emit($event)"></app-file-upload>
-  </mat-tab>
   <!-- <mat-tab>
     <ng-template mat-tab-label>
       <mat-icon class="tab-icon">badge</mat-icon>
@@ -26,5 +19,12 @@
       Drive URL
     </ng-template>
     <app-drive-input (filesAdded)="filesAdded.emit($event)"></app-drive-input>
+  </mat-tab>
+  <mat-tab>
+    <ng-template mat-tab-label>
+      <mat-icon class="tab-icon">upload</mat-icon>
+      Upload Files
+    </ng-template>
+    <app-file-upload (filesAdded)="filesAdded.emit($event)"></app-file-upload>
   </mat-tab>
 </mat-tab-group>

@@ -8,8 +8,10 @@ import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
 
 
-const CUSTOM_FEATURES = [
- '(A) Large Supers',
+import {MatTabsModule} from '@angular/material/tabs';
+
+const LONG_FEATURES = [
+  '(A) Large Supers',
   '(A) Bright Visuals',
   '(A) High Contrast Visuals',
   '(A) Starting Strong',
@@ -81,7 +83,30 @@ const CUSTOM_FEATURES = [
   '(D) Special Offer (Speech)',
   '(D) Price (Text)',
   '(D) Price (Speech)',
-  '(D) Power of Free (Text)',
+  '(D) Power of Free (Text)'
+];
+
+const SHORTS_FEATURES = [
+  '(A) Tight Framing',
+  '(A) Voice',
+  '(A) Direct to Camera',
+  '(A) Supers',
+  '(B) Product Visual (Close-up)',
+  '(B) Product Visual (Extreme Close-up)',
+  '(C) Product Interaction',
+  '(C) Casual Language',
+  '(C) Humor',
+  '(C) Character-Driven',
+  '(D) Call-to-Action (Speech)',
+  '(D) Special Offer (Speech)',
+  '(A) Shorts Production Style (User Generated)',
+  '(A) Short Form Video Adaptation_high',
+  '(A) Vertical Format',
+  '(B) Brand Secondary Element',
+  '(B) Secondary Product Context',
+  '(C) Emoji Usage',
+  '(C) Direct to Camera Character Talk',
+  '(C) Uses Influencer/Creator'
 ];
 
 /**
@@ -89,73 +114,18 @@ const CUSTOM_FEATURES = [
  * Contains the initial array of currently selected features to populate the dialog.
  */
 export interface DialogData {
-  selectedFeatures: string[];
+  selectedFeaturesLong: string[];
+  selectedFeaturesShort: string[];
 }
 
 /**
  * Component for a dialog that allows users to select custom features from a predefined list.
- * It includes a search bar to filter the features and displays the count of selected features.
- * The selected features are returned as an array of strings when the dialog is closed with "Save".
+ * Supports a 2x2 grid per format (Long vs Shorts).
  */
 @Component({
   selector: 'app-custom-features-dialog',
-  template: `
-    <h2 mat-dialog-title>Select Custom Features</h2>
-
-    <mat-dialog-content>
-      <!-- Search Bar -->
-      <mat-form-field appearance="outline" class="search-bar">
-        <mat-label>Search features...</mat-label>
-        <input matInput [(ngModel)]="searchQuery" placeholder="e.g. Brand Visual">
-      </mat-form-field>
-
-      <!-- Checkbox List -->
-      <div class="features-list">
-        <mat-checkbox *ngFor="let feature of filteredFeatures"
-                      [checked]="isSelected(feature)"
-                      (change)="toggleFeature(feature, $event.checked)">
-          {{ feature }}
-        </mat-checkbox>
-      </div>
-
-      <!-- Show when search yields no results -->
-      <div *ngIf="filteredFeatures.length === 0" class="no-results">
-        No features found matching "{{ searchQuery }}"
-      </div>
-    </mat-dialog-content>
-
-    <mat-dialog-actions align="end">
-      <div class="selection-count">
-        {{ selectedFeatures.size }} selected
-      </div>
-      <button mat-button (click)="onCancel()">Cancel</button>
-      <button mat-flat-button color="primary" (click)="onSave()">Save</button>
-    </mat-dialog-actions>`,
-  styles: [`
-    .search-bar {
-      width: 100%;
-      margin-bottom: 8px;
-    }
-    .features-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      max-height: 400px; /* Keeps the dialog from getting too tall */
-    }
-    mat-dialog-actions {
-      justify-content: space-between; /* Puts count on left, buttons on right */
-    }
-    .selection-count {
-      color: #666;
-      font-size: 14px;
-      margin-left: 16px;
-    }
-    .no-results {
-      color: #888;
-      font-style: italic;
-      padding: 16px 0;
-    }
-  `],
+  templateUrl: './custom-features-dialog.component.html',
+  styleUrl: './custom-features-dialog.component.scss',
   standalone: true,
   imports: [
     MatDialogModule,
@@ -163,48 +133,91 @@ export interface DialogData {
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
+    MatTabsModule,
     CommonModule,
     FormsModule
   ]
 })
-/**
- * Component for a dialog that allows users to select custom features from a predefined list.
- * It includes a search bar to filter the features and displays the count of selected features.
- * Allows users to search and select from a predefined list of features.
- * The selected features are returned when the dialog is closed with "Save".
- */
 export class CustomFeaturesDialogComponent {
   dialogRef = inject(MatDialogRef<CustomFeaturesDialogComponent>);
   data = inject<DialogData>(MAT_DIALOG_DATA);
 
-  // Load the static array
-  features: string[] = CUSTOM_FEATURES;
   searchQuery = '';
 
-  // Initialize the Set with whatever was passed in, or empty array if none
-  selectedFeatures: Set<string> = new Set(this.data?.selectedFeatures || []);
+  longGroups = this.groupFeatures(LONG_FEATURES);
+  shortsGroups = this.groupFeatures(SHORTS_FEATURES);
 
-  // Getter to dynamically filter the list based on the search bar
-  get filteredFeatures(): string[] {
-    if (!this.searchQuery) return this.features;
+  // Initialize the Sets with whatever was passed in
+  selectedFeaturesLong: Set<string> = new Set(this.data?.selectedFeaturesLong || []);
+  selectedFeaturesShort: Set<string> = new Set(this.data?.selectedFeaturesShort || []);
 
+  groupFeatures(features: string[]) {
+    const groups: { [key: string]: string[] } = { A: [], B: [], C: [], D: [] };
+    features.forEach(f => {
+      if (f.startsWith('(A)')) groups['A'].push(f);
+      else if (f.startsWith('(B)')) groups['B'].push(f);
+      else if (f.startsWith('(C)')) groups['C'].push(f);
+      else if (f.startsWith('(D)')) groups['D'].push(f);
+    });
+    return groups;
+  }
+
+  getFiltered(items: string[]): string[] {
+    if (!this.searchQuery) return items;
     const lowerQuery = this.searchQuery.toLowerCase();
-    return this.features.filter(feature =>
-      feature.toLowerCase().includes(lowerQuery)
-    );
+    return items.filter(feature => feature.toLowerCase().includes(lowerQuery));
   }
 
-  // Check if a string is in the Set
-  isSelected(feature: string) {
-    return this.selectedFeatures.has(feature);
+  isSelectedLong(feature: string) {
+    return this.selectedFeaturesLong.has(feature);
   }
 
-  // Add or remove the string from the Set
-  toggleFeature(feature: string, checked: boolean) {
+  toggleFeatureLong(feature: string, checked: boolean) {
     if (checked) {
-      this.selectedFeatures.add(feature);
+      this.selectedFeaturesLong.add(feature);
     } else {
-      this.selectedFeatures.delete(feature);
+      this.selectedFeaturesLong.delete(feature);
+    }
+  }
+
+  isSelectedShort(feature: string) {
+    return this.selectedFeaturesShort.has(feature);
+  }
+
+  toggleFeatureShort(feature: string, checked: boolean) {
+    if (checked) {
+      this.selectedFeaturesShort.add(feature);
+    } else {
+      this.selectedFeaturesShort.delete(feature);
+    }
+  }
+
+  onTabChange(event: any) {
+    // Optionally reset search query on tab change
+    // this.searchQuery = '';
+  }
+
+  isAllLongSelected(): boolean {
+    return LONG_FEATURES.length > 0 && LONG_FEATURES.every(f => this.selectedFeaturesLong.has(f));
+  }
+
+  toggleAllLong(checked: boolean) {
+    if (checked) {
+      LONG_FEATURES.forEach(f => this.selectedFeaturesLong.add(f));
+    } else {
+      LONG_FEATURES.forEach(f => this.selectedFeaturesLong.delete(f));
+    }
+  }
+
+  isAllShortsSelected(): boolean {
+    return SHORTS_FEATURES.length > 0 && SHORTS_FEATURES.every(f => this.selectedFeaturesShort.has(f));
+  }
+
+  toggleAllShorts(checked: boolean) {
+    if (checked) {
+      SHORTS_FEATURES.forEach(f => this.selectedFeaturesShort.add(f));
+    } else {
+      SHORTS_FEATURES.forEach(f => this.selectedFeaturesShort.delete(f));
     }
   }
 
@@ -213,6 +226,9 @@ export class CustomFeaturesDialogComponent {
   }
 
   onSave() {
-    this.dialogRef.close(Array.from(this.selectedFeatures));
+    this.dialogRef.close({
+      long: Array.from(this.selectedFeaturesLong),
+      short: Array.from(this.selectedFeaturesShort)
+    });
   }
 }

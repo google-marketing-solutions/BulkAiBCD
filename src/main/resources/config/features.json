@@ -5,7 +5,11 @@
     "category": "Attract",
     "criteria": "One or more shots are tightly framed (e.g., close-up on a face or product covering at least 30% of the frame).",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze Person/Object Metadata: The 'person_annotations' and 'object_annotations' in {metadata_summary} contain bounding box data.\n        2.  Calculate Frame Coverage: For each person or key object track, find the largest bounding box. Calculate its area (`width` * `height`). A person's face is a key subject.\n        3.  Final Verdict: Determine if the maximum calculated area from any bounding box is greater than 0.30 (30% of the screen). If it is, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion based on the metadata calculation. If detected, describe the subject (e.g., 'a person's face', 'the product') and its calculated frame coverage (e.g., 'Detected: A person's face at 3.2s covered approximately 45% of the frame.'). If not, state that no subject met the 30% coverage threshold.\",\n                \"confidence_rationale\": \"Confidence should be high if person/object annotations are present, as this is a direct calculation.\"\n            }\n        }",
-    "type": "LIGHT"
+    "type": "LIGHT",
+    "supportedFormats": [
+      "LONG",
+      "SHORT"
+    ]
   },
   {
     "id": "a_human_voice",
@@ -13,7 +17,11 @@
     "category": "Attract",
     "criteria": "Video meets this criteria if it has included an audible human voice at any time and in any capacity e.g. as a Voice Over, Narration or Dialogue.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze 'speech_annotations' in {metadata_summary} and listen to the video's audio.\n        2.  Determine if any spoken (not sung) human voice is present.\n        3.  Final Verdict: If a spoken voice exists, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Confirm if a spoken human voice was present. Distinguish between voice-over, dialogue, or narration.\",\n                \"confidence_rationale\": \"Justify based on the clarity of the speech in the audio track.\"\n            }\n        }",
-    "type": "LIGHT"
+    "type": "LIGHT",
+    "supportedFormats": [
+      "LONG",
+      "SHORT"
+    ]
   },
   {
     "id": "a_direct_camera",
@@ -21,7 +29,11 @@
     "category": "Attract",
     "criteria": "The viewer is addressed directly via direct contact from a person shown on screen.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze the video for moments where a character looks directly into the camera lens, as if addressing the viewer.\n        2.  Final Verdict: If this eye contact occurs, 'detected' is true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Describe the moment a character broke the fourth wall and made eye contact with the camera. If not, state that all action was observational.\",\n                \"confidence_rationale\": \"Justify confidence based on your direct visual evidence of eye contact.\"\n            }\n        }",
-    "type": "LIGHT"
+    "type": "LIGHT",
+    "supportedFormats": [
+      "LONG",
+      "SHORT"
+    ]
   },
   {
     "id": "a_has_supers",
@@ -29,7 +41,11 @@
     "category": "Attract",
     "criteria": "Videos meet this criteria if any supers (text overlays) have been incorporated into the video.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Consult Text Metadata: The {metadata_summary} is primary evidence. If the 'text_annotations' section is not empty, the feature is detected.\n        2.  Final Verdict: If text overlays are present in the metadata or visible in the video, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion, referencing the text metadata if available. Provide an example of the text seen on screen.\",\n                \"confidence_rationale\": \"Confidence should be high if text metadata is present.\"\n            }\n        }",
-    "type": "LIGHT"
+    "type": "LIGHT",
+    "supportedFormats": [
+      "LONG",
+      "SHORT"
+    ]
   },
   {
     "id": "b_product_closeup",
@@ -37,7 +53,11 @@
     "category": "Brand",
     "criteria": "Does the ad feature close-up scenes of Product? (at least 30% of frame)",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze 'object_annotations' for the product '{product}' which contain bounding box data.\n        2.  Calculate Area: For each annotation of the product, calculate the area of its largest bounding box (`width` * `height`).\n        3.  Final Verdict: If any calculated area is greater than 0.30, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Describe any product close-ups that meet the 30% size criteria, providing a timestamp and the calculated area from metadata.\",\n                \"confidence_rationale\": \"Justify confidence based on the bounding box data in the metadata.\"\n            }\n        }",
-    "type": "LIGHT"
+    "type": "LIGHT",
+    "supportedFormats": [
+      "LONG",
+      "SHORT"
+    ]
   },
   {
     "id": "b_product_extreme_closeup",
@@ -45,7 +65,11 @@
     "category": "Brand",
     "criteria": "Does the ad feature close-up scenes of Product? (at least 60% of frame)",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze 'object_annotations' for the product '{product}' which contain bounding box data.\n        2.  Calculate Area: For each annotation of the product, calculate the area of its largest bounding box (`width` * `height`).\n        3.  Final Verdict: If any calculated area is greater than 0.60, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Describe any product close-ups that meet the 60% size criteria, providing a timestamp and the calculated area from metadata.\",\n                \"confidence_rationale\": \"Justify confidence based on the bounding box data in the metadata.\"\n            }\n        }",
-    "type": "LIGHT"
+    "type": "LIGHT",
+    "supportedFormats": [
+      "LONG",
+      "SHORT"
+    ]
   },
   {
     "id": "c_people_using_product",
@@ -53,7 +77,11 @@
     "category": "Connect",
     "criteria": "Is the product used/held by characters?",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze Metadata: Look for temporal overlaps between 'person_annotations' and 'object_annotations' for the product '{product}'.\n        2.  Check Proximity/Interaction: Within these overlaps, examine the bounding boxes and visual action to confirm a person is holding or actively using the product.\n        3.  Final Verdict: If interaction is confirmed, 'detected' is true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Describe how a person interacted with the product, evidenced by metadata or direct visual analysis.\",\n                \"confidence_rationale\": \"Justify confidence based on the clarity of the human-product interaction.\"\n            }\n        }",
-    "type": "LIGHT"
+    "type": "LIGHT",
+    "supportedFormats": [
+      "LONG",
+      "SHORT"
+    ]
   },
   {
     "id": "c_casual_language",
@@ -61,7 +89,11 @@
     "category": "Connect",
     "criteria": "Does the ad use everyday language?",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze the language in the speech transcript from {metadata_summary}.\n        2.  Assess the tone and word choice for formality, jargon, or slang.\n        3.  Final Verdict: If the language is predominantly conversational and avoids jargon, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Provide an example of casual phrasing from the metadata. If not, explain that the language was formal or technical.\",\n                \"confidence_rationale\": \"Justify confidence based on the consistent tone of the language found in the metadata.\"\n            }\n        }",
-    "type": "LIGHT"
+    "type": "LIGHT",
+    "supportedFormats": [
+      "LONG",
+      "SHORT"
+    ]
   },
   {
     "id": "c_humor",
@@ -69,7 +101,11 @@
     "category": "Connect",
     "criteria": "Does the ad attempt to be humorous?",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze the video for comedic elements like jokes (in speech/text), funny situations, or visual gags.\n        2.  Final Verdict: If the intent to be humorous is clear, 'detected' is true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Describe the element intended to be humorous. If not, state that the tone was serious or informational.\",\n                \"confidence_rationale\": \"Justify based on the clarity of the comedic intent.\"\n            }\n        }",
-    "type": "LIGHT"
+    "type": "LIGHT",
+    "supportedFormats": [
+      "LONG",
+      "SHORT"
+    ]
   },
   {
     "id": "c_character_driven",
@@ -77,7 +113,11 @@
     "category": "Connect",
     "criteria": "Is the story driven by a single character (person, mascot etc.)?",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze the narrative to determine the protagonist.\n        2.  Final Verdict: If the story clearly follows the journey or experiences of one primary character, 'detected' is true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Identify the main character and explain how the story centers on them. If not, explain that the ad was product-focused or an ensemble piece.\",\n                \"confidence_rationale\": \"Justify based on narrative structure.\"\n            }\n        }",
-    "type": "LIGHT"
+    "type": "LIGHT",
+    "supportedFormats": [
+      "LONG",
+      "SHORT"
+    ]
   },
   {
     "id": "d_audio_cta",
@@ -85,7 +125,11 @@
     "category": "Direct",
     "criteria": "Is the CTA mentioned by VO or an on-screen talent?",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Scan Speech Transcript: In {metadata_summary}, look for imperative verbs or phrases that instruct the viewer (e.g., \"Shop now,\" \"visit our website,\" \"download the app\").\n        2.  Final Verdict: If a spoken CTA is found, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Provide the spoken call-to-action phrase, quoting from the speech metadata. If not, state that no audible CTA was given.\",\n                \"confidence_rationale\": \"Justify confidence based on the clarity of the spoken instruction in the transcript.\"\n            }\n        }",
-    "type": "LIGHT"
+    "type": "LIGHT",
+    "supportedFormats": [
+      "LONG",
+      "SHORT"
+    ]
   },
   {
     "id": "d_special_offer_speech",
@@ -93,7 +137,11 @@
     "category": "Direct",
     "criteria": "Is there any special offer or discount mentioned in the audio?",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Scan the speech transcript in {metadata_summary} for mentions of special offers, discounts, or sale prices.\n        2.  Final Verdict: If a clear offer is spoken, 'detected' is true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Quote the specific spoken offer from the transcript. If none, state that no offer was mentioned.\",\n                \"confidence_rationale\": \"Justify based on speech metadata.\"\n            }\n        }",
-    "type": "LIGHT"
+    "type": "LIGHT",
+    "supportedFormats": [
+      "LONG",
+      "SHORT"
+    ]
   },
   {
     "id": "a_large_supers",
@@ -101,7 +149,10 @@
     "category": "Attract",
     "criteria": "The largest single letter of supers (text overlays) is more than 10% of the video player height.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze Text Metadata: The 'text_annotations' in {metadata_summary} contain bounding box data for each text segment.\n        2.  Calculate Relative Height: For each text annotation, find the bounding box (`normalized_bounding_box`). Calculate its height (`bottom` - `top`).\n        3.  Final Verdict: Determine if the maximum calculated height from any bounding box is greater than 0.10. If it is, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(A) Large Supers\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion based on the metadata calculation. If detected, state the largest text height found (e.g., 'Detected: The text 'SALE' had a relative height of 0.15, exceeding the 0.10 threshold.'). If not, confirm that the largest text found was smaller than the 10% threshold.\",\n                \"confidence_rationale\": \"Confidence should be 1.0 if text_annotations are present, as this is a direct calculation.\",\n                \"strengths\": [\"Clear, readable text that effectively captures attention due to its large size.\"],\n                \"weaknesses\": [\"Text was present but too small to have a strong visual impact.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "a_bright_colors",
@@ -109,7 +160,10 @@
     "category": "Attract",
     "criteria": "The ad incorporates bright, vibrant, and vivid color elements on at least 2+ different frames.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        Using your visual analysis capabilities, evaluate the artistic and functional use of bright colors in this video.\n\n        YOUR ANALYTICAL TASKS:\n        1. Analyze Artistic Intent: Is the color palette intentionally bright and vibrant, or is it muted, dark, or monochromatic?\n        2. Identify Key Moments: Look for at least two distinct scenes or frames where bright, saturated colors are a dominant visual element.\n        3. Evaluate Functional Impact: Does the use of bright colors make the ad more eye-catching and visually appealing?\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(A) Bright Visuals\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Describe the scenes where bright colors were used and their impact on the ad's tone. If not detected, describe the overall color palette used (e.g., muted, realistic, dark).\",\n                \"confidence_rationale\": \"Justify confidence based on the vibrancy and intentionality of the color scheme.\",\n                \"strengths\": [\"Use of a vibrant and eye-catching color scheme that enhances the mood.\"],\n                \"weaknesses\": [\"Color palette was muted and lacked visual energy.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "a_high_contrast",
@@ -117,7 +171,10 @@
     "category": "Attract",
     "criteria": "Color contrast in the ad is high on at least 2+ different frames, ensuring clear visibility and distinction between elements.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        Using your visual analysis capabilities, evaluate the use of contrast in this video.\n\n        YOUR ANALYTICAL TASKS:\n        1. Analyze Artistic Intent: Is contrast used purposefully to make elements stand out, or is the lighting and color palette flat?\n        2. Identify Key Moments: Look for at least two distinct scenes or frames with strong visual contrast between light and dark areas, or between complementary colors.\n        3. Evaluate Functional Impact: Does the contrast effectively draw attention to key subjects or improve the readability of text?\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(A) High Contrast Visuals\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Describe the scenes that used high contrast effectively to guide the viewer's eye. If not detected, state that the visual palette was low-contrast or 'flat'.\",\n                \"confidence_rationale\": \"Justify confidence based on the visual separation of elements in the frame.\",\n                \"strengths\": [\"Examples of strong contrast that improved readability or visual focus.\"],\n                \"weaknesses\": [\"Scenes appeared visually \"flat\" or \"muddy\" due to lack of contrast.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "a_heartbeat_story_arc",
@@ -125,7 +182,10 @@
     "category": "Attract",
     "criteria": "Message, strong scene/tease or conclusion revealed within the first 5 seconds (up to 4.99s).",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Early Hook (0-5s): Consult the shot and text metadata for an early reveal. Directly analyze the first 5 seconds of the video to confirm if it presents a compelling message, scene, or conclusion.\n        2.  Final Verdict: After writing your rationale, ensure the 'detected' field accurately reflects if a strong hook is present.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(A) Starting Strong\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"Start with a clear conclusion: 'Detected' or 'Not Detected'. Confirm if a strong hook was present in the first 5 seconds, providing visual or text-based evidence from the video and metadata.\",\n                \"confidence_rationale\": \"Justify your confidence score based on the clarity of the opening hook.\",\n                \"strengths\": [\"Description of the effective opening hook.\"],\n                \"weaknesses\": [\"The video had a slow or unengaging start.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "a_fast_pacing_full",
@@ -133,7 +193,10 @@
     "category": "Attract",
     "criteria": "Within ANY 5 consecutive seconds, there are 5 or more shots.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze Shot Metadata: Review the provided shot change timestamps in the 'shot_annotations' of {metadata_summary}. This is the primary evidence.\n        2.  Identify Dense Periods: Scan through the timestamps to find any 5-second window containing 5 or more shot start times.\n        3.  Final Verdict: If such a window exists based on the metadata, set 'detected' to true. Otherwise, set it to false.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(A) Quick Pacing\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion clearly based on the metadata. If detected, specify the time window with the most cuts (e.g., 'Detected: 6 cuts between 8.2s and 13.2s based on shot metadata'). If not, state that no 5-second window met the threshold.\",\n                \"confidence_rationale\": \"Justify your confidence score based on the clarity of the shot data.\",\n                \"strengths\": [\"The time-code of the fastest-paced segment identified from metadata.\"],\n                \"weaknesses\": [\"Periods of slow pacing.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "a_fast_pacing_early",
@@ -141,7 +204,10 @@
     "category": "Attract",
     "criteria": "At least 5 shot changes detected within the first 5 seconds.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Focus on 0-5 seconds: Analyze the shot change metadata in the 'shot_annotations' of {metadata_summary} for timestamps less than 5.0.\n        2.  Count the Cuts: Tally the number of shot changes in this period based on the metadata.\n        3.  Final Verdict: If the count is 5 or more, 'detected' must be true. Otherwise, it must be false.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(A) Quick Pacing (First 5s)\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State the exact number of cuts observed in the first 5 seconds based on metadata and whether this meets the criteria. (e.g., 'Not Detected: Metadata shows only 3 cuts in the first 5 seconds.')\",\n                \"confidence_rationale\": \"Justify your confidence based on the provided shot data.\",\n                \"strengths\": [\"Description of the opening sequence\"s pacing.\"],\n                \"weaknesses\": [\"If not detected, state the number of cuts that were present.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "a_tight_framing",
@@ -149,7 +215,11 @@
     "category": "Attract",
     "criteria": "One or more shots are tightly framed (e.g., close-up on a face or product covering at least 30% of the frame).",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze Person/Object Metadata: The 'person_annotations' and 'object_annotations' in {metadata_summary} contain bounding box data.\n        2.  Calculate Frame Coverage: For each person or key object track, find the largest bounding box. Calculate its area (`width` * `height`). A person's face is a key subject.\n        3.  Final Verdict: Determine if the maximum calculated area from any bounding box is greater than 0.30 (30% of the screen). If it is, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(A) Tight Framing\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion based on the metadata calculation. If detected, describe the subject (e.g., 'a person's face', 'the product') and its calculated frame coverage (e.g., 'Detected: A person's face at 3.2s covered approximately 45% of the frame.'). If not, state that no subject met the 30% coverage threshold.\",\n                \"confidence_rationale\": \"Confidence should be high if person/object annotations are present, as this is a direct calculation.\",\n                \"strengths\": [\"Effective use of a close-up to create connection or focus on detail.\"],\n                \"weaknesses\": [\"Shots were primarily medium or wide, missing opportunities for emotional connection.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG",
+      "SHORT"
+    ]
   },
   {
     "id": "a_tight_framing_early",
@@ -157,7 +227,10 @@
     "category": "Attract",
     "criteria": "One or more shots are tightly framed (e.g., close-up on a face or product covering at least 30% of the frame) within the first 5 seconds.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze Person/Object Metadata (0-5s): The 'person_annotations' and 'object_annotations' in {metadata_summary} contain bounding box data with timestamps. Focus only on tracks where the 'start_time' is less than 5.0.\n        2.  Calculate Frame Coverage: For each relevant track, find the largest bounding box. Calculate its area (`width` * `height`).\n        3.  Final Verdict: Determine if the maximum calculated area from any bounding box within the first 5 seconds is greater than 0.30. If it is, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(A) Tight Framing (First 5s)\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion based on the metadata calculation. If detected, describe the subject and its calculated frame coverage within the first 5 seconds. If not, state that no subject met the 30% coverage threshold in the opening shots.\",\n                \"confidence_rationale\": \"Confidence should be high if person/object annotations are present, as this is a direct calculation from timed data.\",\n                \"strengths\": [\"The ad immediately grabs attention with an early close-up.\"],\n                \"weaknesses\": [\"The opening shots were too wide and lacked an immediate focal point.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "a_has_sound",
@@ -165,7 +238,10 @@
     "category": "Attract",
     "criteria": "Video includes any audible sound.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze Metadata: Check if 'speech_annotations' or 'frame_label_annotations' (for music/sounds) exist in {metadata_summary}.\n        2.  Final Verdict: If any audio-related annotation is present, 'detected' must be true. If all are empty/missing, it is likely silent, so 'detected' is false.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(A) Sound On\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion based on the presence of any audio metadata. Confirm the presence of sound and specify the types found, or confirm the video is silent based on the lack of audio metadata.\",\n                \"confidence_rationale\": \"Confidence should be 1.0 based on metadata presence.\",\n                \"strengths\": [\"Types of audio present based on metadata.\"],\n                \"weaknesses\": [\"N/A if sound is present.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "a_has_music",
@@ -173,7 +249,10 @@
     "category": "Attract",
     "criteria": "Audible music is included at any time and in any capacity e.g. backing track, jingle or in-situ music.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze Frame Label Metadata: Review 'frame_label_annotations' in {metadata_summary} for labels like 'Music', 'Jingle', 'Soundtrack', or 'Song'.\n        2.  Final Verdict: If any such label is present, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(A) Music\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion based on the metadata. Confirm the presence of music by citing the relevant labels found. If no such labels exist, state that music was not detected in the metadata.\",\n                \"confidence_rationale\": \"Justify based on the presence of music-related labels in the metadata.\",\n                \"strengths\": [\"Description of the music\"s role, inferred from its presence.\"],\n                \"weaknesses\": [\"No music-related labels were found in the metadata.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "a_sound_effects",
@@ -181,7 +260,10 @@
     "category": "Attract",
     "criteria": "Video features sound effects (i.e. revving engine, can opening, 'crunch', water splashing, door closing, fingers snapping, bottle opening).",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze Frame Label Metadata: Review 'frame_label_annotations' in {metadata_summary}.\n        2.  Identify Sound Effect Labels: Look for labels that are clearly not 'Speech' or 'Music', such as 'Whoosh', 'Clapping', 'Slam', 'Click', 'Animal Sound', etc.\n        3.  Final Verdict: If one or more such descriptive audio labels are present in the metadata, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(A) Sound Effects\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion based on the label metadata. If detected, list the specific sound effect labels found (e.g., 'Detected: The metadata contained labels for 'Swoosh' and 'Click'.'). If not, state that the audio labels only indicated Speech and/or Music.\",\n                \"confidence_rationale\": \"Justify confidence based on the presence and clarity of non-musical, non-speech audio labels in the metadata.\",\n                \"strengths\": [\"Effective use of sound design to punctuate actions, confirmed by labels like \"Slam\" and \"Pop\".\"],\n                \"weaknesses\": [\"The audio track was simple, containing only dialogue and music, with no additional sound effects detected in the labels.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "a_human_voice",
@@ -189,7 +271,11 @@
     "category": "Attract",
     "criteria": "Video includes an audible SPOKEN human voice (e.g., as a Voice Over, Narration or Dialogue). Sung lyrics within a music track do not count.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        Your task is to determine if a SPOKEN human voice is present.\n        1.  Find All Vocalizations: Use the 'speech_annotations' in {metadata_summary} to identify all instances of a human voice. If this list is empty, the feature is not detected.\n        2.  Filter Out Sung Lyrics: Cross-reference the timestamps of the speech with 'frame_label_annotations'. If a speech segment occurs at the same time as a 'Music' or 'Song' label, it is likely a sung lyric and must be IGNORED for this analysis.\n        3.  Final Verdict: 'detected' is true ONLY if you find at least one instance of SPOKEN words that are not part of a song's lyrics.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(A) Voice\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion clearly. If detected, specify the type of spoken voice found (e.g., 'Detected: The video contains on-screen dialogue starting at 4.2s.'). If not detected, explain why (e.g., 'Not Detected: The only human vocalizations were sung lyrics, which are excluded by the criteria.' or 'Not Detected: No human voice was found in the metadata or by direct audio analysis.').\",\n                \"confidence_rationale\": \"Justify your confidence based on the clarity of the audio and your ability to distinguish spoken words from sung lyrics.\",\n                \"strengths\": [\"Use of spoken voice (narration or dialogue) to deliver the message.\"],\n                \"weaknesses\": [\"The video had no spoken voice, relying only on music and visuals.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG",
+      "SHORT"
+    ]
   },
   {
     "id": "a_voice_over",
@@ -197,7 +283,10 @@
     "category": "Attract",
     "criteria": "Human voice is used as off-screen narration.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze Metadata: Check for the presence of speech in 'speech_annotations'.\n        2.  Correlate with Visuals: Cross-reference the timestamps of speech segments with 'person_annotations' and 'face_annotations'. A voice-over is likely if speech occurs during shots where no person is visible or clearly speaking.\n        3.  Final Verdict: If speech exists without a corresponding on-screen speaker, 'detected' is true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(A) Voice-Over\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Confirm if an off-screen narrator was used by correlating speech timestamps with the absence of a visible speaker in the person/face metadata. Distinguish this from on-screen dialogue.\",\n                \"confidence_rationale\": \"Justify based on audio-visual evidence from metadata.\",\n                \"strengths\": [\"Presence of clear narration, identified by analyzing metadata.\"],\n                \"weaknesses\": [\"Video used dialogue only, or was silent.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "a_dialogue_single",
@@ -205,7 +294,10 @@
     "category": "Attract",
     "criteria": "A single human speaks on-camera with visible face and clear audio synchronization.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze Metadata: Correlate timestamps between 'speech_annotations' and 'person_annotations'.\n        2.  Identify Solo Speakers: Look for periods where speech occurs and only one person track is active.\n        3.  Final Verdict: If such an instance is found, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(A) Dialogue (1-Person)\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion based on metadata. Describe the scene where a single person was speaking on camera, referencing timestamps. If not found, explain that dialogue involved multiple people or was off-screen only.\",\n                \"confidence_rationale\": \"Justify based on visual and speech metadata.\",\n                \"strengths\": [\"Clear instance of a monologue or single speaker scene identified in metadata.\"],\n                \"weaknesses\": [\"No single-person dialogue present based on metadata analysis.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "a_dialogue_multiple",
@@ -213,7 +305,10 @@
     "category": "Attract",
     "criteria": "Multiple people speaking on-camera with visible faces and clear audio synchronization.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze Metadata: Correlate timestamps between 'speech_annotations' and 'person_annotations'.\n        2.  Identify Conversations: Look for periods where speech occurs and at least two distinct person tracks are active.\n        3.  Final Verdict: If this occurs, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(A) Dialogue (2+ People)\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion based on metadata. Describe the scene where multiple people were speaking, referencing timestamps. If not found, explain that dialogue was monologue or off-screen only.\",\n                \"confidence_rationale\": \"Justify based on visual and speech metadata.\",\n                \"strengths\": [\"Clear instance of a conversational scene identified in metadata.\"],\n                \"weaknesses\": [\"No multi-person dialogue present based on metadata analysis.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "a_direct_camera",
@@ -221,7 +316,11 @@
     "category": "Attract",
     "criteria": "The viewer is addressed directly via direct eye contact from a person shown on screen.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  This feature requires visual interpretation beyond standard metadata. Watch the video for moments where a character looks directly into the camera lens, as if addressing the viewer.\n        2.  Final Verdict: If this occurs, 'detected' is true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(A) Direct to Camera\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Describe the moment a character broke the fourth wall and addressed the camera. If not, state that all action was observational.\",\n                \"confidence_rationale\": \"Justify confidence based on your direct visual evidence of eye contact.\",\n                \"strengths\": [\"Timestamp of direct-to-camera address.\"],\n                \"weaknesses\": [\"No direct address was used.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG",
+      "SHORT"
+    ]
   },
   {
     "id": "a_has_supers",
@@ -229,7 +328,11 @@
     "category": "Attract",
     "criteria": "Any text overlays (supers) are incorporated into the video.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Consult Text Metadata: The {metadata_summary} is the primary evidence. If the 'text_annotations' section exists and is not empty, the feature is detected.\n        2.  Final Verdict: If text overlays are present in the metadata, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(A) Supers\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion, referencing the text metadata as primary evidence. Provide an example of the text seen from the metadata.\",\n                \"confidence_rationale\": \"Confidence should be high if text metadata is present.\",\n                \"strengths\": [\"Example of text seen on screen, confirmed by metadata.\"],\n                \"weaknesses\": [\"Note if no text reinforcement was used.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG",
+      "SHORT"
+    ]
   },
   {
     "id": "a_supers_combined",
@@ -237,7 +340,10 @@
     "category": "Attract",
     "criteria": "Speech matches or is contextually supportive of the overlaid text.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        Your task is to determine if audio and text reinforce each other. This feature is a 'superset' that is true if EITHER of two specific conditions are met:\n        1.  **See & Say (Match):** The speech heard in the ad matches the text shown on screen in the same frame EXACTLY.\n        2.  **Augmented (Support):** The speech does not match exactly but is contextually supportive of the on-screen text (e.g., text shows a statistic, audio explains its benefit).\n        3.  **Final Verdict:** If you find clear evidence for Condition 1 OR Condition 2, then 'detected' MUST be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(A) Supers with Audio\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Explicitly state WHICH condition was met. If Condition 1, quote the exact match from metadata. If Condition 2, describe how the audio augmented the text. If neither, explain that audio and text were unrelated.\",\n                \"confidence_rationale\": \"Justify confidence based on the clarity of the audio-visual link in the metadata.\",\n                \"strengths\": [\"Clear example of a line that was either matched or augmented.\"],\n                \"weaknesses\": [\"Text and audio were disconnected and unrelated.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "a_supers_audio_augment",
@@ -245,7 +351,10 @@
     "category": "Attract",
     "criteria": "Speech is contextually supportive of (but not an exact match to) the overlaid text, often by providing a general concept while the text gives a specific detail.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Consult metadata for text and speech that appear at the same time.\n        2.  Analyze these pairs to find where the speech provides additional context for the on-screen text, without being a word-for-word match. They must be thematically linked.\n        3.  **Crucial Example of Augmentation:** If the on-screen text says \"10x brighter screen,\" the audio might say \"Experience incredible visible brightness.\" The audio supports the text's theme (brightness) without matching the words. The text provides the specific metric, and the audio provides the general benefit. This is a perfect example of what to look for.\n        4.  Final Verdict: If you find a clear instance of this kind of contextual support, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(A) Supers with Audio (Augmented)\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. If detected, describe the moment where speech expanded upon or reinforced the on-screen text, quoting both from the metadata and explaining their contextual link (e.g., 'Detected: The on-screen text provided a specific metric '10x brighter', while the audio reinforced the general concept of 'visible brightness'.').\",\n                \"confidence_rationale\": \"Justify based on the clarity of the contextual link between the audio and text, referencing the provided example pattern.\",\n                \"strengths\": [\"Clear example of audio augmenting on-screen text to reinforce a message.\"],\n                \"weaknesses\": [\"Speech and text were unrelated, or only exact word-for-word matches (\"see & say\") were found.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "a_supers_audio_match",
@@ -253,7 +362,10 @@
     "category": "Attract",
     "criteria": "Speech heard in the ad matches the text shown on screen in the same frame EXACTLY.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Consult metadata for text/speech overlaps.\n        2.  Find instances where the speech transcript is a word-for-word identical match to the on-screen text at the same time.\n        3.  Final Verdict: If an exact match is found, 'detected' is true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(A) Supers with Audio (See & Say)\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Provide an example of an exact word-for-word match between speech and on-screen text, quoting from the metadata.\",\n                \"confidence_rationale\": \"Justify based on the precision of the match in the metadata.\",\n                \"strengths\": [\"Timestamp of the exact see-and-say moment.\"],\n                \"weaknesses\": [\"No exact matches were found.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "b_brand_display",
@@ -261,7 +373,10 @@
     "category": "Brand",
     "criteria": "Branding (name, logo, products, packaging) is shown at any time.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze Metadata: Review 'logo_annotations' and 'text_annotations' in {metadata_summary} for mentions of the brand '{brand}'.\n        2.  Visual Confirmation: Watch the video to confirm if the detected logos/text are indeed the brand, and also look for product packaging of '{product}'.\n        3.  Final Verdict: If any clear branding is confirmed, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(B) Brand Visual\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Describe where and how the brand '{brand}' was shown, referencing metadata (e.g., 'Logo detected at 5.2s') and visual confirmation. If not, confirm it was never visually present.\",\n                \"confidence_rationale\": \"Justify confidence based on clarity of the logo/product from metadata and visual review.\",\n                \"strengths\": [\"List of all brand appearances and timestamps.\"],\n                \"weaknesses\": [\"Note if branding was unclear or absent.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "b_brand_early",
@@ -269,7 +384,10 @@
     "category": "Brand",
     "criteria": "Branding is shown in the first 5 seconds.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze Metadata (0-5s): Review 'logo_annotations' and 'text_annotations' in {metadata_summary} for entries with a start time less than 5.0s that mention '{brand}'.\n        2.  Final Verdict: If branding is found in the metadata within this window, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(B) Brand Visual (First 5s)\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion based on metadata. Describe the specific branding shown in the first 5 seconds, or state that none was present in the metadata.\",\n                \"confidence_rationale\": \"Justify confidence based on clear metadata evidence in the first 5 seconds.\",\n                \"strengths\": [\"Description of the early branding element, confirmed by metadata.\"],\n                \"weaknesses\": [\"Note if the first brand appearance was after the 5-second mark.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "b_brand_late",
@@ -277,7 +395,10 @@
     "category": "Brand",
     "criteria": "Branding is shown in the LAST 5 seconds.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze Metadata (Last 5s): Review 'logo_annotations' and 'text_annotations' for '{brand}' in {metadata_summary}. Check if any segment's end time falls within the last 5 seconds of the video.\n        2.  Final Verdict: If present, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(B) Brand Visual (Last 5s)\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Confirm if branding was shown in the final 5 seconds based on metadata. If not, state it was absent.\",\n                \"confidence_rationale\": \"Justify based on clear metadata evidence in the last 5 seconds.\",\n                \"strengths\": [\"Description of the final branding moment, confirmed by metadata.\"],\n                \"weaknesses\": [\"Ad ended with no final branding according to metadata.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "b_brand_overlaid",
@@ -285,7 +406,10 @@
     "category": "Brand",
     "criteria": "An overlaid brand logo is present at any time.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze 'logo_annotations' and 'text_annotations' for the brand name '{brand}'. An overlay is inherently a graphic, so the presence of the brand in this data is strong evidence.\n        2.  Final Verdict: If an overlaid logo or text is present, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(B) Brand Visual (Overlaid)\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Describe the overlaid logo or text (e.g., watermark in corner, logo on end card), confirmed by metadata. If none, state that branding was only in-situation.\",\n                \"confidence_rationale\": \"Justify based on visual evidence and metadata.\",\n                \"strengths\": [\"Clear use of an overlaid logo, confirmed by metadata.\"],\n                \"weaknesses\": [\"No overlaid branding was used.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "b_brand_in_situation",
@@ -293,7 +417,10 @@
     "category": "Brand",
     "criteria": "Branding is shown ONLY in-situation (as a physical product, packaging, or sign within the scene).",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Check for Overlays: First, check 'logo_annotations' and 'text_annotations' for any overlaid graphics of the brand '{brand}'. If any exist, this feature is FALSE.\n        2.  Check for Objects: Review 'object_annotations' for mentions of the product '{product}' or brand '{brand}'. This indicates a physical object.\n        3.  Final Verdict: If step 1 is false AND step 2 is true, then 'detected' is true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(B) Brand Visual (In-situation)\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Describe the in-situation branding found in object metadata for '{product}'. Crucially, confirm that no overlaid branding was found in the logo/text metadata.\",\n                \"confidence_rationale\": \"Justify based on a combination of object and logo/text metadata.\",\n                \"strengths\": [\"Effective integration of the brand into the scene, confirmed via object tracking.\"],\n                \"weaknesses\": [\"Branding was overlaid (confirmed by logo/text data), or no branding was present at all.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "b_brand_visual_nonconsecutive",
@@ -301,7 +428,10 @@
     "category": "Brand",
     "criteria": "Branding is present on at least 3 non-consecutive frames.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Compile Evidence: Gather all timestamps for brand appearances from 'logo_annotations', 'text_annotations' (for the brand name '{brand}'), and 'object_annotations' (for the product '{product}').\n        2.  Count Distinct Moments: Count the number of separate, non-overlapping time segments where the brand appears.\n        3.  Final Verdict: If the count is 3 or more, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(B) Brand Visual (3+ Times)\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. State the number of distinct, non-consecutive brand appearances you counted based on a synthesis of all relevant metadata, providing example timestamps.\",\n                \"confidence_rationale\": \"Justify confidence based on the clarity and separation of the brand appearances in the metadata.\",\n                \"strengths\": [\"Timestamps of the different brand appearances confirmed via metadata.\"],\n                \"weaknesses\": [\"Note if branding appeared only once or twice based on metadata.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "b_large_brand_logo",
@@ -309,7 +439,10 @@
     "category": "Brand",
     "criteria": "The brand logo is at least 10% of the screen and is presented in a clear, legible, and visually prominent way.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        Your task is to determine if the brand logo is both large AND visually effective. This is a two-part test:\n        1.  Quantitative Check (Size): First, analyze the 'logo_annotations' in {metadata_summary}. Calculate the area of the logo's bounding box (`width` * `height`). Does it ever exceed 0.10 (10% of the screen area)?\n        2.  Qualitative Check (Clarity): Second, perform a direct visual analysis of the video frames where the logo appears. Is the logo clear, high-contrast, and easily legible? Would it be recognizable if viewed on a small mobile screen?\n\n        FINAL VERDICT: 'detected' can only be true if BOTH Condition 1 AND Condition 2 are met. A large but blurry or obscured logo does not count.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(B) Brand Logo (Large)\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion based on both the size calculation and visual clarity. If detected, confirm both were met (e.g., 'Detected: The logo at 12.5s covered 15% of the screen and was presented in high-contrast, making it clearly legible.'). If not detected, state which condition failed (e.g., 'Not Detected: While a logo was present, its largest calculated area was only 5%.' or 'Not Detected: A logo covered 12% of the screen but was low-contrast and difficult to read.').\",\n                \"confidence_rationale\": \"Justify your confidence based on the clarity of the bounding box data and your visual assessment of the logo's legibility.\",\n                \"strengths\": [\"The logo was displayed at a large size and with excellent clarity, ensuring prominence on any screen.\"],\n                \"weaknesses\": [\"The logo, while present, was either too small or not legible enough to have a strong impact.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "b_brand_mention",
@@ -317,7 +450,10 @@
     "category": "Brand",
     "criteria": "The brand name '{brand}' or a jingle is heard at any time.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze Speech & Labels: Check 'speech_annotations' in {metadata_summary} for the brand name '{brand}'. Also check 'frame_label_annotations' for labels like 'Jingle'.\n        2.  Final Verdict: If either is found, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(B) Brand Mention (Speech)\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Confirm that the brand name '{brand}' was spoken (quoting from transcript) or that a 'Jingle' label was found in the metadata. If not, state that it was never mentioned audibly.\",\n                \"confidence_rationale\": \"Justify confidence based on evidence from the speech transcript or frame labels.\",\n                \"strengths\": [\"Quote or timestamp of the audible brand mention/jingle from metadata.\"],\n                \"weaknesses\": [\"Ad relied only on visual branding.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "b_brand_mention_see_say",
@@ -325,7 +461,10 @@
     "category": "Brand",
     "criteria": "Brand '{brand}' is mentioned in audio and visualized in the same frame.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Find Audio Mentions: Identify all time segments in 'speech_annotations' where the brand '{brand}' is spoken.\n        2.  Find Visuals: Identify all time segments where the brand is visible from 'logo_annotations', 'text_annotations', and 'object_annotations'.\n        3.  Check for Overlap: Determine if any audio mention segment overlaps with any visual brand segment.\n        4.  Final Verdict: If an overlap exists, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(B) Brand Mention (Speech) (See & Say)\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion based on metadata analysis. Describe the moment where spoken and visual branding coincided, referencing timestamps. If not, explain that they were never synchronized.\",\n                \"confidence_rationale\": \"Justify confidence based on the clarity of the audio-visual synchronization in the metadata.\",\n                \"strengths\": [\"Timestamp of the see-and-say moment, confirmed by metadata overlap.\"],\n                \"weaknesses\": [\"Note if brand mentions occurred over non-branded visuals.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "b_brand_mention_late",
@@ -333,7 +472,10 @@
     "category": "Brand",
     "criteria": "The brand name '{brand}' is mentioned in the Last 5s.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze the speech transcript in {metadata_summary} for a mention of the brand '{brand}' within the final 5 seconds of the video.\n        2.  Final Verdict: If the mention occurs in that window, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(B) Brand Mention (Speech) (Last 5s)\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Confirm if the brand was mentioned in the last 5 seconds, providing a timestamp from speech metadata. If not, state that it was not.\",\n                \"confidence_rationale\": \"Justify confidence based on the speech metadata.\",\n                \"strengths\": [\"Timestamp of the late brand mention.\"],\n                \"weaknesses\": [\"No mention occurred in the final 5s.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "b_brand_mention_early",
@@ -341,7 +483,10 @@
     "category": "Brand",
     "criteria": "The brand name '{brand}' is mentioned in the First 5s.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze the speech transcript in {metadata_summary} for a mention of the brand '{brand}' with a timestamp under 5.0s.\n        2.  Final Verdict: If found, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(B) Brand Mention (Speech) (First 5s)\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Confirm if the brand was mentioned in the first 5 seconds, providing a timestamp from speech metadata. If not, state that it was not.\",\n                \"confidence_rationale\": \"Justify confidence based on the speech metadata.\",\n                \"strengths\": [\"Timestamp of the early brand mention.\"],\n                \"weaknesses\": [\"Note if the first mention occurred after 5s.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "b_brand_mention_see_say_early",
@@ -349,7 +494,10 @@
     "category": "Brand",
     "criteria": "Brand '{brand}' is mentioned and visualized in the same frame in the First 5s.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Find moments within the first 5 seconds where the brand name '{brand}' is spoken (using speech metadata).\n        2.  Check for simultaneous visuals of the brand from logo/text/object metadata.\n        3.  Final Verdict: If this synchronization occurs, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(B) Brand Mention (Speech) (See & Say) (First 5s)\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Describe the moment of early synchronization with timestamps based on metadata. If not, explain that it did not occur.\",\n                \"confidence_rationale\": \"Justify based on audio-visual metadata evidence.\",\n                \"strengths\": [\"Timestamp of the early see-and-say moment.\"],\n                \"weaknesses\": [\"No synchronized mention in the first 5s.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "b_jingle",
@@ -357,7 +505,10 @@
     "category": "Brand",
     "criteria": "A brand-specific jingle or musical mnemonic is used. This means the brand name is sung or timed to a distinct musical phrase.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        Your task is to determine if a true brand mnemonic is used by directly analyzing the video's audio. Ignore any pre-analyzed metadata for this specific feature.\n        1.  **Define Mnemonic:** A mnemonic is a short, distinctive musical tune or sound sequence associated with a brand. Often, the brand name is **sung as part of a jingle**.\n        2.  **Define What is NOT a Mnemonic:** A simple voice-over **speaking** the brand name over generic background music does NOT count. The musical element must be unique and intentionally tied to the brand name itself.\n        3.  **Direct Audio Analysis:** Listen carefully to the entire audio track. Do you hear a sound that meets the definition in step 1?\n        4.  **Final Verdict:** 'detected' is true ONLY if you can identify a distinct, brand-specific musical sound or sung jingle from your direct analysis of the audio.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(B) Brand Mnemonic\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion clearly based on your direct audio analysis. If detected, describe the musical mnemonic or jingle (e.g., 'Detected: The brand name was sung in a three-note melody at the end of the ad.'). If not detected, explain why (e.g., 'Not Detected: The brand name was spoken by a voice-over, but there was no unique musical element tied to it. The background music was generic.').\",\n                \"confidence_rationale\": \"Justify your confidence based on how distinct and audibly clear the brand-specific sound was. Your confidence should be high if you can clearly distinguish it from a simple voice-over.\",\n                \"strengths\": [\"Use of a memorable sonic logo or jingle that reinforces brand identity.\"],\n                \"weaknesses\": [\"The audio lacked a distinctive sonic brand element, relying only on a standard voice-over.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "b_brand_elements",
@@ -365,7 +516,10 @@
     "category": "Brand",
     "criteria": "The ad includes the brand in 2 or more different audio or visual ways.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Create a checklist: (Visual Logo/Text for '{brand}', Spoken Name '{brand}', Visual Product '{product}', Jingle). Use metadata to tick off each unique type of brand element observed.\n        2.  Final Verdict: If the count of unique elements is 2 or more, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(B) Multiple Brand Elements\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. List the different types of brand elements observed based on evidence from metadata and state the final count.\",\n                \"confidence_rationale\": \"Justify confidence based on the variety of branding methods confirmed in the metadata.\",\n                \"strengths\": [\"List of all distinct brand elements identified from metadata.\"],\n                \"weaknesses\": [\"Note if branding was one-dimensional.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "b_product_visualized",
@@ -373,7 +527,10 @@
     "category": "Brand",
     "criteria": "A product or branded packaging is present at any time.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze Metadata: Review 'object_annotations' and 'text_annotations' for mentions of the product '{product}'.\n        2.  Visual Confirmation: Watch the video to confirm if the detected objects/text are indeed the product.\n        3.  Final Verdict: If a clear visual of the product is confirmed, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(B) Product Visual\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Confirm the product '{product}' was shown, referencing object or text metadata. If not, state that no product was visible.\",\n                \"confidence_rationale\": \"Justify confidence based on visual clarity and metadata confirmation.\",\n                \"strengths\": [\"Description of how the product was featured.\"],\n                \"weaknesses\": [\"Note if the ad was conceptual with no product.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "b_product_visualized_early",
@@ -381,7 +538,10 @@
     "category": "Brand",
     "criteria": "A product or branded packaging is present in the first 5 seconds.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze Metadata (0-5s): Review 'object_annotations' and 'text_annotations' for '{product}' with a start time less than 5.0s.\n        2.  Final Verdict: If a detection is found in the metadata, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(B) Product Visual (First 5s)\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Confirm if the product '{product}' was visible in the first 5 seconds, providing a timestamp from metadata. If not, state it was not.\",\n                \"confidence_rationale\": \"Justify confidence based on clear metadata evidence in the first 5 seconds.\",\n                \"strengths\": [\"Timestamp of the product\"s first appearance from metadata.\"],\n                \"weaknesses\": [\"Note if the product reveal was held until after 5s.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "b_product_visualized_late",
@@ -389,7 +549,10 @@
     "category": "Brand",
     "criteria": "A product or branded packaging is present in the last 5 seconds.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze Metadata (Last 5s): Review 'object_annotations' and 'text_annotations' for '{product}'. Check if any segment's end time falls within the last 5 seconds of the video.\n        2.  Final Verdict: If present, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(B) Product Visual (Last 5s)\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Confirm if the product '{product}' was shown in the final 5 seconds based on metadata. If not, state it was absent.\",\n                \"confidence_rationale\": \"Justify confidence based on clear metadata evidence in the last 5 seconds.\",\n                \"strengths\": [\"Description of the final product shot, confirmed by metadata.\"],\n                \"weaknesses\": [\"Note if the ad ended without a final product visual according to metadata.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "b_product_closeup",
@@ -397,7 +560,11 @@
     "category": "Brand",
     "criteria": "The ad features close-up scenes of the Product (at least 30% of frame).",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze 'object_annotations' for the product '{product}' which contain bounding box data.\n        2.  Calculate Area: For each annotation of the product, calculate the area of its largest bounding box (`width` * `height`).\n        3.  Final Verdict: If any calculated area is greater than 0.30, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(B) Product Visual (Close-up)\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Describe any product close-ups that meet the size criteria, providing a timestamp and the calculated area from metadata. If none, confirm that the product was only shown in wider shots.\",\n                \"confidence_rationale\": \"Justify confidence based on the bounding box data in the metadata.\",\n                \"strengths\": [\"Timestamp of the best product close-up confirmed by metadata.\"],\n                \"weaknesses\": [\"Note if the product was not given a hero shot according to metadata.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG",
+      "SHORT"
+    ]
   },
   {
     "id": "b_product_extreme_closeup",
@@ -405,7 +572,11 @@
     "category": "Brand",
     "criteria": "The ad features extreme close-up scenes of the Product (at least 60% of frame).",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze 'object_annotations' for the product '{product}' which contain bounding box data.\n        2.  Calculate Area: For each annotation of the product, calculate the area of its largest bounding box (`width` * `height`).\n        3.  Final Verdict: If any calculated area is greater than 0.60, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(B) Product Visual (Extreme Close-up)\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Describe shots where the product dominated the screen based on bounding box calculations from metadata. If not, confirm no such extreme close-ups were used.\",\n                \"confidence_rationale\": \"Justify confidence based on the bounding box data in the metadata.\",\n                \"strengths\": [\"Timestamp of a product shot that filled the frame, confirmed by metadata.\"],\n                \"weaknesses\": [\"Note if all product shots kept background visible.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG",
+      "SHORT"
+    ]
   },
   {
     "id": "b_product_mention_combined",
@@ -413,7 +584,10 @@
     "category": "Brand",
     "criteria": "The Product '{product}' is featured in audio (VO/mentions) or in supers.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Review text and speech metadata in {metadata_summary} for mentions of the product '{product}'.\n        2.  Final Verdict: If the product name is found in either source, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(B) Product Mention (Speech or Text)\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Specify whether the product '{product}' was mentioned in speech, text, or both, quoting from the metadata. If not, state that it was never explicitly named.\",\n                \"confidence_rationale\": \"Justify confidence based on confirmation from metadata sources.\",\n                \"strengths\": [\"Quote of the mention from metadata.\"],\n                \"weaknesses\": [\"Note if the ad relied only on visuals of the product.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "b_product_mention_speech",
@@ -421,7 +595,10 @@
     "category": "Brand",
     "criteria": "The Product '{product}' is mentioned in the audio (VO/mentions).",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Scan the speech transcript in {metadata_summary} for mentions of the '{product}'.\n        2.  Final Verdict: If found, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(B) Product Mention (Speech)\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Confirm if the product '{product}' was mentioned, quoting the transcript. If not, state it was not mentioned.\",\n                \"confidence_rationale\": \"Justify based on speech metadata.\",\n                \"strengths\": [\"Quote of the spoken product mention.\"],\n                \"weaknesses\": [\"Product was not mentioned in audio.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "b_product_mention_speech_early",
@@ -429,7 +606,10 @@
     "category": "Brand",
     "criteria": "The Product '{product}' is mentioned in the First 5s.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Scan the speech transcript in {metadata_summary} for mentions of the '{product}' with a timestamp under 5.0s.\n        2.  Final Verdict: If found, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(B) Product Mention (Speech) (First 5s)\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Confirm if the product '{product}' was mentioned in the first 5 seconds, quoting the transcript. If not, state it was not.\",\n                \"confidence_rationale\": \"Justify based on speech metadata.\",\n                \"strengths\": [\"Timestamp of early product mention.\"],\n                \"weaknesses\": [\"Product was not mentioned in the first 5s.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "b_product_mention_speech_late",
@@ -437,7 +617,10 @@
     "category": "Brand",
     "criteria": "The Product '{product}' is mentioned in the Last 5s.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Scan the speech transcript in {metadata_summary} for mentions of the '{product}' within the final 5 seconds of the video.\n        2.  Final Verdict: If found, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(B) Product Mention (Speech) (Last 5s)\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Confirm if the product '{product}' was mentioned in the last 5 seconds, quoting the transcript. If not, state it was not.\",\n                \"confidence_rationale\": \"Justify based on speech metadata.\",\n                \"strengths\": [\"Timestamp of late product mention.\"],\n                \"weaknesses\": [\"Product was not mentioned in the final 5s.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "b_product_mention_text",
@@ -445,7 +628,10 @@
     "category": "Brand",
     "criteria": "The Product '{product}' is mentioned in text/supers.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze the 'text_annotations' in {metadata_summary} for any mentions of the product name '{product}'.\n        2.  Also perform a direct visual scan of the video for any on-screen text mentioning the product that the metadata might have missed.\n        3.  Final Verdict: If the product name is found in any on-screen text, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(B) Product Mention (Text)\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. If detected, quote the text from the metadata and briefly describe how it was presented. For example: 'Detected: The text '{product}' appeared as a full-screen super at 10.5s.' or 'Detected: The product name was visible as part of the brand logo at the end of the ad.'. If not detected, state that the product was never mentioned in any on-screen text.\",\n                \"confidence_rationale\": \"Justify based on the presence of the product name in the text metadata or your direct visual analysis.\",\n                \"strengths\": [\"The product name was clearly mentioned in on-screen text, reinforcing what the viewer sees or hears.\"],\n                \"weaknesses\": [\"The product was shown but its specific name was never reinforced with on-screen text.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "b_product_focus",
@@ -453,7 +639,10 @@
     "category": "Brand",
     "criteria": "The product '{product}' plays a key role in the narrative.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze the video's story.\n        2.  Final Verdict: If the story could not exist without this specific product '{product}', then 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(B) Product Focus\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Describe how the story revolved around the product '{product}', or explain how it was incidental to the narrative.\",\n                \"confidence_rationale\": \"Justify confidence based on your interpretation of the narrative structure.\",\n                \"strengths\": [\"Explanation of the product\"s narrative role.\"],\n                \"weaknesses\": [\"Note if the product felt like a simple placement.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "c_people_overall",
@@ -461,7 +650,10 @@
     "category": "Connect",
     "criteria": "People are in the ad.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze Metadata: Check if 'person_annotations' or 'face_annotations' in {metadata_summary} exist and are not empty.\n        2.  Final Verdict: If people or faces are present in the metadata, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(C) Presence of People\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion based on metadata. Confirm the presence of people. If not, state that the ad was purely product-focused or abstract.\",\n                \"confidence_rationale\": \"Justify confidence based on clear evidence in person/face metadata.\",\n                \"strengths\": [\"Description of the people or characters shown, confirmed by metadata.\"],\n                \"weaknesses\": [\"N/A if people are present.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "c_people_early",
@@ -469,7 +661,10 @@
     "category": "Connect",
     "criteria": "People are in the First 5s.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze Metadata (0-5s): Check 'person_annotations' or 'face_annotations' in {metadata_summary} for any tracks with a start time less than 5.0s.\n        2.  Final Verdict: If people or faces are present in this window, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(C) Presence of People (First 5s)\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion based on metadata. Confirm if people were present in the first 5 seconds. If not, state that they were not.\",\n                \"confidence_rationale\": \"Justify based on visual metadata.\",\n                \"strengths\": [\"People were featured from the start, confirmed by metadata.\"],\n                \"weaknesses\": [\"Opening shots did not feature people according to metadata.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "c_closeup_people",
@@ -477,7 +672,10 @@
     "category": "Connect",
     "criteria": "The ad features close-up scenes of People (face covers at least 30% of frame).",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze Face/Person Metadata: Review 'face_annotations' and 'person_annotations' in {metadata_summary}.\n        2.  Calculate Coverage: For each face/person, calculate the area of its largest bounding box.\n        3.  Final Verdict: If any face/person's bounding box area is greater than 0.30, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(C) Presence of People (Close-up)\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion based on metadata calculation. Describe any close-up shots of faces that met the 30% threshold. If not, confirm that all shots of people were from a distance.\",\n                \"confidence_rationale\": \"Justify confidence based on the bounding box data in the metadata.\",\n                \"strengths\": [\"Timestamp of a clear facial close-up confirmed by metadata.\"],\n                \"weaknesses\": [\"Note if characters were only shown in medium or wide shots according to metadata.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "c_early_faces",
@@ -485,7 +683,10 @@
     "category": "Connect",
     "criteria": "Faces are featured in the First 5s.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze Metadata (0-5s): Check 'face_annotations' in {metadata_summary} for any tracks with a start time less than 5.0s.\n        2.  Final Verdict: If a face is present in this window, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(C) Visible Face (First 5s)\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion based on metadata. Confirm if a face was visible in the first 5 seconds. If not, state that it was not.\",\n                \"confidence_rationale\": \"Justify based on visual metadata.\",\n                \"strengths\": [\"A human face was shown early to build connection, confirmed by metadata.\"],\n                \"weaknesses\": [\"The opening shots did not feature a human face according to metadata.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "c_people_using_product",
@@ -493,7 +694,11 @@
     "category": "Connect",
     "criteria": "The product '{product}' is used/held by characters.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze Metadata: Look for temporal overlaps between 'person_annotations' and 'object_annotations' for the specific product '{product}'.\n        2.  Check Proximity: Within these overlaps, examine the bounding boxes. If a person's box is very close to or overlaps with the product's box, interaction is likely.\n        3.  Final Verdict: If this proximity is confirmed, 'detected' is true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(C) Product Interaction\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion based on metadata. Describe how a person interacted with the product, evidenced by overlapping bounding boxes at specific timestamps. If not, state that the product and people were shown separately.\",\n                \"confidence_rationale\": \"Justify confidence based on the clarity of the human-product interaction in the metadata.\",\n                \"strengths\": [\"Description of the interaction that demonstrates the product\"s use case.\"],\n                \"weaknesses\": [\"Note if the product was shown in static shots separate from the characters.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG",
+      "SHORT"
+    ]
   },
   {
     "id": "c_product_context",
@@ -501,7 +706,10 @@
     "category": "Connect",
     "criteria": "The Product '{product}' is featured in the context of use.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze Frame Labels: Review 'frame_label_annotations' in {metadata_summary}. Look for labels that describe a setting (e.g., 'Kitchen', 'Bathroom', 'Office').\n        2.  Correlate with Product: Check if these setting labels overlap with the timestamps where the product '{product}' appears (from 'object_annotations').\n        3.  Final Verdict: If the product appears in a contextually relevant setting, 'detected' is true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(C) Product Context\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Describe the realistic scenario where the product was shown, using frame labels as evidence (e.g., 'Product shown on a 'Table' in a 'Kitchen' scene'). If not, explain that it was shown in an abstract setting.\",\n                \"confidence_rationale\": \"Justify confidence based on the combination of object and frame label metadata.\",\n                \"strengths\": [\"Description of the relatable use-case scenario.\"],\n                \"weaknesses\": [\"Note if the product was shown against a plain background.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "c_focused_messaging",
@@ -509,7 +717,10 @@
     "category": "Connect",
     "criteria": "The ad is focused on one single message.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Synthesize the key takeaway message. Use text and speech metadata to identify recurring themes.\n        2.  Final Verdict: If one message is clearly dominant, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(C) Clear Messaging\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. State what you believe the single core message is, supported by metadata. If not detected, list the multiple competing messages that diluted the focus.\",\n                \"confidence_rationale\": \"Justify confidence based on the dominance of the primary message.\",\n                \"strengths\": [\"The primary message identified.\"],\n                \"weaknesses\": [\"List of other messages that diluted the focus.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "c_single_feature_benefit",
@@ -517,7 +728,10 @@
     "category": "Connect",
     "criteria": "The ad is focused on one single benefit or feature.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Determine if the ad's primary focus is on a single feature (what it *is*) or a single benefit (what it *does* for the user).\n        2.  Final Verdict: If messaging is consistently centered on one specific point, 'detected' is true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(C) Single Message\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Identify the single feature or benefit that was the focus. If multiple were presented with equal weight, state that the focus was not singular.\",\n                \"confidence_rationale\": \"Justify based on message consistency.\",\n                \"strengths\": [\"Clear focus on a single selling point.\"],\n                \"weaknesses\": [\"Messaging was scattered across multiple features/benefits.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "c_casual_language",
@@ -525,7 +739,11 @@
     "category": "Connect",
     "criteria": "Does the ad use everyday language?",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze the language in the speech transcript from {metadata_summary}.\n        2.  Final Verdict: If the language is predominantly conversational and avoids jargon, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(C) Casual Language\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Provide an example of casual phrasing from the metadata. If not, explain that the language was formal or technical.\",\n                \"confidence_rationale\": \"Justify confidence based on the consistent tone of the language found in the metadata.\",\n                \"strengths\": [\"Quote of conversational language.\"],\n                \"weaknesses\": [\"Examples of formal or technical jargon used.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG",
+      "SHORT"
+    ]
   },
   {
     "id": "c_expression_benefits",
@@ -533,7 +751,10 @@
     "category": "Connect",
     "criteria": "The ad features any benefit related to the product or service.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Distinguish features (what it *is*) from benefits (what it *does for you*). Scan speech and text metadata for language describing positive user outcomes.\n        2.  Final Verdict: If benefits are expressed, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(C) Expression of Benefit\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. List the specific user benefits mentioned, quoting from the metadata. If not, state that the ad focused only on product features.\",\n                \"confidence_rationale\": \"Justify confidence based on the clarity of the benefit-oriented messaging in the metadata.\",\n                \"strengths\": [\"List of specific benefits communicated.\"],\n                \"weaknesses\": [\"Note if the ad only described features, not benefits.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "c_competitive_claim",
@@ -541,7 +762,10 @@
     "category": "Connect",
     "criteria": "The ad features any competitive claim, including superlatives, comparisons, or third-party endorsements.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        Your task is to determine if the ad makes any form of competitive claim. A competitive claim can be one of three types:\n        1.  **Superlative:** Using words like \"best,\" \"fastest,\" \"strongest,\" \"#1,\" or \"most.\"\n        2.  **Comparative:** Directly or indirectly comparing the product to others, using phrases like \"better than,\" \"more effective than,\" or \"unlike other brands.\"\n        3.  **Endorsement/Award:** Citing a third-party authority, award, or ranking, such as \"Doctor recommended,\" \"Award-winning,\" or \"The official choice of...\"\n\n        INSTRUCTIONS:\n        1.  Analyze the speech transcript and on-screen text in the {metadata_summary}.\n        2.  Watch and listen to the video to catch any claims missed by the metadata.\n        3.  Final Verdict: If you find any language that fits one of the three types of claims above, 'detected' MUST be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(C) Competitive Claim\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion clearly first. If detected, quote the exact competitive claim you identified and state which type it is (Superlative, Comparative, or Endorsement). For example: 'Detected: The ad used a Superlative claim by stating it was the '#1 selling brand'.' or 'Detected: The ad featured an Endorsement with the text 'Recommended by 9 out of 10 dentists'.'. If no claim is found, explicitly state that.\",\n                \"confidence_rationale\": \"Justify confidence based on the presence or absence of clear, unambiguous competitive language.\",\n                \"strengths\": [\"The use of a specific competitive claim to build authority or create differentiation.\"],\n                \"weaknesses\": [\"If not detected, state \"No comparative language, superlatives, or endorsements were used.\"\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "c_benefit_visualization",
@@ -549,7 +773,10 @@
     "category": "Connect",
     "criteria": "The ad features the product/service as a need/problem solution.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Watch the video for a clear problem-solution narrative (e.g., a \"before and after\" sequence).\n        2.  Final Verdict: If the product is visually shown to be the solution to an established problem, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(C) Visualization of Benefit\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Describe how the benefit was shown visually (e.g., 'The ad showed a stained shirt ('the problem') and then the same shirt perfectly clean ('the solution')'). If not, explain that benefits were only stated, not visualized.\",\n                \"confidence_rationale\": \"Justify confidence based on the clarity of the visual problem-solution narrative.\",\n                \"strengths\": [\"Description of the visual proof of the benefit.\"],\n                \"weaknesses\": [\"Note if benefits were only stated, not visualized.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "c_emotions",
@@ -557,7 +784,10 @@
     "category": "Connect",
     "criteria": "The ad visibly or audibly presents clear emotional cues from characters, text, or music.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        Your task is to identify if clear, specific emotions are PRESENTED in the video content. Do NOT guess what the viewer might feel. Your job is to report on what is shown.\n        1.  **Look for Depicted Emotions:** Scan the video for evidence of specific emotions like **joy, laughter, fear, anger, sadness, acceptance, disgust, anticipation, or surprise**.\n        2.  **Find Evidence in Multiple Channels:**\n            *   **Visual (People):** Are there clear facial expressions (smiling, frowning, crying) or body language (celebrating, cowering) from on-screen characters?\n            *   **Audio (Speech):** Is the tone of voice in the dialogue or voice-over clearly emotional (e.g., excited, worried, somber)?\n            *   **Audio (Music):** Does the musical score create an unambiguous mood (e.g., a suspenseful track for fear, an uplifting melody for joy)?\n            *   **Visual (Text):** Do any on-screen words explicitly name an emotion (e.g., \"Get Happy!\")?\n        3.  **Final Verdict:** If you find clear, observable evidence of a specific emotion being presented through any of these channels, 'detected' is true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(C) Emotions\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion based on the observable evidence. If detected, identify the specific emotion presented and the evidence you observed. For example: 'Detected: The emotion of joy was presented through the main character laughing and smiling at 15.2s.' or 'Detected: The emotion of fear was conveyed through tense, suspenseful background music.'. If not detected, state that the ad's tone was neutral and did not present clear emotional cues.\",\n                \"confidence_rationale\": \"Justify your confidence based on how clear and unambiguous the depicted emotional cues were. A close-up of a smiling face is high confidence; an ambiguous musical score is lower confidence.\",\n                \"strengths\": [\"The ad presented a clear emotional context (e.g., joy, surprise) through its characters and music.\"],\n                \"weaknesses\": [\"The ad\"s tone was emotionally neutral or ambiguous, making it harder to connect with.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "c_humor",
@@ -565,7 +795,11 @@
     "category": "Connect",
     "criteria": "The ad attempts to be humorous through its visuals, audio, or text.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        Your task is to determine if the ad has a clear humorous intent. Look for comedic elements in any of the following channels:\n        1.  **Visuals (People/Situations):** Analyze the actions for funny situations, slapstick, absurd scenarios, or comical character expressions (visual gags).\n        2.  **Audio (Speech):** Analyze the 'speech_annotations' and listen for spoken jokes, witty dialogue, sarcasm, or a funny tone of voice.\n        3.  **On-Screen Text:** Analyze the 'text_annotations' for funny phrases, puns, or witty copy.\n        4.  **Audio (Music/SFX):** Listen for comical sound effects or a playful, goofy musical score that enhances a joke.\n\n        FINAL VERDICT: If you find a clear attempt at humor in ANY of these channels, 'detected' is true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(C) Humor\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion clearly. If detected, describe the specific element intended to be humorous and which channel it used (e.g., 'Detected: The ad used a visual gag where the main character slips on a banana peel at 5.2s.' or 'Detected: The voice-over delivered a sarcastic line at 10.1s.'). If not detected, state that the ad's tone was serious or purely informational.\",\n                \"confidence_rationale\": \"Justify your confidence based on the clarity and obviousness of the comedic intent. A clear joke is high confidence; ambiguous sarcasm is lower confidence.\",\n                \"strengths\": [\"A well-executed joke or funny scenario that makes the ad more memorable.\"],\n                \"weaknesses\": [\"The tone was consistently serious, missing an opportunity for humorous connection.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG",
+      "SHORT"
+    ]
   },
   {
     "id": "c_delight",
@@ -573,7 +807,10 @@
     "category": "Connect",
     "criteria": "The ad engages the viewer with an intriguing, surprising, unique, or otherwise delightful element.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        Your task is to determine if the ad uses a creative technique to generate delight, surprise, or intrigue. Analyze the video for any of the following:\n        1.  **Mystery or Partial Reveal:** Does the ad build curiosity by initially showing only a part of a product, person, or scene? For example, showing only the headlight of a new car before the full reveal.\n        2.  **Surprise or Unexpected Context:** Does something happen that breaks the pattern or defies expectations? Is a product used in a completely novel or unexpected way?\n        3.  **Unique Visuals or Language:** Are there any visuals that are particularly beautiful, creative, or visually distinct from a typical ad? Is there clever or witty wordplay in the on-screen text or spoken audio?\n\n        FINAL VERDICT: If you find a clear example of any of the techniques above that is intended to delight or surprise the viewer, 'detected' is true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(C) Delight\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion clearly. If detected, describe the specific element and which technique it used (e.g., 'Detected: The ad used a partial reveal, showing only the silhouette of the new car for the first 7 seconds to build intrigue.' or 'Detected: The ad created surprise by having the characters suddenly break into song.'). If not detected, state that the creative was straightforward and did not use these techniques.\",\n                \"confidence_rationale\": \"Justify your confidence based on how clear and intentional the creative technique was. A clear plot twist is high confidence; a slightly unusual camera angle is lower confidence.\",\n                \"strengths\": [\"A unique visual or narrative twist that makes the ad more engaging and memorable.\"],\n                \"weaknesses\": [\"The creative approach was conventional and followed a standard formula without any surprising elements.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "c_character_driven",
@@ -581,7 +818,11 @@
     "category": "Connect",
     "criteria": "The story is driven by a single character.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Analyze the narrative to determine the protagonist.\n        2.  Final Verdict: If the story clearly follows the journey or experiences of one primary character, 'detected' is true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(C) Character-Driven\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Identify the main character and explain how the story centers on them. If not, explain that the ad was product-focused or an ensemble piece.\",\n                \"confidence_rationale\": \"Justify based on narrative structure.\",\n                \"strengths\": [\"A clear and relatable central character.\"],\n                \"weaknesses\": [\"The ad lacked a clear protagonist.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG",
+      "SHORT"
+    ]
   },
   {
     "id": "d_call_to_action_supers",
@@ -589,7 +830,10 @@
     "category": "Direct",
     "criteria": "The CTA is visualized in supers.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Scan Text Metadata: In {metadata_summary}, look for imperative verbs or phrases that instruct the viewer (e.g., \"Shop Now,\" \"Learn More\").\n        2.  Final Verdict: If a CTA is found, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(D) Call-to-Action (Text)\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Provide the exact text of the call-to-action super, quoting from the text metadata. If not, state that no instructive CTA text was present.\",\n                \"confidence_rationale\": \"Justify confidence based on the presence of clear instructional text in the metadata.\",\n                \"strengths\": [\"The exact CTA phrase shown on screen.\"],\n                \"weaknesses\": [\"Note if the ad ended without any instructive text.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "d_free_speech",
@@ -597,7 +841,10 @@
     "category": "Direct",
     "criteria": "The word 'free' is mentioned in the audio.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Scan the speech transcript in {metadata_summary} for the word \"free\" (case-insensitive).\n        2.  Final Verdict: If found, 'detected' is true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(D) Power of Free (Speech)\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Confirm if the word 'free' was spoken, quoting from the transcript. If not, state that it was not.\",\n                \"confidence_rationale\": \"Justify based on speech metadata.\",\n                \"strengths\": [\"Use of the word \"free\" in the audio.\"],\n                \"weaknesses\": [\"The word \"free\" was not spoken.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "d_path_to_purchase",
@@ -605,7 +852,10 @@
     "category": "Direct",
     "criteria": "The ad features how/where it is possible to purchase or partake.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Scan text and speech metadata for instructions on where or how to buy/access the product (e.g., \"available at...\", \"visit our website,\" \"download the app\").\n        2.  Final Verdict: If such instructions are present, 'detected' is true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(D) Path to Purchase\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Describe the path to purchase mentioned in the ad, quoting from the metadata. If none, state that no path was provided.\",\n                \"confidence_rationale\": \"Justify based on metadata.\",\n                \"strengths\": [\"A clear path to purchase was provided.\"],\n                \"weaknesses\": [\"Viewer was not told how or where to get the product.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "d_search_bar",
@@ -613,7 +863,10 @@
     "category": "Direct",
     "criteria": "The ad features a search bar.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Watch the video for any visual representation of a search bar or search interface element.\n        2.  Final Verdict: If a search bar is shown, 'detected' is true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(D) Search Bar\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Describe the scene where a search bar was featured. If not, state that no search bar was shown.\",\n                \"confidence_rationale\": \"Justify based on visual evidence.\",\n                \"strengths\": [\"A search bar was used to demonstrate product discovery.\"],\n                \"weaknesses\": [\"No search interface was shown.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "d_audio_cta",
@@ -621,7 +874,11 @@
     "category": "Direct",
     "criteria": "The CTA is mentioned by VO or an on-screen talent.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Scan Speech Transcript: In {metadata_summary}, look for imperative verbs or phrases that instruct the viewer (e.g., \"Shop now,\" \"visit our website\").\n        2.  Final Verdict: If a CTA is found, 'detected' must be true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(D) Call-to-Action (Speech)\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Provide the spoken call-to-action phrase, quoting from the speech metadata. If not, state that no audible CTA was given.\",\n                \"confidence_rationale\": \"Justify confidence based on the clarity of the spoken instruction in the transcript.\",\n                \"strengths\": [\"The exact spoken CTA phrase.\"],\n                \"weaknesses\": [\"Note if the ad ended without any audible instruction.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG",
+      "SHORT"
+    ]
   },
   {
     "id": "d_relevant_call_to_action",
@@ -629,7 +886,10 @@
     "category": "Direct",
     "criteria": "The CTA is visualized after the appearance of a product, problem, need, or insight.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  First, identify the moment a key piece of information (product reveal, problem solved) is delivered.\n        2.  Then, check if a Call to Action (in text or speech) appears *after* that moment.\n        3.  Final Verdict: If this sequence occurs, 'detected' is true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(D) Relevant Call-to-Action\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Describe the sequence, noting the timestamp of the insight/product reveal and the subsequent CTA. If not, explain that the CTA was premature or absent.\",\n                \"confidence_rationale\": \"Justify based on the narrative sequence.\",\n                \"strengths\": [\"CTA was well-timed after the value proposition.\"],\n                \"weaknesses\": [\"CTA appeared too early or was disconnected from the core message.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "d_purchase_incentive",
@@ -637,7 +897,10 @@
     "category": "Direct",
     "criteria": "The ad features limited time or quantities (Text and/or Speech).",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Scan speech and text metadata for phrases indicating urgency or scarcity, such as \"limited time,\" \"while supplies last,\" or \"offer ends soon.\"\n        2.  Final Verdict: If such an incentive is mentioned, 'detected' is true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(D) Purchase Incentive (Limited Time/Quantities)\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Quote the specific limited time/quantity offer from the metadata. If none, state that no such incentive was mentioned.\",\n                \"confidence_rationale\": \"Justify based on clear evidence in the metadata.\",\n                \"strengths\": [\"A clear scarcity or urgency message.\"],\n                \"weaknesses\": [\"No incentive was offered.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "d_special_offer_text",
@@ -645,7 +908,10 @@
     "category": "Direct",
     "criteria": "Any special offer or discount is displayed in the ad.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Scan the text metadata in {metadata_summary} for explicit offers like \"X% off,\" \"Buy One Get One,\" or specific sale prices.\n        2.  Final Verdict: If a clear offer is present in the text, 'detected' is true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(D) Special Offer (Text)\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Quote the specific offer from the text metadata. If none, state that no offer was displayed.\",\n                \"confidence_rationale\": \"Justify based on text metadata.\",\n                \"strengths\": [\"A clear, compelling offer was displayed.\"],\n                \"weaknesses\": [\"No special offer was shown in text.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "d_special_offer_speech",
@@ -653,15 +919,22 @@
     "category": "Direct",
     "criteria": "Any special offer or discount is mentioned in the audio.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Scan the speech transcript in {metadata_summary} for mentions of special offers or discounts.\n        2.  Final Verdict: If a clear offer is spoken, 'detected' is true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(D) Special Offer (Speech)\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Quote the specific spoken offer from the transcript. If none, state that no offer was mentioned.\",\n                \"confidence_rationale\": \"Justify based on speech metadata.\",\n                \"strengths\": [\"A clear, compelling offer was spoken.\"],\n                \"weaknesses\": [\"No special offer was mentioned in the audio.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG",
+      "SHORT"
+    ]
   },
   {
     "id": "d_price_text",
     "name": "(D) Price (Text)",
     "category": "Direct",
     "criteria": "Any price is displayed in the ad.",
-    "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Scan the text metadata in {metadata_summary} for any text that includes a currency symbol ($, €, £, etc.) or currency code (USD, etc.) followed by numbers.\n        2.  Final Verdict: If found, 'detected' is true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(D) Price (Text)\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Quote the specific price displayed from the text metadata. If none, state that no price was shown.\",\n                \"confidence_rationale\": \"Justify based on text metadata.\",\n                \"strengths\": [\"Price was clearly displayed.\"],\n                \"weaknesses\": [\"No price was shown in text.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Scan the text metadata in {metadata_summary} for any text that includes a currency symbol ($, \u20ac, \u00a3, etc.) or currency code (USD, etc.) followed by numbers.\n        2.  Final Verdict: If found, 'detected' is true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(D) Price (Text)\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Quote the specific price displayed from the text metadata. If none, state that no price was shown.\",\n                \"confidence_rationale\": \"Justify based on text metadata.\",\n                \"strengths\": [\"Price was clearly displayed.\"],\n                \"weaknesses\": [\"No price was shown in text.\"]\n            }\n        }",
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "d_price_speech",
@@ -669,7 +942,10 @@
     "category": "Direct",
     "criteria": "Any price is mentioned in the audio.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Scan the speech transcript in {metadata_summary} for spoken numbers associated with currency words (\"dollars,\" \"euros,\" \"pounds,\" etc.).\n        2.  Final Verdict: If found, 'detected' is true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(D) Price (Speech)\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Quote the specific price mentioned from the transcript. If none, state that no price was mentioned.\",\n                \"confidence_rationale\": \"Justify based on speech metadata.\",\n                \"strengths\": [\"Price was clearly mentioned.\"],\n                \"weaknesses\": [\"No price was mentioned in the audio.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
   },
   {
     "id": "d_free_text",
@@ -677,6 +953,97 @@
     "category": "Direct",
     "criteria": "The word 'free' is displayed in the ad.",
     "promptTemplate": "ANALYTICAL FRAMEWORK:\n        \n        1.  Scan the text metadata in {metadata_summary} for the word \"free\" (case-insensitive).\n        2.  Final Verdict: If found and not in fine print, 'detected' is true. If not found or in fine print, 'detected' is false.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"parameter_name\": \"(D) Power of Free (Text)\",\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"score\": int (1-4),\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Confirm if the word 'free' was displayed prominently, quoting from the text metadata. If not, state that it was not.\",\n                \"confidence_rationale\": \"Justify based on text metadata.\",\n                \"strengths\": [\"Prominent use of the word \"free\".\"],\n                \"weaknesses\": [\"The word \"free\" was not used.\"]\n            }\n        }",
-    "type": "STANDARD"
+    "type": "STANDARD",
+    "supportedFormats": [
+      "LONG"
+    ]
+  },
+  {
+    "id": "a_shorts_production_style",
+    "name": "(A) Shorts Production Style (User Generated)",
+    "category": "Shorts",
+    "criteria": "Is the video user generated production style ?",
+    "promptTemplate": "ANALYTICAL FRAMEWORK:\n        1.  Analyze the video's visual and audio style. Look for indicators of user-generated content (UGC) such as: shaky camera, non-professional lighting, authentic home/outdoor environments, selfie-style shots, or unpolished editing.\n        2.  Contrast this with high-production styles: cinematic lighting, perfectly stable camera, studio sets, professional actors, and slick graphics.\n        3.  Final Verdict: If the video's overall feel is more like authentic UGC than a polished ad, 'detected' is true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Describe the visual cues that indicate a user-generated or a professional production style.\",\n                \"confidence_rationale\": \"Justify confidence based on how clearly the production style fits into either UGC or professional categories.\"\n            }\n        }",
+    "type": "STANDARD",
+    "supportedFormats": [
+      "SHORT"
+    ]
+  },
+  {
+    "id": "a_shorts_sfv_adaptation_high",
+    "name": "(A) Short Form Video Adaptation_high",
+    "category": "Shorts",
+    "criteria": "Is the Short Form Video (SFV) production adaptation (Emulate native, organic short form video content).",
+    "promptTemplate": "ANALYTICAL FRAMEWORK:\n        1.  Evaluate if the video feels native to a Shorts/TikTok/Reels feed. This goes beyond UGC style and includes editing and content choices.\n        2.  Look for elements common in organic short-form video: fast-paced cuts, use of trending audio or meme formats, on-screen text captions that tell a story, direct-to-camera address, and a low-fi, authentic feel.\n        3.  Final Verdict: If the video successfully emulates the look and feel of native, organic content on short-form video platforms, 'detected' is true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Describe the elements that make the video feel native to a short-form video platform.\",\n                \"confidence_rationale\": \"Justify confidence based on how well the video adopts common SFV tropes and styles.\"\n            }\n        }",
+    "type": "STANDARD",
+    "supportedFormats": [
+      "SHORT"
+    ]
+  },
+  {
+    "id": "c_shorts_emoji_usage",
+    "name": "(C) Emoji Usage",
+    "category": "Shorts",
+    "criteria": "Does the ad use any emojis?",
+    "promptTemplate": "ANALYTICAL FRAMEWORK:\n        1.  Scan the 'text_annotations' metadata for any characters that are emojis (e.g., \ud83d\ude0a, \ud83d\udd25, \ud83d\udc4d).\n        2.  Perform a direct visual scan of the video to catch any emojis rendered as images rather than text.\n        3.  Final Verdict: If one or more emojis are found, 'detected' is true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. If detected, list or describe the emojis used and where they appeared.\",\n                \"confidence_rationale\": \"Justify based on the clear presence or absence of emojis in the video or text metadata.\"\n            }\n        }",
+    "type": "STANDARD",
+    "supportedFormats": [
+      "SHORT"
+    ]
+  },
+  {
+    "id": "c_shorts_personal_character_talk",
+    "name": "(C) Direct to Camera Character Talk",
+    "category": "Shorts",
+    "criteria": "The story is driven by a single character (person, mascot etc.) that talks directly to camera, creating a personal connection with the viewer.",
+    "promptTemplate": "ANALYTICAL FRAMEWORK:\n        This is a combination of two features. Both must be true.\n        1.  Character-Driven: First, determine if the story is primarily driven by a single character.\n        2.  Direct to Camera Speech: Second, determine if this specific character speaks while looking directly at the camera.\n        3.  Final Verdict: If both conditions are met, 'detected' is true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. If detected, confirm that a single main character speaks directly to the camera.\",\n                \"confidence_rationale\": \"Justify based on the presence of both a single protagonist and direct-to-camera speech.\"\n            }\n        }",
+    "type": "STANDARD",
+    "supportedFormats": [
+      "SHORT"
+    ]
+  },
+  {
+    "id": "b_shorts_native_brand_context",
+    "name": "(B) Brand Secondary Element",
+    "category": "Shorts",
+    "criteria": "Brand is positioned as a secondary element rather than the main focus of the ad, integrating naturally within the content.",
+    "promptTemplate": "ANALYTICAL FRAMEWORK:\n        1.  Analyze the overall narrative and visual focus of the video. Is the primary focus on a story, a person, a trend, or a demonstration?\n        2.  Observe how the branding (logo, product name) is presented. Is it a huge, central part of the frame (like a product ad), or does it appear more subtly as part of the environment or story?\n        3.  Final Verdict: If the story or character is the primary focus and the branding feels integrated and non-intrusive, 'detected' is true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Describe the primary focus of the ad and how the brand was integrated.\",\n                \"confidence_rationale\": \"Justify based on your interpretation of the ad's narrative and visual hierarchy.\"\n            }\n        }",
+    "type": "STANDARD",
+    "supportedFormats": [
+      "SHORT"
+    ]
+  },
+  {
+    "id": "c_shorts_personal_character_type",
+    "name": "(C) Uses Influencer/Creator",
+    "category": "Shorts",
+    "criteria": "The video ad uses everyday people, influencer, or content creator as the main character rather than actors, celebrities, or fictional characters.",
+    "promptTemplate": "ANALYTICAL FRAMEWORK:\n        1.  Analyze the main character's appearance, performance style, and environment.\n        2.  Look for signs of a typical person, influencer, or creator: selfie-style filming, a non-studio environment (like a bedroom or kitchen), a conversational and unscripted speaking style.\n        3.  Contrast this with a traditional actor's performance: polished delivery, professional set, cinematic lighting.\n        4.  Final Verdict: If the main character appears to be a creator or 'real person' rather than a traditional actor in a high-budget production, 'detected' is true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Describe the characteristics of the main person that suggest they are a creator/influencer or a professional actor.\",\n                \"confidence_rationale\": \"Justify confidence based on the production style and the performance of the on-screen talent.\"\n            }\n        }",
+    "type": "STANDARD",
+    "supportedFormats": [
+      "SHORT"
+    ]
+  },
+  {
+    "id": "b_shorts_product_context",
+    "name": "(B) Secondary Product Context",
+    "category": "Shorts",
+    "criteria": "The product is positioned as a secondary element rather than the main focus of the ad, appearing in a natural and realistic context.",
+    "promptTemplate": "ANALYTICAL FRAMEWORK:\n        1.  Analyze the overall narrative and visual focus of the video. Is the video primarily about the product, or is it about a person, story, or activity where the product is simply used?\n        2.  Observe how the product is presented. Is it a \"hero shot\" in the center of the screen with dramatic lighting, or is it just being used naturally by a character as part of their activity?\n        3.  Final Verdict: If the product is used as a natural part of a larger story and is not the constant, primary focus, 'detected' is true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion. Describe the role the product plays in the narrative.\",\n                \"confidence_rationale\": \"Justify based on the visual hierarchy and the product's role in the story.\"\n            }\n        }",
+    "type": "STANDARD",
+    "supportedFormats": [
+      "SHORT"
+    ]
+  },
+  {
+    "id": "a_shorts_video_format",
+    "name": "(A) Vertical Format",
+    "category": "Shorts",
+    "criteria": "The ad is in a vertical format with portrait aspect ratio, specifically designed for mobile device viewing.",
+    "promptTemplate": "ANALYTICAL FRAMEWORK:\n        1.  Directly analyze the video's aspect ratio. A vertical video's height is significantly greater than its width (e.g., 9:16). A horizontal video is wider than it is tall (16:9). A square video has equal width and height (1:1).\n        2.  Final Verdict: If the video's height is clearly greater than its width, 'detected' is true.\n\n        FORMAT RESPONSE AS JSON:\n        {\n            \"detected\": boolean,\n            \"confidence_score\": float,\n            \"evaluation\": {\n                \"rationale\": \"State your conclusion based on the video's aspect ratio.\",\n                \"confidence_rationale\": \"Confidence for this feature should be 1.0 as it is a direct, objective measurement of the video frame.\"\n            }\n        }",
+    "type": "STANDARD",
+    "supportedFormats": [
+      "SHORT"
+    ]
   }
 ]
