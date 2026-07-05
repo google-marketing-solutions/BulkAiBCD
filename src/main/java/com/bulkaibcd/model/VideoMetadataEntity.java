@@ -62,4 +62,7 @@ public class VideoMetadataEntity {
   private String person;
   private String labelName;
   private String explicit;
+
+  @com.google.cloud.firestore.annotation.Exclude
+  private String signedUrl;
 }

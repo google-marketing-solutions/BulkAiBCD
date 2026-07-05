@@ -1,13 +1,19 @@
 package com.bulkaibcd.controller;
 
+import com.bulkaibcd.client.GcsClient;
 import com.bulkaibcd.model.GenerateDeckRequest;
 import com.bulkaibcd.model.GenerateReportRequest;
 import com.bulkaibcd.model.VideoMetadataEntity;
 import com.bulkaibcd.repository.VideoMetadataRepository;
 import com.bulkaibcd.service.output.GenerateDeckService;
 import com.bulkaibcd.service.output.GenerateSpreadsheetReportService;
+import com.google.cloud.storage.BlobInfo;
+import com.google.cloud.storage.HttpMethod;
+import com.google.cloud.storage.Storage.SignUrlOption;
+import java.net.URL;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -32,6 +38,7 @@ public class OutputController {
   private final VideoMetadataRepository videoMetadataRepository;
   private final GenerateDeckService generateDeckService;
   private final GenerateSpreadsheetReportService generateSpreadsheetReportService;
+  private final GcsClient gcsClient;
 
   @GetMapping("/videos/{analysisId}")
   public Flux<VideoMetadataEntity> getVideos(@PathVariable String analysisId) {
@@ -47,6 +54,27 @@ public class OutputController {
           v.setPerson(null);
           v.setLabelName(null);
           v.setExplicit(null);
+
+          if (v.getGcsObjectId() != null && !v.getGcsObjectId().isBlank()) {
+            int slash = v.getGcsObjectId().indexOf('/');
+            if (slash > 0) {
+              String bucket = v.getGcsObjectId().substring(0, slash);
+              String object = v.getGcsObjectId().substring(slash + 1);
+              try {
+                BlobInfo blobInfo = BlobInfo.newBuilder(bucket, object).build();
+                URL signed = gcsClient.signUrl(
+                    blobInfo,
+                    60,
+                    TimeUnit.MINUTES,
+                    SignUrlOption.httpMethod(HttpMethod.GET),
+                    SignUrlOption.withV4Signature());
+                v.setSignedUrl(signed.toString());
+              } catch (Exception e) {
+                log.warn("Failed to generate signed URL for {}", v.getGcsObjectId(), e);
+              }
+            }
+          }
+
           return v;
         });
   }
