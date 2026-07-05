@@ -154,7 +154,8 @@ function toBreakdown(m: VideoMetadata): VideoBreakdown {
     m.thumbnailUrl ??
     (ytMatch ? `https://i.ytimg.com/vi/${ytMatch[1]}/hqdefault.jpg` : null);
   const videoLink =
-    (m.sourceType === 'youtube' || m.sourceType === 'drive') ? urlForLink : null;
+    (m.sourceType === 'file' || m.sourceType === 'drive') ? (m.signedUrl ?? null) :
+    (m.sourceType === 'youtube' ? urlForLink : null);
 
   const {sourceLabel, sourceIcon} = describeSource(m.sourceType);
 

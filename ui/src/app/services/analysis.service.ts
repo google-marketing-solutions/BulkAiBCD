@@ -42,6 +42,7 @@ export interface VideoMetadata {
   format?: string;
   status: string;
   errorMessage?: string;
+  signedUrl?: string;
   aScore?: number | null;
   bScore?: number | null;
   cScore?: number | null;
