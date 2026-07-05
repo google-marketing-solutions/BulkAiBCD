@@ -67,6 +67,16 @@ After code changes, re-run `./install.sh YOUR_GCP_PROJECT_ID` — it's idempoten
 will no-op existing resources; Cloud Build rebuilds the container and rolls out a new
 Cloud Run revision.
 
+## Uninstalling
+
+If you want to tear down the deployment and clean up the resources created on your Google Cloud project, run the uninstaller script:
+
+```bash
+./uninstall.sh YOUR_GCP_PROJECT_ID
+```
+
+This will automatically empty your GCS uploads bucket, delete the Cloud Run service, and run a Terraform destroy to remove all managed infrastructure (like Firestore, Artifact Registry, Cloud Tasks queues, etc.) while safely leaving core APIs enabled so as not to break other applications in your project.
+
 ## Local Development
 
 To run the application locally for development:
