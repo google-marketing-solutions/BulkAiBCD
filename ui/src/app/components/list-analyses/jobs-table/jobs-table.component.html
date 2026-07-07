@@ -112,12 +112,29 @@
 </div>
 
 <!-- NEW: POPUP DIALOG TEMPLATE -->
-<ng-template #featuresDialogTemplate let-features>
+<ng-template #featuresDialogTemplate let-data>
   <h2 mat-dialog-title>Custom Features Selected</h2>
   <mat-dialog-content>
-    <ul class="features-list" *ngIf="features && features.length > 0; else noFeatures">
-      <li *ngFor="let feature of features">{{ feature }}</li>
-    </ul>
+    <ng-container *ngIf="data.hasFeatures; else noFeatures">
+      <mat-tab-group>
+        <mat-tab label="Long Format">
+          <div class="grid-container">
+            <ng-container *ngTemplateOutlet="featureCategory; context: {$implicit: 'Attract (A)', items: data.longGroups['A']}"></ng-container>
+            <ng-container *ngTemplateOutlet="featureCategory; context: {$implicit: 'Brand (B)', items: data.longGroups['B']}"></ng-container>
+            <ng-container *ngTemplateOutlet="featureCategory; context: {$implicit: 'Connect (C)', items: data.longGroups['C']}"></ng-container>
+            <ng-container *ngTemplateOutlet="featureCategory; context: {$implicit: 'Direct (D)', items: data.longGroups['D']}"></ng-container>
+          </div>
+        </mat-tab>
+        <mat-tab label="Shorts Format">
+          <div class="grid-container">
+            <ng-container *ngTemplateOutlet="featureCategory; context: {$implicit: 'Attract (A)', items: data.shortGroups['A']}"></ng-container>
+            <ng-container *ngTemplateOutlet="featureCategory; context: {$implicit: 'Brand (B)', items: data.shortGroups['B']}"></ng-container>
+            <ng-container *ngTemplateOutlet="featureCategory; context: {$implicit: 'Connect (C)', items: data.shortGroups['C']}"></ng-container>
+            <ng-container *ngTemplateOutlet="featureCategory; context: {$implicit: 'Direct (D)', items: data.shortGroups['D']}"></ng-container>
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+    </ng-container>
     <ng-template #noFeatures>
       <p class="text-muted">No specific features were selected for this analysis.</p>
     </ng-template>
@@ -125,4 +142,19 @@
   <mat-dialog-actions align="end">
     <button mat-button mat-dialog-close>Close</button>
   </mat-dialog-actions>
+
+  <ng-template #featureCategory let-title let-items="items">
+    <div class="category-box">
+      <h3>{{ title }}</h3>
+      <div class="features-list">
+        <div class="feature-item" *ngFor="let feature of items">
+          <mat-icon class="check-icon">check</mat-icon>
+          <span>{{ feature }}</span>
+        </div>
+        <div *ngIf="items.length === 0" class="no-results">
+          No features selected
+        </div>
+      </div>
+    </div>
+  </ng-template>
 </ng-template>

@@ -1,4 +1,5 @@
 import {MatDialog, MatDialogModule} from '@angular/material/dialog';
+import {MatTabsModule} from '@angular/material/tabs';
 import {AsyncPipe, CommonModule, DatePipe} from '@angular/common';
 import {ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit, TemplateRef, ViewChild} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
@@ -21,7 +22,7 @@ export interface Job {
   analysisType: string;
   status: JobStatus;
   dateCreated: Date | null;
-  customFeatures: string[];
+  customFeatures: { long: string[], short: string[] };
 }
 
 const DEFAULT_REQUESTER_ID = 'default-user';
@@ -45,6 +46,7 @@ const POLL_MS = 5000;
     DatePipe,
     AsyncPipe,
     MatDialogModule,
+    MatTabsModule,
   ],
 })
 export class JobsTableComponent implements OnInit {
@@ -69,7 +71,7 @@ export class JobsTableComponent implements OnInit {
   private pollSub: Subscription | null = null;
 
  @ViewChild('featuresDialogTemplate')
-  featuresDialogTemplate!: TemplateRef<string[]>;
+  featuresDialogTemplate!: TemplateRef<any>;
 
   ngOnInit() {
     this.loading$.next(true);
@@ -104,11 +106,26 @@ export class JobsTableComponent implements OnInit {
       .subscribe();
   }
 
-  openFeaturesDialog(features: string[]) {
+  openFeaturesDialog(features: { long: string[], short: string[] }) {
+    const longGroups = this.groupFeatures(features.long);
+    const shortGroups = this.groupFeatures(features.short);
+    const hasFeatures = features.long.length > 0 || features.short.length > 0;
+    
     this.dialog.open(this.featuresDialogTemplate, {
-      data: features,
+      data: { longGroups, shortGroups, hasFeatures },
       width: '700px'
     });
+  }
+
+  groupFeatures(features: string[]) {
+    const groups: { [key: string]: string[] } = { A: [], B: [], C: [], D: [] };
+    features.forEach(f => {
+      if (f.startsWith('(A)')) groups['A'].push(f);
+      else if (f.startsWith('(B)')) groups['B'].push(f);
+      else if (f.startsWith('(C)')) groups['C'].push(f);
+      else if (f.startsWith('(D)')) groups['D'].push(f);
+    });
+    return groups;
   }
 
   private schedulePoll(jobs: Job[]) {
@@ -168,7 +185,10 @@ function toJob(row: AnalysisRequest): Job {
     analysisType: row.analysisType,
     status: statusOf(row.analysisStatus),
     dateCreated: row.createdAt ? new Date(row.createdAt) : null,
-    customFeatures: [...(row.customFeaturesLong || []), ...(row.customFeaturesShort || [])],
+    customFeatures: {
+      long: row.customFeaturesLong || [],
+      short: row.customFeaturesShort || []
+    },
   };
 }
 
