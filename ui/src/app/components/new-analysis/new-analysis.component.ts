@@ -1,5 +1,6 @@
 import {CommonModule} from '@angular/common';
-import {ChangeDetectionStrategy, Component, inject, signal} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, signal, OnInit, DestroyRef} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {FormControl, ReactiveFormsModule, Validators} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
 import {MatFormFieldModule} from '@angular/material/form-field';
@@ -18,6 +19,10 @@ import {InputQueueComponent} from './input-queue/input-queue.component';
 const DEFAULT_REQUESTER_ID = 'default-user';
 const MAX_VIDEOS_PER_ANALYSIS = 25;
 
+/**
+ * Component for starting a new analysis.
+ * Handles the configuration and submission of video analysis requests.
+ */
 @Component({
   selector: 'app-new-analysis',
   templateUrl: './new-analysis.component.html',
@@ -39,7 +44,7 @@ const MAX_VIDEOS_PER_ANALYSIS = 25;
     MatSnackBarModule,
   ],
 })
-export class NewAnalysisComponent {
+export class NewAnalysisComponent implements OnInit {
   private readonly analysisService = inject(AnalysisService);
   private readonly router = inject(Router);
   private readonly snackBar = inject(MatSnackBar);
@@ -49,9 +54,21 @@ export class NewAnalysisComponent {
   protected readonly format = new FormControl('LONG', [Validators.required]);
   protected readonly analysisType = new FormControl<string | null>('standard');
   protected readonly customFeatures = new FormControl<{long: string[], short: string[]} | null>({long: [], short: []});
+  private readonly destroyRef = inject(DestroyRef);
   protected readonly videos = signal<File[]>([]);
   protected readonly submitting = signal(false);
 
+  ngOnInit() {
+    this.analysisType.valueChanges.pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(val => {
+      if (val === 'custom') {
+        this.marketingObjective.disable();
+      } else {
+        this.marketingObjective.enable();
+      }
+    });
+  }
   protected addFiles(files: File[]) {
     const remaining = MAX_VIDEOS_PER_ANALYSIS - this.videos().length;
     if (remaining <= 0) {

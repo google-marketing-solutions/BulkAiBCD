@@ -13,7 +13,7 @@
       <mat-radio-button value="custom">Custom Analysis</mat-radio-button>
       <mat-icon matTooltip="Select specific features for a tailored analysis">help_outline</mat-icon>
       @if (control().value === 'custom') {
-        <button mat-button color="primary" (click)="openDialog()">Select Features ({{ (customFeaturesControl().value?.long?.length || 0) + (customFeaturesControl().value?.short?.length || 0) }})</button>
+        <button mat-button color="primary" (click)="openDialog()">Select Features ({{ customFeaturesControl().value?.long?.length || 0 }} Long, {{ customFeaturesControl().value?.short?.length || 0 }} Shorts)</button>
       }
     </div>
   </mat-radio-group>
