@@ -22,6 +22,7 @@ locals {
     "roles/iam.serviceAccountTokenCreator",
     "roles/logging.logWriter",
     "roles/monitoring.metricWriter",
+    "roles/iap.httpsResourceAccessor",
   ]
 }
 

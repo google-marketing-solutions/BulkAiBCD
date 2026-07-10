@@ -27,6 +27,7 @@ substitutions:
   # resubmit this build with --substitutions=_APP_BACKEND_URL=<service-url> so
   # the Cloud Tasks OIDC audience points at the actual service origin.
   _APP_BACKEND_URL: ""
+  _IAP_CLIENT_ID: ""
 
 steps:
   - id: Build
@@ -58,10 +59,11 @@ steps:
       - --platform=managed
       - --timeout=600s
       - --no-allow-unauthenticated
+      - --iap
       - --service-account=${_RUNTIME_SA}
       - --memory=4Gi
       - --cpu=2
-      - --set-env-vars=SPRING_PROFILES_ACTIVE=prod,GOOGLE_CLOUD_PROJECT=${PROJECT_ID},GOOGLE_CLOUD_LOCATION=${_REGION},CLOUD_TASKS_QUEUE=${_CLOUD_TASKS_QUEUE},CLOUD_TASKS_SERVICE_ACCOUNT=${_RUNTIME_SA},APP_BACKEND_URL=${_APP_BACKEND_URL},UPLOADS_BUCKET=${_UPLOADS_BUCKET}
+      - --set-env-vars=SPRING_PROFILES_ACTIVE=prod,GOOGLE_CLOUD_PROJECT=${PROJECT_ID},GOOGLE_CLOUD_LOCATION=${_REGION},CLOUD_TASKS_QUEUE=${_CLOUD_TASKS_QUEUE},CLOUD_TASKS_SERVICE_ACCOUNT=${_RUNTIME_SA},APP_BACKEND_URL=${_APP_BACKEND_URL},UPLOADS_BUCKET=${_UPLOADS_BUCKET},IAP_CLIENT_ID=${_IAP_CLIENT_ID}
 
 options:
   logging: CLOUD_LOGGING_ONLY

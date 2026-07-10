@@ -207,3 +207,11 @@ resource "google_identity_platform_config" "default" {
 
   depends_on = [google_project_service.apis]
 }
+
+resource "google_project_iam_member" "user_iap_accessors" {
+  for_each = toset(var.iap_users)
+
+  project = var.project_id
+  role    = "roles/iap.httpsResourceAccessor"
+  member  = "user:${each.value}"
+}

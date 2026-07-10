@@ -63,6 +63,11 @@ public class CloudTasksQueueClient {
   public void enqueueTask(String endpoint, String payload, String taskSuffix, Integer delaySeconds)
       throws IOException {
     String queuePath = QueueName.of(projectId, location, queueId).toString();
+    String iapClientId = System.getenv("IAP_CLIENT_ID");
+
+    if (iapClientId == null || iapClientId.trim().isEmpty()) {
+      throw new IllegalStateException("IAP_CLIENT_ID environment variable is not set.");
+    }
 
     HttpRequest.Builder httpRequestBuilder =
         HttpRequest.newBuilder()
@@ -70,7 +75,10 @@ public class CloudTasksQueueClient {
             .setHttpMethod(HttpMethod.POST)
             .putHeaders("Content-Type", "application/json")
             .setOidcToken(
-                OidcToken.newBuilder().setServiceAccountEmail(serviceAccountEmail).build());
+                OidcToken.newBuilder()
+                    .setServiceAccountEmail(serviceAccountEmail)
+                    .setAudience(iapClientId)
+                    .build());
 
     if (payload != null) {
       httpRequestBuilder.setBody(ByteString.copyFrom(payload, StandardCharsets.UTF_8));

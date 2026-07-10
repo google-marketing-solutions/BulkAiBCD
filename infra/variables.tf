@@ -69,6 +69,12 @@ variable "cloud_run_deployed" {
   default     = false
 }
 
+variable "iap_client_id" {
+  description = "The OAuth Client ID for IAP. Used as the audience for Cloud Tasks OIDC tokens."
+  type        = string
+  default     = ""
+}
+
 variable "enable_iap_gate" {
   description = <<-EOT
     Turn on IAP in front of the Cloud Run service. Default false because enabling IAP

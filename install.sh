@@ -83,21 +83,21 @@ ensure_terraform_installed() {
       return 0
     fi
   fi
-  
+
   info "Terraform not found or is a dummy wrapper. Attempting to install..."
   if ! command -v apt-get >/dev/null 2>&1; then
     fail "apt-get not found. Please install Terraform 1.5+ manually."
   fi
-  
+
   wget -qO - https://apt.releases.hashicorp.com/gpg | sudo gpg --yes --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
   echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(grep -oP '(?<=UBUNTU_CODENAME=).*' /etc/os-release || lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list > /dev/null
   sudo apt-get update -yq >/dev/null
   sudo apt-get install terraform -yq >/dev/null
-  
+
   if ! terraform version 2>&1 | grep -qi "Terraform v"; then
     fail "Failed to install Terraform. Please install it manually."
   fi
-  
+
   info "Terraform installed successfully."
   if [[ -n "${CLOUD_SHELL:-}" ]]; then
     echo 'wget -qO - https://apt.releases.hashicorp.com/gpg | sudo gpg --yes --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg; echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(grep -oP '\''(?<=UBUNTU_CODENAME=).*'\'' /etc/os-release || lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list > /dev/null; sudo apt-get update -yq > /dev/null; sudo apt-get install terraform -yq > /dev/null' >> "$HOME/.customize_environment"
@@ -251,6 +251,38 @@ CLOUD_RUN_URL="$(gcloud run services describe bulkaibcd --region="${REGION}" --p
 info "Cloud Run URL: ${CLOUD_RUN_URL}"
 
 # -----------------------------------------------------------------------------
+banner " IAP OAuth"
+# -----------------------------------------------------------------------------
+
+IAP_CLIENT_ID=""
+if [[ -f "infra/terraform.tfvars" ]]; then
+  IAP_CLIENT_ID="$(grep -E '^iap_client_id' infra/terraform.tfvars | head -n1 | cut -d'"' -f2 || true)"
+fi
+
+if [[ -z "${IAP_CLIENT_ID}" ]]; then
+  info "Google sign-in provider is already active."
+    echo
+    echo "   Please generate your Custom OAuth Client ID from IAP:"
+    echo "   1. Open: https://pantheon.corp.google.com/security/iap?referrer=search&project=${PROJECT}"
+    echo "   2. Locate 'bulkaibcd' in the list."
+    echo "   3. Click the 'Hide info panel' / 'Show info panel' button, or click Actions (⋮) > Settings next to the service."
+    echo "   4. Select 'Custom OAuth' > 'Auto-generated credentials'."
+    echo "   5. Copy the Client ID and press 'Save'."
+    echo
+fi
+
+while [[ -z "${IAP_CLIENT_ID}" ]]; do
+  read -r -p "   Please paste your IAP OAuth Client ID here: " IAP_CLIENT_ID
+  [[ -z "${IAP_CLIENT_ID}" ]] && echo "      ❌ Client ID cannot be empty."
+done
+
+if grep -q "^iap_client_id" infra/terraform.tfvars 2>/dev/null; then
+  sed -i.bak -e "s|^iap_client_id.*|iap_client_id = \"${IAP_CLIENT_ID}\"|" infra/terraform.tfvars
+else
+  echo "iap_client_id = \"${IAP_CLIENT_ID}\"" >> infra/terraform.tfvars
+fi
+
+# -----------------------------------------------------------------------------
 banner "Terraform — pass 2 (IAP + Cloud Run IAM bindings + CORS for the real URL)"
 # -----------------------------------------------------------------------------
 
@@ -276,7 +308,7 @@ banner "Cloud Build — second pass (wires APP_BACKEND_URL for Cloud Tasks)"
 gcloud builds submit \
   --config=cloudbuild.yaml \
   --project="${PROJECT}" \
-  --substitutions="_REGION=${REGION},_RUNTIME_SA=${RUNTIME_SA},_UPLOADS_BUCKET=${UPLOADS_BUCKET},_APP_BACKEND_URL=${CLOUD_RUN_URL},_CLOUD_TASKS_QUEUE=${QUEUE_ID}"
+  --substitutions="_REGION=${REGION},_RUNTIME_SA=${RUNTIME_SA},_UPLOADS_BUCKET=${UPLOADS_BUCKET},_APP_BACKEND_URL=${CLOUD_RUN_URL},_CLOUD_TASKS_QUEUE=${QUEUE_ID},_IAP_CLIENT_ID=${IAP_CLIENT_ID}"
 
 # -----------------------------------------------------------------------------
 banner "Enforcing CORS on uploads bucket"
