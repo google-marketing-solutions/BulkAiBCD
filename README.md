@@ -1,3 +1,7 @@
+This is not an officially supported Google product. This project is not eligible
+for the
+[Google Open Source Software Vulnerability Rewards Program](https://bughunters.google.com/open-source-security).
+
 # Bulk AiBCD
 
 Score ad-creative videos against the ABCD framework using Vertex AI Gemini. Bulk-ingest
@@ -82,11 +86,12 @@ This will automatically empty your GCS uploads bucket, delete the Cloud Run serv
 To run the application locally for development:
 
 1. **Backend (Java/Spring Boot)**:
-   The application uses Maven. You can run the backend server locally using:
-   ```bash
-   mvn spring-boot:run
-   ```
-   *Note: Ensure you have authenticated locally with `gcloud auth application-default login` so the backend can interact with your GCP project resources (Firestore, Cloud Tasks, etc.).*
+    The application uses Maven. You can run the backend server locally using:
+
+    ```bash
+    mvn spring-boot:run
+    ```
+    *Note: Ensure you have authenticated locally with `gcloud auth application-default login` so the backend can interact with your GCP project resources (Firestore, Cloud Tasks, etc.).*
 
 2. **Frontend (Angular)**:
    The UI is an Angular project located in the `ui/` folder. Please refer to the [ui/README.md](ui/README.md) for detailed instructions on how to start the frontend development server.
