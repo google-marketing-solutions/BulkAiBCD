@@ -17,109 +17,123 @@
 package com.bulkaibcd.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.bulkaibcd.model.AnalysisRequestEntity;
 import com.bulkaibcd.model.SubmitAnalysisRequest;
-import com.bulkaibcd.model.VideoInputEntity;
-import com.bulkaibcd.repository.AnalysisRequestRepository;
-import com.bulkaibcd.repository.VideoInputRepository;
-import com.bulkaibcd.service.CloudTasksService;
-import java.io.IOException;
-import java.util.List;
+import com.bulkaibcd.service.analysis.CancelAnalysisService;
+import com.bulkaibcd.service.analysis.DeleteAnalysisService;
+import com.bulkaibcd.service.analysis.GetAnalysisService;
+import com.bulkaibcd.service.analysis.ListAnalysesService;
+import com.bulkaibcd.service.analysis.SubmitAnalysisService;
+import com.bulkaibcd.service.drive.DriveResolveService;
+import java.util.Map;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-@ExtendWith(MockitoExtension.class)
 class InputControllerTest {
 
-  @Mock AnalysisRequestRepository repo;
-  @Mock VideoInputRepository videoInputRepo;
-  @Mock CloudTasksService cloudTasksService;
+  private DriveResolveService driveResolveService;
+  private SubmitAnalysisService submitAnalysisService;
+  private ListAnalysesService listAnalysesService;
+  private GetAnalysisService getAnalysisService;
+  private CancelAnalysisService cancelAnalysisService;
+  private DeleteAnalysisService deleteAnalysisService;
+  private InputController controller;
 
-  @InjectMocks InputController controller;
+  @BeforeEach
+  void setUp() {
+    driveResolveService = mock(DriveResolveService.class);
+    submitAnalysisService = mock(SubmitAnalysisService.class);
+    listAnalysesService = mock(ListAnalysesService.class);
+    getAnalysisService = mock(GetAnalysisService.class);
+    cancelAnalysisService = mock(CancelAnalysisService.class);
+    deleteAnalysisService = mock(DeleteAnalysisService.class);
 
-  private static SubmitAnalysisRequest sampleRequest() {
-    return SubmitAnalysisRequest.builder()
-        .requesterId("r")
-        .analysisName("n")
-        .analysisType("t")
-        .brandName("Acme")
-        .marketingObjective("core_unknown")
-        .videos(List.of(
-            SubmitAnalysisRequest.VideoInput.builder()
-                .sourceType("youtube")
-                .videoName("Sample YT Title")
-                .videoUrl("https://youtu.be/abc")
-                .build()))
-        .build();
+    controller =
+        new InputController(
+            driveResolveService,
+            submitAnalysisService,
+            listAnalysesService,
+            getAnalysisService,
+            cancelAnalysisService,
+            deleteAnalysisService);
   }
 
   @Test
-  void submitSucceedsReturnsAnalysisIdAndLeavesRecordInPlace() throws IOException {
-    when(repo.save(any())).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
-    when(videoInputRepo.save(any())).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
+  void submitAnalysisDelegatesToService() {
+    SubmitAnalysisRequest req = SubmitAnalysisRequest.builder().analysisName("Test").build();
+    when(submitAnalysisService.execute(req)).thenReturn(Mono.just(ResponseEntity.ok("ana-123")));
 
-    StepVerifier.create(controller.submitAnalysis(sampleRequest()))
+    StepVerifier.create(controller.submitAnalysis(req))
         .assertNext(
             resp -> {
               assertThat(resp.getStatusCode().is2xxSuccessful()).isTrue();
-              assertThat(resp.getBody()).isNotBlank();
+              assertThat(resp.getBody()).isEqualTo("ana-123");
             })
         .verifyComplete();
-
-    verify(cloudTasksService).enqueueTask(anyString(), anyString());
-    verify(repo, never()).deleteById(anyString());
-    verify(videoInputRepo, atLeastOnce()).save(any(VideoInputEntity.class));
+    verify(submitAnalysisService).execute(req);
   }
 
   @Test
-  void submitRollsBackRecordsWhenEnqueueFails() throws IOException {
-    when(repo.save(any())).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
-    when(videoInputRepo.save(any())).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
-    when(repo.deleteById(anyString())).thenReturn(Mono.empty());
-    when(videoInputRepo.findByAnalysisId(anyString())).thenReturn(Flux.empty());
-    doThrow(new IOException("OIDC failed"))
-        .when(cloudTasksService)
-        .enqueueTask(anyString(), anyString());
+  void resolveDriveDelegatesToService() {
+    Map<String, String> body = Map.of("url", "https://drive.google.com/folder");
+    @SuppressWarnings("unchecked")
+    ResponseEntity<Object> expectedResponse = (ResponseEntity<Object>) (ResponseEntity<?>) ResponseEntity.ok("resolved");
+    when(driveResolveService.execute(body)).thenReturn(Mono.just(expectedResponse));
 
-    StepVerifier.create(controller.submitAnalysis(sampleRequest()))
-        .assertNext(
-            resp -> {
-              assertThat(resp.getStatusCode().value()).isEqualTo(500);
-              assertThat(resp.getBody()).contains("Failed to submit analysis");
-            })
+    StepVerifier.create(controller.resolveDrive(body))
+        .assertNext(resp -> assertThat(resp.getBody()).isEqualTo("resolved"))
         .verifyComplete();
-
-    // No orphaned parent record.
-    verify(repo).deleteById(anyString());
+    verify(driveResolveService).execute(body);
   }
 
   @Test
-  void submitReturns500EvenIfRollbackDeleteAlsoFails() throws IOException {
-    when(repo.save(any())).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
-    when(videoInputRepo.save(any())).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
-    when(repo.deleteById(anyString()))
-        .thenReturn(Mono.error(new RuntimeException("firestore down")));
-    when(videoInputRepo.findByAnalysisId(anyString())).thenReturn(Flux.empty());
-    doThrow(new IOException("OIDC failed"))
-        .when(cloudTasksService)
-        .enqueueTask(anyString(), anyString());
+  void listAnalysesDelegatesToService() {
+    AnalysisRequestEntity a1 = AnalysisRequestEntity.builder().analysisId("1").build();
+    when(listAnalysesService.execute("user-1")).thenReturn(Flux.just(a1));
 
-    StepVerifier.create(controller.submitAnalysis(sampleRequest()))
-        .assertNext(resp -> assertThat(resp.getStatusCode().value()).isEqualTo(500))
+    StepVerifier.create(controller.listAnalyses("user-1"))
+        .expectNext(a1)
         .verifyComplete();
+    verify(listAnalysesService).execute("user-1");
+  }
+
+  @Test
+  void getAnalysisDelegatesToService() {
+    AnalysisRequestEntity a1 = AnalysisRequestEntity.builder().analysisId("1").build();
+    when(getAnalysisService.execute("1")).thenReturn(Mono.just(ResponseEntity.ok(a1)));
+
+    StepVerifier.create(controller.getAnalysis("1"))
+        .assertNext(resp -> assertThat(resp.getBody()).isEqualTo(a1))
+        .verifyComplete();
+    verify(getAnalysisService).execute("1");
+  }
+
+  @Test
+  void cancelAnalysisDelegatesToService() {
+    when(cancelAnalysisService.execute("1")).thenReturn(Mono.just(ResponseEntity.ok("Cancelled")));
+
+    StepVerifier.create(controller.cancelAnalysis("1"))
+        .assertNext(resp -> assertThat(resp.getBody()).isEqualTo("Cancelled"))
+        .verifyComplete();
+    verify(cancelAnalysisService).execute("1");
+  }
+
+  @Test
+  void deleteAnalysisDelegatesToService() {
+    when(deleteAnalysisService.execute("1")).thenReturn(Mono.just(ResponseEntity.ok("Deleted")));
+
+    StepVerifier.create(controller.deleteAnalysis("1"))
+        .assertNext(resp -> assertThat(resp.getBody()).isEqualTo("Deleted"))
+        .verifyComplete();
+    verify(deleteAnalysisService).execute("1");
   }
 }
+

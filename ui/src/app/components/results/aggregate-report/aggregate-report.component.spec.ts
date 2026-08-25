@@ -15,14 +15,20 @@
  */
 
 import {ComponentFixture, TestBed} from '@angular/core/testing';
+import {MatSnackBar} from '@angular/material/snack-bar';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
+import {of} from 'rxjs';
 
-import {VideoMetadata} from '../../../services/analysis.service';
+import {AnalysisService, VideoMetadata} from '../../../services/analysis.service';
+import {AuthFailure, GoogleAuthService} from '../../../services/google-auth.service';
 import {AggregateReportComponent} from './aggregate-report.component';
 
 describe('AggregateReportComponent', () => {
   let fixture: ComponentFixture<AggregateReportComponent>;
   let component: AggregateReportComponent;
+  let analysisService: jasmine.SpyObj<AnalysisService>;
+  let googleAuth: jasmine.SpyObj<GoogleAuthService>;
+  let snackBar: MatSnackBar;
 
   const videos: VideoMetadata[] = [
     {
@@ -41,12 +47,24 @@ describe('AggregateReportComponent', () => {
   ];
 
   beforeEach(async () => {
+    analysisService = jasmine.createSpyObj<AnalysisService>('AnalysisService', [
+      'generatePitchDeck',
+    ]);
+    googleAuth = jasmine.createSpyObj<GoogleAuthService>('GoogleAuthService', [
+      'requestDriveToken',
+    ]);
+
     await TestBed.configureTestingModule({
       imports: [AggregateReportComponent, NoopAnimationsModule],
+      providers: [
+        {provide: AnalysisService, useValue: analysisService},
+        {provide: GoogleAuthService, useValue: googleAuth},
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(AggregateReportComponent);
     component = fixture.componentInstance;
+    snackBar = fixture.debugElement.injector.get(MatSnackBar);
     component.analysisId = 'a1';
     component.videos = videos;
     fixture.detectChanges();
@@ -63,17 +81,81 @@ describe('AggregateReportComponent', () => {
     expect(btn.disabled).toBeTrue();
   });
 
-  it('generatePitchDeck opens a new window with the selected rows', () => {
-    const fakeDoc = {open: jasmine.createSpy(), write: jasmine.createSpy(), close: jasmine.createSpy()};
-    const fakeWin = {document: fakeDoc, focus: jasmine.createSpy(), print: jasmine.createSpy()};
-    spyOn(window, 'open').and.returnValue(fakeWin as unknown as Window);
-    // Preload a selected row into the child table's emission surface.
-    (component as any).selected.set([{
-      id: 'x', videoId: 'v', videoName: 'n', thumbnailUrl: null,
-      videoLink: null, status: 'COMPLETED', avg: 75, a: 80, b: 70, c: 75, d: 75,
-    }]);
-    (component as any).generatePitchDeck();
-    expect(window.open).toHaveBeenCalled();
-    expect(fakeDoc.write).toHaveBeenCalled();
+  it('generatePitchDeck requests token and generates slides presentation in Drive', async () => {
+    googleAuth.requestDriveToken.and.returnValue(Promise.resolve('mock-token'));
+    analysisService.generatePitchDeck.and.returnValue(
+      of({
+        decks: [
+          {
+            videoId: 'v1',
+            videoTitle: 'Ad 1',
+            deckUrl: 'https://docs.google.com/presentation/d/deck-123',
+          },
+        ],
+      }),
+    );
+    spyOn(window, 'open');
+
+    // Select row
+    (component as any).selected.set([
+      {
+        id: 'x',
+        videoId: 'v1',
+        videoName: 'Ad 1',
+        thumbnailUrl: null,
+        videoLink: null,
+        status: 'COMPLETED',
+        avg: 75,
+        a: 80,
+        b: 70,
+        c: 75,
+        d: 75,
+      },
+    ]);
+
+    await (component as any).generatePitchDeck();
+
+    expect(googleAuth.requestDriveToken).toHaveBeenCalled();
+    expect(analysisService.generatePitchDeck).toHaveBeenCalledWith(
+      'a1',
+      ['v1'],
+      'mock-token',
+    );
+    expect(window.open).toHaveBeenCalledWith(
+      'https://docs.google.com/presentation/d/deck-123',
+      '_blank',
+      'noopener',
+    );
+  });
+
+  it('surfaces auth error when popup is blocked', async () => {
+    const snackSpy = spyOn(snackBar, 'open');
+    googleAuth.requestDriveToken.and.rejectWith(
+      new AuthFailure('POPUP_BLOCKED', 'blocked'),
+    );
+
+    (component as any).selected.set([
+      {
+        id: 'x',
+        videoId: 'v1',
+        videoName: 'Ad 1',
+        thumbnailUrl: null,
+        videoLink: null,
+        status: 'COMPLETED',
+        avg: 75,
+        a: 80,
+        b: 70,
+        c: 75,
+        d: 75,
+      },
+    ]);
+
+    await (component as any).generatePitchDeck();
+
+    expect(snackSpy).toHaveBeenCalledWith(
+      jasmine.stringMatching(/blocked the sign-in popup/),
+      'Dismiss',
+      jasmine.any(Object),
+    );
   });
 });

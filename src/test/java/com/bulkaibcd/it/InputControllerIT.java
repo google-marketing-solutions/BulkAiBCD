@@ -17,19 +17,18 @@
 package com.bulkaibcd.it;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 
-import com.google.common.truth.Expect;
-import org.junit.Rule;
-
 import com.bulkaibcd.BulkAibcdApplication;
+import com.bulkaibcd.client.CloudTasksQueueClient;
 import com.bulkaibcd.model.AnalysisRequestEntity;
 import com.bulkaibcd.model.SubmitAnalysisRequest;
 import com.bulkaibcd.repository.AnalysisRequestRepository;
-import com.bulkaibcd.service.CloudTasksService;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -41,13 +40,16 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.testcontainers.containers.FirestoreEmulatorContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-@SpringBootTest(classes = BulkAibcdApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(
+    classes = BulkAibcdApplication.class,
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("dev")
 @Testcontainers
 @TestPropertySource(
@@ -58,8 +60,6 @@ import org.testcontainers.utility.DockerImageName;
       "app.backend-url=http://localhost:0"
     })
 class InputControllerIT {
-
-  @Rule public final Expect expect = Expect.create();
 
   @Container
   static final FirestoreEmulatorContainer firestore =
@@ -77,12 +77,12 @@ class InputControllerIT {
 
   @Autowired AnalysisRequestRepository repo;
 
-  @MockBean CloudTasksService cloudTasksService;
+  @MockBean CloudTasksQueueClient cloudTasksClient;
 
   private RestTemplate http;
   private String baseUrl;
 
-  @org.junit.jupiter.api.BeforeEach
+  @BeforeEach
   void setUp() {
     http = new RestTemplate();
     baseUrl = "http://localhost:" + port + "/api/v2/input";
@@ -91,43 +91,44 @@ class InputControllerIT {
 
   @Test
   void submitPersistsRecordAndIsRetrievable() throws Exception {
-    doNothing().when(cloudTasksService).enqueueTask(anyString(), anyString());
+    doNothing().when(cloudTasksClient).enqueueTask(anyString(), anyString());
 
-    SubmitAnalysisRequest body = SubmitAnalysisRequest.builder()
-        .requesterId("it-user")
-        .analysisName("IT Run")
-        .analysisType("standard")
-        .brandName("Acme")
-        .marketingObjective("core_unknown")
-        .videos(List.of(
-            SubmitAnalysisRequest.VideoInput.builder()
-                .sourceType("youtube")
-                .videoName("Sample YT Title")
-                .videoUrl("https://youtu.be/abc")
-                .build()))
-        .build();
+    SubmitAnalysisRequest body =
+        SubmitAnalysisRequest.builder()
+            .requesterId("it-user")
+            .analysisName("IT Run")
+            .analysisType("standard")
+            .brandName("Acme")
+            .marketingObjective("core_unknown")
+            .videos(
+                List.of(
+                    SubmitAnalysisRequest.VideoInput.builder()
+                        .sourceType("youtube")
+                        .videoName("Sample YT Title")
+                        .videoUrl("https://youtu.be/abc")
+                        .build()))
+            .build();
 
     ResponseEntity<String> submit =
         http.postForEntity(baseUrl + "/submit", body, String.class);
-    expect.that(submit.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertThat(submit.getStatusCode()).isEqualTo(HttpStatus.OK);
     String analysisId = submit.getBody();
-    expect.that(analysisId).isNotBlank();
+    assertThat(analysisId).isNotBlank();
 
     // Record should be persisted with status PENDING.
     AnalysisRequestEntity fetched = repo.findById(analysisId).block();
-    expect.that(fetched).isNotNull();
+    assertThat(fetched).isNotNull();
     if (fetched != null) {
-      expect.that(fetched.getAnalysisStatus()).isEqualTo("PENDING");
-      expect.that(fetched.getCreatedAt()).isNotNull();
+      assertThat(fetched.getAnalysisStatus()).isEqualTo("PENDING");
+      assertThat(fetched.getCreatedAt()).isNotNull();
     }
 
-    // GET /list returns it. Use JsonNode to dodge com.google.cloud.Timestamp Jackson binding
-    // (the field serializes fine on the wire but has no default Jackson deserializer).
+    // GET /list returns it.
     ResponseEntity<JsonNode> list =
         http.getForEntity(baseUrl + "/list/it-user", JsonNode.class);
-    expect.that(list.getBody()).isNotNull();
+    assertThat(list.getBody()).isNotNull();
     if (list.getBody() != null) {
-      expect.that(list.getBody().isArray()).isTrue();
+      assertThat(list.getBody().isArray()).isTrue();
       boolean found = false;
       for (JsonNode row : list.getBody()) {
         if (analysisId.equals(row.get("analysisId").asText())) {
@@ -135,7 +136,7 @@ class InputControllerIT {
           break;
         }
       }
-      expect.that(found).isTrue();
+      assertThat(found).isTrue();
     }
   }
 
@@ -143,31 +144,23 @@ class InputControllerIT {
   void listWithNonexistentUserReturnsEmptyList() {
     ResponseEntity<JsonNode> list =
         http.getForEntity(baseUrl + "/list/nonexistent-user", JsonNode.class);
-    expect.that(list.getStatusCode()).isEqualTo(HttpStatus.OK);
-    expect.that(list.getBody()).isNotNull();
+    assertThat(list.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertThat(list.getBody()).isNotNull();
     if (list.getBody() != null) {
-      expect.that(list.getBody().isArray()).isTrue();
-      expect.that(list.getBody().size()).isEqualTo(0);
+      assertThat(list.getBody().isArray()).isTrue();
+      assertThat(list.getBody().size()).isEqualTo(0);
     }
   }
 
   @Test
   void getAnalysisForNonexistentIdReturnsNotFound() {
-    try {
-      http.getForEntity(baseUrl + "/invalid-id", String.class);
-      expect.withMessage("Expected HttpClientErrorException to be thrown").that(false).isTrue();
-    } catch (org.springframework.web.client.HttpClientErrorException e) {
-      expect.that(e.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-    }
+    assertThatThrownBy(() -> http.getForEntity(baseUrl + "/invalid-id", String.class))
+        .isInstanceOf(HttpClientErrorException.NotFound.class);
   }
 
   @Test
   void cancelAnalysisForNonexistentIdReturnsNotFound() {
-    try {
-      http.postForEntity(baseUrl + "/invalid-id/cancel", null, String.class);
-      expect.withMessage("Expected HttpClientErrorException to be thrown").that(false).isTrue();
-    } catch (org.springframework.web.client.HttpClientErrorException e) {
-      expect.that(e.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-    }
+    assertThatThrownBy(() -> http.postForEntity(baseUrl + "/invalid-id/cancel", null, String.class))
+        .isInstanceOf(HttpClientErrorException.NotFound.class);
   }
 }

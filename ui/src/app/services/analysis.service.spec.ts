@@ -22,7 +22,15 @@ import {
 import {TestBed} from '@angular/core/testing';
 
 import {environment} from '../../environments/environment';
-import {AnalysisRequest, AnalysisService, VideoMetadata} from './analysis.service';
+import {
+  AnalysisRequest,
+  AnalysisService,
+  AppConfig,
+  DriveResolveResponse,
+  GeneratedDecksResponse,
+  SignedUploadUrl,
+  VideoMetadata,
+} from './analysis.service';
 
 describe('AnalysisService', () => {
   let service: AnalysisService;
@@ -94,24 +102,24 @@ describe('AnalysisService', () => {
     expect(received).toEqual(videos);
   });
 
-  it('generateSpreadsheet POSTs to /output/report/{id} with X-Google-Access-Token', () => {
+  it('generateSpreadsheet POSTs to /output/report/{id} with X-Drive-Access-Token', () => {
     let received: {sheetUrl: string} | undefined;
     service.generateSpreadsheet('a', 'user-token-xyz').subscribe((r) => (received = r));
 
     const req = httpMock.expectOne(`${environment.apiUrl}/output/report/a`);
     expect(req.request.method).toBe('POST');
-    expect(req.request.headers.get('X-Google-Access-Token')).toBe('user-token-xyz');
+    expect(req.request.headers.get('X-Drive-Access-Token')).toBe('user-token-xyz');
     req.flush({sheetUrl: 'https://docs.google.com/spreadsheets/d/xyz'});
     expect(received?.sheetUrl).toContain('/spreadsheets/d/');
   });
 
-  it('generatePitchDeck POSTs videoIds + token and returns per-video URLs', () => {
-    let received: {decks: Array<{videoId: string; videoTitle: string; deckUrl: string}>} | undefined;
+  it('generatePitchDeck POSTs videoIds + token with X-Drive-Access-Token and returns per-video URLs', () => {
+    let received: GeneratedDecksResponse | undefined;
     service.generatePitchDeck('a', ['v1', 'v2'], 'user-token-xyz').subscribe((r) => (received = r));
 
     const req = httpMock.expectOne(`${environment.apiUrl}/output/generate-deck/a`);
     expect(req.request.method).toBe('POST');
-    expect(req.request.headers.get('X-Google-Access-Token')).toBe('user-token-xyz');
+    expect(req.request.headers.get('X-Drive-Access-Token')).toBe('user-token-xyz');
     expect(req.request.body).toEqual({videoIds: ['v1', 'v2']});
     req.flush({
       decks: [
@@ -120,6 +128,64 @@ describe('AnalysisService', () => {
       ],
     });
     expect(received?.decks.length).toBe(2);
+  });
+
+  it('requestUploadUrl POSTs to /input/upload-url', () => {
+    let received: SignedUploadUrl | undefined;
+    service.requestUploadUrl('video.mp4', 'video/mp4').subscribe((r) => (received = r));
+
+    const req = httpMock.expectOne(`${environment.apiUrl}/input/upload-url`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({filename: 'video.mp4', contentType: 'video/mp4'});
+    req.flush({url: 'https://upload.url', gcsObjectId: 'bucket/video.mp4'});
+    expect(received?.url).toBe('https://upload.url');
+    expect(received?.gcsObjectId).toBe('bucket/video.mp4');
+  });
+
+  it('getConfig GETs /config', () => {
+    let received: AppConfig | undefined;
+    service.getConfig().subscribe((cfg) => (received = cfg));
+
+    const req = httpMock.expectOne(`${environment.apiUrl}/config`);
+    expect(req.request.method).toBe('GET');
+    req.flush({driveIngestServiceAccount: 'sa@test.com', projectId: 'test-project'});
+    expect(received?.driveIngestServiceAccount).toBe('sa@test.com');
+    expect(received?.projectId).toBe('test-project');
+  });
+
+  it('resolveDrive POSTs to /input/drive-resolve', () => {
+    let received: DriveResolveResponse | undefined;
+    service.resolveDrive('https://drive.google.com/folder').subscribe((r) => (received = r));
+
+    const req = httpMock.expectOne(`${environment.apiUrl}/input/drive-resolve`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({url: 'https://drive.google.com/folder'});
+    req.flush({
+      videos: [{videoName: 'v1', videoUrl: 'https://drive.google.com/v1', thumbnailUrl: 'thumb'}],
+    });
+    expect(received?.videos.length).toBe(1);
+  });
+
+  it('cancelAnalysis POSTs to /input/{analysisId}/cancel', () => {
+    let received: string | undefined;
+    service.cancelAnalysis('ana-1').subscribe((r) => (received = r));
+
+    const req = httpMock.expectOne(`${environment.apiUrl}/input/ana-1/cancel`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.responseType).toBe('text');
+    req.flush('CANCELLED');
+    expect(received).toBe('CANCELLED');
+  });
+
+  it('deleteAnalysis DELETEs /input/{analysisId}', () => {
+    let received: string | undefined;
+    service.deleteAnalysis('ana-1').subscribe((r) => (received = r));
+
+    const req = httpMock.expectOne(`${environment.apiUrl}/input/ana-1`);
+    expect(req.request.method).toBe('DELETE');
+    expect(req.request.responseType).toBe('text');
+    req.flush('DELETED');
+    expect(received).toBe('DELETED');
   });
 
   it('propagates HTTP errors as Observable errors', () => {

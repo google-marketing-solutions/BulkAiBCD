@@ -15,22 +15,32 @@
  */
 
 import {ComponentFixture, TestBed} from '@angular/core/testing';
+import {MatDialog} from '@angular/material/dialog';
+import {MatSnackBar} from '@angular/material/snack-bar';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {provideRouter} from '@angular/router';
 import {of, throwError} from 'rxjs';
 
 import {AnalysisRequest, AnalysisService} from '../../../services/analysis.service';
-import {JobsTableComponent} from './jobs-table.component';
+import {Job, JobsTableComponent} from './jobs-table.component';
 
 describe('JobsTableComponent', () => {
   let fixture: ComponentFixture<JobsTableComponent>;
   let component: JobsTableComponent;
   let analysisService: jasmine.SpyObj<AnalysisService>;
+  let snackBar: MatSnackBar;
+  let dialog: MatDialog;
 
   beforeEach(async () => {
     analysisService = jasmine.createSpyObj<AnalysisService>('AnalysisService', [
       'listAnalyses',
+      'cancelAnalysis',
+      'deleteAnalysis',
     ]);
+    analysisService.listAnalyses.and.returnValue(of([]));
+    analysisService.cancelAnalysis.and.returnValue(of('CANCELLED'));
+    analysisService.deleteAnalysis.and.returnValue(of('DELETED'));
+
     await TestBed.configureTestingModule({
       imports: [JobsTableComponent, NoopAnimationsModule],
       providers: [
@@ -41,6 +51,8 @@ describe('JobsTableComponent', () => {
 
     fixture = TestBed.createComponent(JobsTableComponent);
     component = fixture.componentInstance;
+    snackBar = fixture.debugElement.injector.get(MatSnackBar);
+    dialog = fixture.debugElement.injector.get(MatDialog);
   });
 
   it('loads rows on init and maps AnalysisRequest to Job shape', () => {
@@ -86,7 +98,7 @@ describe('JobsTableComponent', () => {
     expect(component.error$.value).toBe('boom');
   });
 
-  it('maps non-COMPLETED status values to Processing', () => {
+  it('maps non-COMPLETED status values to Processing or Cancelled', () => {
     const rows: AnalysisRequest[] = [
       {
         analysisId: 'a',
@@ -95,9 +107,73 @@ describe('JobsTableComponent', () => {
         analysisType: 't',
         analysisStatus: 'PENDING',
       },
+      {
+        analysisId: 'b',
+        requesterId: 'u',
+        analysisName: 'n2',
+        analysisType: 't',
+        analysisStatus: 'CANCELLED',
+      },
     ];
     analysisService.listAnalyses.and.returnValue(of(rows));
     fixture.detectChanges();
     expect(component.dataSource$.value[0].status).toBe('Processing');
+    expect(component.dataSource$.value[1].status).toBe('Cancelled');
+  });
+
+  it('groupFeatures partitions features into A, B, C, D buckets', () => {
+    const features = [
+      '(A) Large Supers',
+      '(B) Brand Logo',
+      '(C) People',
+      '(D) Call to Action',
+    ];
+    const grouped = component.groupFeatures(features);
+    expect(grouped['A']).toEqual(['(A) Large Supers']);
+    expect(grouped['B']).toEqual(['(B) Brand Logo']);
+    expect(grouped['C']).toEqual(['(C) People']);
+    expect(grouped['D']).toEqual(['(D) Call to Action']);
+  });
+
+  it('openFeaturesDialog calls dialog.open', () => {
+    const openSpy = spyOn(dialog, 'open').and.returnValue({} as any);
+    component.openFeaturesDialog({long: ['(A) Large Supers'], short: []});
+    expect(openSpy).toHaveBeenCalled();
+  });
+
+  it('cancel calls cancelAnalysis and reloads when confirmed', () => {
+    spyOn(window, 'confirm').and.returnValue(true);
+    const snackSpy = spyOn(snackBar, 'open');
+
+    const job: Job = {
+      analysisId: 'job-1',
+      analysisName: 'Test Job',
+      analysisType: 'standard',
+      status: 'Processing',
+      dateCreated: new Date(),
+      customFeatures: {long: [], short: []},
+    };
+
+    component.cancel(job);
+    expect(analysisService.cancelAnalysis).toHaveBeenCalledWith('job-1');
+    expect(snackSpy).toHaveBeenCalledWith('Cancelled.', 'Dismiss', jasmine.any(Object));
+  });
+
+  it('delete calls deleteAnalysis and reloads when confirmed', () => {
+    spyOn(window, 'confirm').and.returnValue(true);
+    const snackSpy = spyOn(snackBar, 'open');
+
+    const job: Job = {
+      analysisId: 'job-1',
+      analysisName: 'Test Job',
+      analysisType: 'standard',
+      status: 'Completed',
+      dateCreated: new Date(),
+      customFeatures: {long: [], short: []},
+    };
+
+    component.delete(job);
+    expect(analysisService.deleteAnalysis).toHaveBeenCalledWith('job-1');
+    expect(snackSpy).toHaveBeenCalledWith('Deleted.', 'Dismiss', jasmine.any(Object));
   });
 });

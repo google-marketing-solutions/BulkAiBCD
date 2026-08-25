@@ -19,9 +19,9 @@ package com.bulkaibcd.it;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.bulkaibcd.BulkAibcdApplication;
+import com.bulkaibcd.client.CloudTasksQueueClient;
 import com.bulkaibcd.model.VideoMetadataEntity;
 import com.bulkaibcd.repository.VideoMetadataRepository;
-import com.bulkaibcd.service.CloudTasksService;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,7 +67,7 @@ class OutputControllerIT {
 
   @Autowired VideoMetadataRepository repo;
 
-  @MockBean CloudTasksService cloudTasksService;
+  @MockBean CloudTasksQueueClient cloudTasksClient;
 
   @Test
   void getVideosReturnsPersistedMetadata() {

@@ -19,6 +19,7 @@ package com.bulkaibcd.model;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.cloud.Timestamp;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class AnalysisRequestEntityTest {
@@ -32,6 +33,10 @@ class AnalysisRequestEntityTest {
             .requesterId("user-1")
             .analysisName("Q3 Review")
             .analysisType("standard")
+            .brandName("Acme")
+            .marketingObjective("awareness")
+            .customFeaturesLong(List.of("fLong"))
+            .customFeaturesShort(List.of("fShort"))
             .analysisStatus("PENDING")
             .createdAt(now)
             .updatedAt(now)
@@ -41,6 +46,10 @@ class AnalysisRequestEntityTest {
     assertThat(entity.getRequesterId()).isEqualTo("user-1");
     assertThat(entity.getAnalysisName()).isEqualTo("Q3 Review");
     assertThat(entity.getAnalysisType()).isEqualTo("standard");
+    assertThat(entity.getBrandName()).isEqualTo("Acme");
+    assertThat(entity.getMarketingObjective()).isEqualTo("awareness");
+    assertThat(entity.getCustomFeaturesLong()).containsExactly("fLong");
+    assertThat(entity.getCustomFeaturesShort()).containsExactly("fShort");
     assertThat(entity.getAnalysisStatus()).isEqualTo("PENDING");
     assertThat(entity.getCreatedAt()).isEqualTo(now);
     assertThat(entity.getUpdatedAt()).isEqualTo(now);
@@ -55,6 +64,8 @@ class AnalysisRequestEntityTest {
             .requesterId("r")
             .analysisName("n")
             .analysisType("t")
+            .brandName("b")
+            .marketingObjective("m")
             .analysisStatus("s")
             .createdAt(t)
             .updatedAt(t)
@@ -65,6 +76,8 @@ class AnalysisRequestEntityTest {
             .requesterId("r")
             .analysisName("n")
             .analysisType("t")
+            .brandName("b")
+            .marketingObjective("m")
             .analysisStatus("s")
             .createdAt(t)
             .updatedAt(t)

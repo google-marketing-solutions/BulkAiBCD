@@ -17,6 +17,7 @@
 import {provideHttpClient} from '@angular/common/http';
 import {provideHttpClientTesting} from '@angular/common/http/testing';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
+import {MatSnackBar} from '@angular/material/snack-bar';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {Router, provideRouter} from '@angular/router';
 import {of, throwError} from 'rxjs';
@@ -29,6 +30,7 @@ describe('NewAnalysisComponent', () => {
   let component: NewAnalysisComponent;
   let analysisService: jasmine.SpyObj<AnalysisService>;
   let router: Router;
+  let snackBar: MatSnackBar;
 
   beforeEach(async () => {
     analysisService = jasmine.createSpyObj<AnalysisService>('AnalysisService', [
@@ -47,6 +49,7 @@ describe('NewAnalysisComponent', () => {
     fixture = TestBed.createComponent(NewAnalysisComponent);
     component = fixture.componentInstance;
     router = TestBed.inject(Router);
+    snackBar = fixture.debugElement.injector.get(MatSnackBar);
     fixture.detectChanges();
   });
 
@@ -82,5 +85,43 @@ describe('NewAnalysisComponent', () => {
 
     expect(navigateSpy).not.toHaveBeenCalled();
     expect((component as any).submitting()).toBeFalse();
+  });
+
+  it('disables marketingObjective when analysisType is set to custom', () => {
+    expect((component as any).marketingObjective.enabled).toBeTrue();
+    (component as any).analysisType.setValue('custom');
+    expect((component as any).marketingObjective.disabled).toBeTrue();
+
+    (component as any).analysisType.setValue('standard');
+    expect((component as any).marketingObjective.enabled).toBeTrue();
+  });
+
+  it('addFiles caps files to max 25 and attaches format', () => {
+    const files: File[] = [];
+    for (let i = 0; i < 30; i++) {
+      files.push(new File([''], `v${i}.mp4`, {type: 'video/mp4'}));
+    }
+    const snackSpy = spyOn(snackBar, 'open');
+
+    (component as any).addFiles(files);
+
+    expect((component as any).videos().length).toBe(25);
+    expect((component as any).videos()[0].format).toBe('LONG');
+    expect(snackSpy).toHaveBeenCalled();
+  });
+
+  it('removeVideo removes item by index and clearVideos resets list', () => {
+    const f1 = new File([''], 'v1.mp4', {type: 'video/mp4'});
+    const f2 = new File([''], 'v2.mp4', {type: 'video/mp4'});
+    (component as any).addFiles([f1, f2]);
+
+    expect((component as any).videos().length).toBe(2);
+
+    (component as any).removeVideo(0);
+    expect((component as any).videos().length).toBe(1);
+    expect((component as any).videos()[0].name).toBe('v2.mp4');
+
+    (component as any).clearVideos();
+    expect((component as any).videos().length).toBe(0);
   });
 });
