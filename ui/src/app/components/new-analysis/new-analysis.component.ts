@@ -27,7 +27,7 @@ import {MatRadioModule} from '@angular/material/radio';
 import {MatSnackBar, MatSnackBarModule} from '@angular/material/snack-bar';
 import {Router} from '@angular/router';
 
-import {AnalysisService, VideoInputPayload} from '../../services/analysis.service';
+import {AnalysisService, AnalysisVideoFile, VideoInputPayload} from '../../services/analysis.service';
 import {VideoInputTabsComponent} from './video-input-tabs/video-input-tabs.component';
 import {AnalysisConfigComponent} from './analysis-config/analysis-config.component';
 import {InputQueueComponent} from './input-queue/input-queue.component';
@@ -125,12 +125,7 @@ export class NewAnalysisComponent implements OnInit {
     if (this.brandName.invalid || this.format.invalid || this.videos().length === 0) return;
     this.submitting.set(true);
     const videos: VideoInputPayload[] = this.videos().map((f) => {
-      const meta = f as File & {
-        sourceUrl?: string;
-        gcsObjectId?: string;
-        thumbnailDataUrl?: string | null;
-        format?: string;
-      };
+      const meta = f as AnalysisVideoFile;
       return {
         sourceType: detectSourceType(f),
         videoName: f.name,
@@ -138,6 +133,7 @@ export class NewAnalysisComponent implements OnInit {
         gcsObjectId: meta.gcsObjectId,
         thumbnailUrl: meta.thumbnailDataUrl ?? undefined,
         format: meta.format ?? 'LONG',
+        unlisted: Boolean(meta.unlisted),
       };
     });
     this.analysisService

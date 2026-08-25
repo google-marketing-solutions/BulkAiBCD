@@ -23,12 +23,15 @@ import static org.mockito.Mockito.when;
 
 import com.bulkaibcd.model.AnalysisRequestEntity;
 import com.bulkaibcd.model.SubmitAnalysisRequest;
+import com.bulkaibcd.model.YouTubeVideoInfoDto;
 import com.bulkaibcd.service.analysis.CancelAnalysisService;
 import com.bulkaibcd.service.analysis.DeleteAnalysisService;
 import com.bulkaibcd.service.analysis.GetAnalysisService;
 import com.bulkaibcd.service.analysis.ListAnalysesService;
 import com.bulkaibcd.service.analysis.SubmitAnalysisService;
 import com.bulkaibcd.service.drive.DriveResolveService;
+import com.bulkaibcd.service.youtube.YouTubeResolveService;
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,6 +43,7 @@ import reactor.test.StepVerifier;
 class InputControllerTest {
 
   private DriveResolveService driveResolveService;
+  private YouTubeResolveService youTubeResolveService;
   private SubmitAnalysisService submitAnalysisService;
   private ListAnalysesService listAnalysesService;
   private GetAnalysisService getAnalysisService;
@@ -50,6 +54,7 @@ class InputControllerTest {
   @BeforeEach
   void setUp() {
     driveResolveService = mock(DriveResolveService.class);
+    youTubeResolveService = mock(YouTubeResolveService.class);
     submitAnalysisService = mock(SubmitAnalysisService.class);
     listAnalysesService = mock(ListAnalysesService.class);
     getAnalysisService = mock(GetAnalysisService.class);
@@ -59,6 +64,7 @@ class InputControllerTest {
     controller =
         new InputController(
             driveResolveService,
+            youTubeResolveService,
             submitAnalysisService,
             listAnalysesService,
             getAnalysisService,
@@ -92,6 +98,30 @@ class InputControllerTest {
         .assertNext(resp -> assertThat(resp.getBody()).isEqualTo("resolved"))
         .verifyComplete();
     verify(driveResolveService).execute(body);
+  }
+
+  @Test
+  void resolveYouTubeDelegatesToService() {
+    Map<String, List<String>> body = Map.of("urls", List.of("https://youtube.com/watch?v=123"));
+    YouTubeVideoInfoDto info =
+        YouTubeVideoInfoDto.builder()
+            .videoId("123")
+            .url("https://youtube.com/watch?v=123")
+            .title("Test Video")
+            .unlisted(true)
+            .build();
+    when(youTubeResolveService.resolveVideos(List.of("https://youtube.com/watch?v=123")))
+        .thenReturn(Flux.just(info));
+
+    StepVerifier.create(controller.resolveYouTube(body))
+        .assertNext(
+            resp -> {
+              assertThat(resp.getVideoId()).isEqualTo("123");
+              assertThat(resp.isUnlisted()).isTrue();
+              assertThat(resp.getTitle()).isEqualTo("Test Video");
+            })
+        .verifyComplete();
+    verify(youTubeResolveService).resolveVideos(List.of("https://youtube.com/watch?v=123"));
   }
 
   @Test
@@ -136,4 +166,3 @@ class InputControllerTest {
     verify(deleteAnalysisService).execute("1");
   }
 }
-

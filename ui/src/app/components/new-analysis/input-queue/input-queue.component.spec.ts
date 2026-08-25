@@ -1,6 +1,7 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 
+import {AnalysisVideoFile} from '../../../services/analysis.service';
 import {InputQueueComponent} from './input-queue.component';
 
 describe('InputQueueComponent', () => {
@@ -17,11 +18,12 @@ describe('InputQueueComponent', () => {
     fixture.detectChanges();
   });
 
-  it('groups files by source type and parses YouTube thumbnails', () => {
+  it('groups files by source type, parses YouTube thumbnails, and passes unlisted flag', () => {
     const ytFile = new File([''], 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', {
       type: 'youtube/url',
-    });
-    (ytFile as any).sourceUrl = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+    }) as AnalysisVideoFile;
+    ytFile.sourceUrl = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+    ytFile.unlisted = true;
 
     const driveFile = new File([''], 'drive-doc.mp4', {type: 'drive/url'});
     const uploadFile = new File([''], 'local-vid.mp4', {type: 'video/uploaded'});
@@ -33,6 +35,7 @@ describe('InputQueueComponent', () => {
     expect(groups.length).toBe(3);
     expect(groups[0].key).toBe('youtube');
     expect(groups[0].items[0].thumbnailUrl).toContain('i.ytimg.com/vi/dQw4w9WgXcQ');
+    expect(groups[0].items[0].unlisted).toBeTrue();
     expect(groups[1].key).toBe('drive');
     expect(groups[2].key).toBe('file');
   });
@@ -57,4 +60,3 @@ describe('InputQueueComponent', () => {
     expect(clearSpy).toHaveBeenCalled();
   });
 });
-

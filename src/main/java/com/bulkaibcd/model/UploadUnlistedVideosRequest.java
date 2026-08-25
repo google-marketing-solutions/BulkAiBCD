@@ -16,9 +16,8 @@
 
 package com.bulkaibcd.model;
 
-import com.google.cloud.Timestamp;
-import com.google.cloud.firestore.annotation.DocumentId;
-import com.google.cloud.spring.data.firestore.Document;
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,24 +25,27 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * An entity representing a top-level video analysis job request in Firestore.
+ * A request payload to initiate batch upload of unlisted YouTube videos to Google Cloud Storage.
  */
-@Document(collectionName = "analyses")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AnalysisRequestEntity {
-  @DocumentId private String analysisId;
-  private String requesterId;
+public class UploadUnlistedVideosRequest {
+
+  @JsonProperty("unlisted_youtube_video_ids")
+  @JsonAlias("unlistedYoutubeVideoIds")
+  private List<String> unlistedYoutubeVideoIds;
+
+  @JsonProperty("gcs_uri_prefix")
+  @JsonAlias("gcsUriPrefix")
+  private String gcsUriPrefix;
+
+  @JsonProperty("user_id")
+  @JsonAlias("userId")
+  private String userId;
+
+  @JsonProperty("analysis_name")
+  @JsonAlias("analysisName")
   private String analysisName;
-  private String analysisType;
-  private String analysisStatus;
-  private String brandName;
-  private String marketingObjective;
-  private List<String> customFeaturesLong;
-  private List<String> customFeaturesShort;
-  private Timestamp createdAt;
-  private Timestamp updatedAt;
-  private String uploadRequestId;
 }

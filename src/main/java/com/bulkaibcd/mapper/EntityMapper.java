@@ -25,11 +25,19 @@ import com.google.cloud.Timestamp;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
 
+/**
+ * A mapper component to transform between API request DTOs and Firestore database entity models.
+ */
 @Component
 public class EntityMapper {
 
+  /**
+   * Maps a {@link SubmitAnalysisRequest} payload to an {@link AnalysisRequestEntity} domain record.
+   *
+   * @param request the analysis submission request
+   * @return the initialized analysis entity record
+   */
   public static AnalysisRequestEntity toAnalysisRequestEntity(SubmitAnalysisRequest request) {
-
     Timestamp now = Timestamp.now();
     String analysisId = UUID.randomUUID().toString();
     return AnalysisRequestEntity.builder()
@@ -47,9 +55,15 @@ public class EntityMapper {
         .build();
   }
 
+  /**
+   * Maps an individual {@link SubmitAnalysisRequest.VideoInput} payload to a {@link VideoInputEntity} record.
+   *
+   * @param videoInput the child video input item
+   * @param analysisId the parent analysis identifier
+   * @return the initialized video input entity
+   */
   public static VideoInputEntity toVideoInputEntity(
       SubmitAnalysisRequest.VideoInput videoInput, String analysisId) {
-
     String videoId = UUID.randomUUID().toString();
     return VideoInputEntity.builder()
         .id(analysisId + "_" + videoId)
@@ -61,11 +75,18 @@ public class EntityMapper {
         .sourceType(videoInput.getSourceType())
         .format(videoInput.getFormat())
         .gcsObjectId(videoInput.getGcsObjectId())
+        .unlisted(videoInput.getUnlisted() != null && videoInput.getUnlisted())
         .build();
   }
 
+  /**
+   * Initializes a skeleton {@link VideoMetadataEntity} for an analysis and video pair.
+   *
+   * @param analysisId the parent analysis ID
+   * @param videoId the video ID
+   * @return the skeleton metadata entity
+   */
   public static VideoMetadataEntity toVideoMetadataEntity(String analysisId, String videoId) {
-
     return VideoMetadataEntity.builder()
         .id(analysisId + "_" + videoId)
         .analysisId(analysisId)
@@ -74,10 +95,16 @@ public class EntityMapper {
         .build();
   }
 
+  /**
+   * Converts a persisted {@link VideoInputEntity} into a seeded {@link VideoMetadataEntity}.
+   *
+   * @param v the video input entity record
+   * @param hasError whether an error occurred during preparation/ingestion
+   * @return the seeded metadata entity record
+   */
   public static VideoMetadataEntity toVideoMetadataEntity(VideoInputEntity v, boolean hasError) {
-
     String docId = v.getAnalysisId() + "_" + v.getVideoId();
-    VideoMetadataEntity.VideoMetadataEntityBuilder videoMetadataEntityBuilder =
+    VideoMetadataEntity.VideoMetadataEntityBuilder builder =
         VideoMetadataEntity.builder()
             .id(docId)
             .analysisId(v.getAnalysisId())
@@ -90,7 +117,7 @@ public class EntityMapper {
             .format(v.getFormat())
             .status(hasError ? AnalysisStatus.COMPLETED.name() : AnalysisStatus.PROCESSING.name());
     if (hasError) {
-      videoMetadataEntityBuilder
+      builder
           .errorMessage(v.getErrorMessage())
           .assetName("")
           .aScore(0)
@@ -98,6 +125,6 @@ public class EntityMapper {
           .cScore(0)
           .dScore(0);
     }
-    return videoMetadataEntityBuilder.build();
+    return builder.build();
   }
 }

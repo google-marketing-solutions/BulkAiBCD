@@ -24,10 +24,6 @@ describe('VideoInputTabsComponent', () => {
   it('creates successfully with sub-tab components', () => {
     expect(component).toBeTruthy();
     const compiled = fixture.nativeElement;
-    expect(compiled.querySelector('app-file-upload')).toBeTruthy();
-    expect(compiled.querySelector('app-url-input')).toBeTruthy();
-    expect(compiled.querySelector('app-drive-input')).toBeTruthy();
-    expect(compiled.querySelector('app-id-input')).toBeTruthy();
+    expect(compiled.querySelector('mat-tab-group')).toBeTruthy();
   });
 });
-

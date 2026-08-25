@@ -16,32 +16,34 @@
 
 package com.bulkaibcd.model;
 
-import com.google.cloud.firestore.annotation.DocumentId;
-import com.google.cloud.spring.data.firestore.Document;
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Document(collectionName = "video_inputs")
+/**
+ * A status record for an individual video's upload progress in a batch job.
+ */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class VideoInputEntity {
-  @DocumentId private String id;
-  private String analysisId;
+public class VideoUploadStatusInfo {
+
+  @JsonProperty("video_id")
+  @JsonAlias("videoId")
   private String videoId;
-  /** Human-readable display label (YT title, original filename, Ads ID label). */
-  private String videoName;
-  /** Canonical source URL for this video (YT watch URL, Drive URL). Null for file uploads. */
-  private String videoUrl;
-  /** Client-captured JPEG data URL for uploaded local files; null for URL sources. */
-  private String thumbnailUrl;
-  private String sourceType;
-  private String format;
-  private String gcsObjectId;
+
+  @JsonProperty("status")
+  private String status;
+
+  @JsonProperty("gcs_path")
+  @JsonAlias("gcsPath")
+  private String gcsPath;
+
+  @JsonProperty("error_message")
+  @JsonAlias("errorMessage")
   private String errorMessage;
-  private Boolean unlisted;
-  private String uploadRequestId;
 }

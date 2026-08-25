@@ -1,26 +1,48 @@
+/*
+ * Copyright 2026 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.bulkaibcd.service.analysis;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.bulkaibcd.client.BoqInputServiceClient;
 import com.bulkaibcd.client.CloudTasksQueueClient;
 import com.bulkaibcd.client.GoogleDriveClient;
 import com.bulkaibcd.model.AnalysisRequestEntity;
+import com.bulkaibcd.model.UploadUnlistedVideosRequest;
+import com.bulkaibcd.model.UploadUnlistedVideosResponse;
 import com.bulkaibcd.model.VideoInputEntity;
 import com.bulkaibcd.repository.AnalysisRequestRepository;
 import com.bulkaibcd.repository.VideoInputRepository;
 import com.bulkaibcd.repository.VideoMetadataRepository;
 import com.bulkaibcd.service.batch.BatchPredictionOrchestrator;
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.HttpStatus;
+import org.springframework.test.util.ReflectionTestUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -32,6 +54,7 @@ class PrepareAnalysisServiceTest {
   private VideoMetadataRepository videoMetadataRepo;
   private BatchPredictionOrchestrator batchOrchestrator;
   private CloudTasksQueueClient cloudTasksClient;
+  private BoqInputServiceClient boqInputServiceClient;
   private ObjectProvider<GoogleDriveClient> driveProvider;
   private GoogleDriveClient driveClient;
   private PrepareAnalysisService service;
@@ -43,6 +66,7 @@ class PrepareAnalysisServiceTest {
     videoMetadataRepo = mock(VideoMetadataRepository.class);
     batchOrchestrator = mock(BatchPredictionOrchestrator.class);
     cloudTasksClient = mock(CloudTasksQueueClient.class);
+    boqInputServiceClient = mock(BoqInputServiceClient.class);
     @SuppressWarnings("unchecked")
     ObjectProvider<GoogleDriveClient> provider = mock(ObjectProvider.class);
     driveProvider = provider;
@@ -56,7 +80,9 @@ class PrepareAnalysisServiceTest {
             videoMetadataRepo,
             batchOrchestrator,
             cloudTasksClient,
+            boqInputServiceClient,
             driveProvider);
+    ReflectionTestUtils.setField(service, "uploadsBucket", "test-bucket");
   }
 
   @Test
@@ -73,7 +99,7 @@ class PrepareAnalysisServiceTest {
   }
 
   @Test
-  void executeWithVideosSeedsMetadataAndSubmitsPhase1Job() throws Exception {
+  void executeWithPublicYouTubeVideosSeedsMetadataAndSubmitsPhase1Job() throws Exception {
     AnalysisRequestEntity parent =
         AnalysisRequestEntity.builder().analysisId("ana-1").analysisStatus("PENDING").build();
     when(analysisRepo.findById("ana-1")).thenReturn(Mono.just(parent));
@@ -86,6 +112,7 @@ class PrepareAnalysisServiceTest {
             .videoId("v1")
             .sourceType("YOUTUBE")
             .videoUrl("https://youtube.com/1")
+            .unlisted(false)
             .build();
     when(videoInputRepo.findByAnalysisId("ana-1")).thenReturn(Flux.just(v1));
     when(videoMetadataRepo.findById("ana-1_v1")).thenReturn(Mono.empty());
@@ -100,13 +127,59 @@ class PrepareAnalysisServiceTest {
             })
         .verifyComplete();
 
-    verify(batchOrchestrator).submitPhase1Job("ana-1", java.util.List.of(v1));
+    verify(batchOrchestrator).submitPhase1Job("ana-1", List.of(v1));
     verify(cloudTasksClient)
         .enqueueTask(
-            org.mockito.ArgumentMatchers.eq("/api/v2/worker/check-phase1-status"),
+            eq("/api/v2/worker/check-phase1-status"),
             anyString(),
             anyString(),
             anyInt());
+  }
+
+  @Test
+  void executeWithUnlistedYouTubeVideosInitiatesBoqUploadAndEnqueuesUploadPoller() throws Exception {
+    AnalysisRequestEntity parent =
+        AnalysisRequestEntity.builder()
+            .analysisId("ana-1")
+            .requesterId("user-1")
+            .analysisName("brand-analysis")
+            .analysisStatus("PENDING")
+            .build();
+    when(analysisRepo.findById("ana-1")).thenReturn(Mono.just(parent));
+    when(analysisRepo.save(any())).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
+
+    VideoInputEntity unlistedVid =
+        VideoInputEntity.builder()
+            .id("ana-1_v1")
+            .analysisId("ana-1")
+            .videoId("v1")
+            .sourceType("YOUTUBE")
+            .videoUrl("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+            .unlisted(true)
+            .build();
+    when(videoInputRepo.findByAnalysisId("ana-1")).thenReturn(Flux.just(unlistedVid));
+    when(videoInputRepo.save(any())).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
+
+    UploadUnlistedVideosResponse uploadResponse =
+        UploadUnlistedVideosResponse.builder().requestId("boq-req-999").build();
+    when(boqInputServiceClient.uploadUnlistedVideosToGcs(any(UploadUnlistedVideosRequest.class)))
+        .thenReturn(uploadResponse);
+
+    StepVerifier.create(service.execute(Map.of("analysisId", "ana-1")))
+        .assertNext(
+            resp -> {
+              assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+              assertThat(resp.getBody()).contains("Boq unlisted upload launched");
+            })
+        .verifyComplete();
+
+    verify(boqInputServiceClient).uploadUnlistedVideosToGcs(any(UploadUnlistedVideosRequest.class));
+    verify(cloudTasksClient)
+        .enqueueTask(
+            eq("/api/v2/worker/check-upload-status"),
+            eq("{\"analysisId\":\"ana-1\",\"requestId\":\"boq-req-999\",\"attemptCount\":1}"),
+            eq("ana-1_UPLOAD_POLL_attempt_1"),
+            eq(15));
   }
 
   @Test

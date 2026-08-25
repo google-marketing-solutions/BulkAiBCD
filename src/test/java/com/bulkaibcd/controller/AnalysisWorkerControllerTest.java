@@ -27,6 +27,7 @@ import com.bulkaibcd.model.TaskRequest;
 import com.bulkaibcd.service.analysis.PrepareAnalysisService;
 import com.bulkaibcd.service.batch.CheckPhase1StatusService;
 import com.bulkaibcd.service.batch.CheckPhase2StatusService;
+import com.bulkaibcd.service.batch.CheckUploadStatusService;
 import com.bulkaibcd.service.batch.ProcessPhase1ResultsService;
 import com.bulkaibcd.service.batch.ProcessPhase2ResultsService;
 import com.bulkaibcd.service.batch.StartPhase2Service;
@@ -42,6 +43,7 @@ import reactor.test.StepVerifier;
 class AnalysisWorkerControllerTest {
 
   private PrepareAnalysisService prepareAnalysisService;
+  private CheckUploadStatusService checkUploadStatusService;
   private FetchScoringMetadataService fetchScoringMetadataService;
   private ExtractRawMetadataService extractRawMetadataService;
   private StartPhase2Service startPhase2Service;
@@ -55,6 +57,7 @@ class AnalysisWorkerControllerTest {
   @BeforeEach
   void setUp() {
     prepareAnalysisService = mock(PrepareAnalysisService.class);
+    checkUploadStatusService = mock(CheckUploadStatusService.class);
     fetchScoringMetadataService = mock(FetchScoringMetadataService.class);
     extractRawMetadataService = mock(ExtractRawMetadataService.class);
     startPhase2Service = mock(StartPhase2Service.class);
@@ -66,6 +69,7 @@ class AnalysisWorkerControllerTest {
     controller =
         new AnalysisWorkerController(
             prepareAnalysisService,
+            checkUploadStatusService,
             fetchScoringMetadataService,
             extractRawMetadataService,
             startPhase2Service,
@@ -84,6 +88,17 @@ class AnalysisWorkerControllerTest {
         .assertNext(resp -> assertThat(resp.getBody()).isEqualTo("prepared"))
         .verifyComplete();
     verify(prepareAnalysisService).execute(payload);
+  }
+
+  @Test
+  void checkUploadStatusDelegatesToService() {
+    Map<String, Object> payload = Map.of("analysisId", "ana-1", "requestId", "req-1");
+    when(checkUploadStatusService.execute(payload)).thenReturn(Mono.just(ResponseEntity.ok("upload-checked")));
+
+    StepVerifier.create(controller.checkUploadStatus(payload))
+        .assertNext(resp -> assertThat(resp.getBody()).isEqualTo("upload-checked"))
+        .verifyComplete();
+    verify(checkUploadStatusService).execute(payload);
   }
 
   @Test
@@ -167,4 +182,3 @@ class AnalysisWorkerControllerTest {
     verify(processPhase1ResultsService).execute(request);
   }
 }
-

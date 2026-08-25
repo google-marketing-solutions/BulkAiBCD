@@ -129,7 +129,18 @@
       <version>1.19.3</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>com.google.c2pauthorizer</groupId>
+      <artifactId>client</artifactId>
+      <version>RELEASE</version>
+    </dependency>
   </dependencies>
+  <repositories>
+    <repository>
+      <id>c2pauthlibs-java-ar</id>
+      <url>artifactregistry://us-central1-maven.pkg.dev/c2pauthorizer-client-libs/c2pauthlibs-java-ar</url>
+    </repository>
+  </repositories>
   <dependencyManagement>
     <dependencies>
       <dependency>
@@ -150,6 +161,13 @@
   </dependencyManagement>
 
   <build>
+    <extensions>
+      <extension>
+        <groupId>com.google.cloud.artifactregistry</groupId>
+        <artifactId>artifactregistry-maven-wagon</artifactId>
+        <version>RELEASE</version>
+      </extension>
+    </extensions>
     <plugins>
       <plugin>
         <groupId>org.springframework.boot</groupId>

@@ -53,5 +53,7 @@ public class SubmitAnalysisRequest {
     private String thumbnailUrl;
     /** The format for this specific video (e.g., LONG, SHORT) */
     private String format;
+    /** Whether this video is unlisted on YouTube. */
+    private Boolean unlisted;
   }
 }

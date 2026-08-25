@@ -32,3 +32,6 @@ spring:
 app:
   backend-url: ${APP_BACKEND_URL}
   uploads-bucket: ${UPLOADS_BUCKET:bulkaibcd-uploads-${GOOGLE_CLOUD_PROJECT}}
+  boq:
+    hybrid-api-url: ${BOQ_HYBRID_API_URL:https://autopush-bulkaibcd.hybrid.sandbox.googleapis.com}
+    hybrid-api-service-name: ${BOQ_HYBRID_API_SERVICE_NAME:staging-bulkaibcd.hybrid.googleapis.com}

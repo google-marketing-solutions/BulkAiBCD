@@ -38,6 +38,7 @@
             </ng-template>
           </div>
           <span class="video-name" [title]="item.name">{{ item.name }}</span>
+          <span *ngIf="item.unlisted" class="unlisted-badge">Unlisted</span>
           <span class="video-format-badge">{{ item.format === 'SHORT' ? 'Shorts' : 'Longer format' }}</span>
           <button mat-icon-button aria-label="Remove video" (click)="onDeleteVideo(item.originalIndex)">
             <mat-icon>close</mat-icon>

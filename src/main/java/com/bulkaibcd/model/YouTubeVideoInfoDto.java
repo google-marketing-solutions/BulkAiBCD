@@ -16,32 +16,30 @@
 
 package com.bulkaibcd.model;
 
-import com.google.cloud.firestore.annotation.DocumentId;
-import com.google.cloud.spring.data.firestore.Document;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Document(collectionName = "video_inputs")
+/**
+ * A data transfer object representing resolved YouTube video information and unlisted status.
+ */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class VideoInputEntity {
-  @DocumentId private String id;
-  private String analysisId;
+public class YouTubeVideoInfoDto {
+
+  @JsonProperty("video_id")
   private String videoId;
-  /** Human-readable display label (YT title, original filename, Ads ID label). */
-  private String videoName;
-  /** Canonical source URL for this video (YT watch URL, Drive URL). Null for file uploads. */
-  private String videoUrl;
-  /** Client-captured JPEG data URL for uploaded local files; null for URL sources. */
-  private String thumbnailUrl;
-  private String sourceType;
-  private String format;
-  private String gcsObjectId;
-  private String errorMessage;
-  private Boolean unlisted;
-  private String uploadRequestId;
+
+  @JsonProperty("url")
+  private String url;
+
+  @JsonProperty("title")
+  private String title;
+
+  @JsonProperty("unlisted")
+  private boolean unlisted;
 }

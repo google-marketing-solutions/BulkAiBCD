@@ -25,11 +25,13 @@ import {
 } from '@angular/core';
 import {MatButtonModule} from '@angular/material/button';
 import {MatIconModule} from '@angular/material/icon';
+import {AnalysisVideoFile} from '../../../services/analysis.service';
 
 interface QueueItem {
   name: string;
   thumbnailUrl: string | null;
   format: string;
+  unlisted?: boolean;
   // Index into the original, unsorted File[] input — emitted on delete so the
   // parent can splice the right element out.
   originalIndex: number;
@@ -120,21 +122,28 @@ function sourceKey(file: File): SourceKey {
 }
 
 function toQueueItem(file: File, originalIndex: number): QueueItem {
+  const meta = file as AnalysisVideoFile;
+  const isUnlisted = Boolean(meta.unlisted);
+  const format = meta.format ?? 'LONG';
   if (file.type === 'youtube/url') {
-    const url = (file as File & {sourceUrl?: string}).sourceUrl ?? file.name;
+    const url = meta.sourceUrl ?? file.name;
     const m = YOUTUBE_ID.exec(url);
     if (m) {
       return {
         name: file.name,
         thumbnailUrl: `https://i.ytimg.com/vi/${m[1]}/hqdefault.jpg`,
         originalIndex,
-        format: (file as any).format ?? 'LONG',
+        format,
+        unlisted: isUnlisted,
       };
     }
   }
-  const dataUrl = (file as File & {thumbnailDataUrl?: string | null})
-    .thumbnailDataUrl;
-  const format = (file as any).format ?? 'LONG';
-  if (dataUrl) return {name: file.name, thumbnailUrl: dataUrl, originalIndex, format};
-  return {name: file.name, thumbnailUrl: null, originalIndex, format};
+  const dataUrl = meta.thumbnailDataUrl;
+  return {
+    name: file.name,
+    thumbnailUrl: dataUrl ?? null,
+    originalIndex,
+    format,
+    unlisted: isUnlisted,
+  };
 }

@@ -21,6 +21,8 @@ import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatIconModule} from '@angular/material/icon';
 import {MatInputModule} from '@angular/material/input';
 import {MatSnackBar, MatSnackBarModule} from '@angular/material/snack-bar';
+import {firstValueFrom} from 'rxjs';
+import {AnalysisService, AnalysisVideoFile} from '../../../../services/analysis.service';
 
 const YOUTUBE_URL_PATTERN =
   /^https?:\/\/(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[A-Za-z0-9_-]+/;
@@ -68,6 +70,7 @@ export class UrlInputComponent {
   readonly currentCount = input(0);
   readonly filesAdded = output<File[]>();
   private readonly snackBar = inject(MatSnackBar);
+  private readonly analysisService = inject(AnalysisService);
 
   urlsControl = new FormControl('', [Validators.required]);
 
@@ -97,24 +100,38 @@ export class UrlInputComponent {
     }
     if (valid.length === 0) return;
 
-    // Resolve titles in parallel; fall back to the URL if lookup fails.
-    const files = await Promise.all(
-      valid.map(async (url) => {
-        const title = await fetchYoutubeTitle(url).catch(() => null);
-        // File.name is what the queue + breakdown table render; we put the title
-        // there and keep the URL as the content so the backend still stores it.
-        const label = title ? title : url;
-        const file = new File([url], label, {type: 'youtube/url'});
-        // Stash the URL alongside so NewAnalysisComponent can send it as videoLink.
-        (file as File & {sourceUrl: string}).sourceUrl = url;
+    try {
+      const resolvedList = await firstValueFrom(this.analysisService.resolveYouTubeUrls(valid));
+      const files: AnalysisVideoFile[] = resolvedList.map((res) => {
+        const label = res.title ? res.title : res.url;
+        const file = new File([res.url], label, {type: 'youtube/url'}) as AnalysisVideoFile;
+        file.sourceUrl = res.url;
+        file.unlisted = res.unlisted;
         return file;
-      }),
-    );
+      });
 
-    this.filesAdded.emit(files);
-    this.urlsControl.reset('', {emitEvent: false});
-    this.urlsControl.markAsPristine();
-    this.urlsControl.markAsUntouched();
+      this.filesAdded.emit(files);
+      this.urlsControl.reset('', {emitEvent: false});
+      this.urlsControl.markAsPristine();
+      this.urlsControl.markAsUntouched();
+    } catch {
+      // Resolve titles in parallel via oEmbed fallback if backend resolver is unavailable
+      const files: AnalysisVideoFile[] = await Promise.all(
+        valid.map(async (url) => {
+          const title = await fetchYoutubeTitle(url).catch(() => null);
+          const label = title ? title : url;
+          const file = new File([url], label, {type: 'youtube/url'}) as AnalysisVideoFile;
+          file.sourceUrl = url;
+          file.unlisted = false;
+          return file;
+        }),
+      );
+
+      this.filesAdded.emit(files);
+      this.urlsControl.reset('', {emitEvent: false});
+      this.urlsControl.markAsPristine();
+      this.urlsControl.markAsUntouched();
+    }
   }
 }
 

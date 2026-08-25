@@ -16,34 +16,23 @@
 
 package com.bulkaibcd.model;
 
-import com.google.cloud.Timestamp;
-import com.google.cloud.firestore.annotation.DocumentId;
-import com.google.cloud.spring.data.firestore.Document;
-import java.util.List;
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * An entity representing a top-level video analysis job request in Firestore.
+ * A request payload to poll the status of a batch upload job in Boq InputService.
  */
-@Document(collectionName = "analyses")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AnalysisRequestEntity {
-  @DocumentId private String analysisId;
-  private String requesterId;
-  private String analysisName;
-  private String analysisType;
-  private String analysisStatus;
-  private String brandName;
-  private String marketingObjective;
-  private List<String> customFeaturesLong;
-  private List<String> customFeaturesShort;
-  private Timestamp createdAt;
-  private Timestamp updatedAt;
-  private String uploadRequestId;
+public class UploadStatusRequest {
+
+  @JsonProperty("request_id")
+  @JsonAlias("requestId")
+  private String requestId;
 }

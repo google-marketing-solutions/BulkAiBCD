@@ -22,7 +22,7 @@ import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {Router, provideRouter} from '@angular/router';
 import {of, throwError} from 'rxjs';
 
-import {AnalysisService} from '../../services/analysis.service';
+import {AnalysisService, AnalysisVideoFile} from '../../services/analysis.service';
 import {NewAnalysisComponent} from './new-analysis.component';
 
 describe('NewAnalysisComponent', () => {
@@ -35,7 +35,12 @@ describe('NewAnalysisComponent', () => {
   beforeEach(async () => {
     analysisService = jasmine.createSpyObj<AnalysisService>('AnalysisService', [
       'submitAnalysis',
+      'getConfig',
     ]);
+    analysisService.getConfig.and.returnValue(
+      of({driveIngestServiceAccount: 'sa@test.iam.gserviceaccount.com', projectId: 'test-project'}),
+    );
+
     await TestBed.configureTestingModule({
       imports: [NewAnalysisComponent, NoopAnimationsModule],
       providers: [
@@ -66,12 +71,18 @@ describe('NewAnalysisComponent', () => {
   it('submits and routes to /list on success', () => {
     analysisService.submitAnalysis.and.returnValue(of('analysis-1'));
     const navigateSpy = spyOn(router, 'navigate').and.returnValue(Promise.resolve(true));
-    setup('Q3', [new File([''], 'v.mp4', {type: 'video/mp4'})]);
+    const file = new File([''], 'v.mp4', {type: 'video/mp4'}) as AnalysisVideoFile;
+    file.unlisted = true;
+    setup('Q3', [file]);
 
     (component as any).runAnalysis();
 
     expect(analysisService.submitAnalysis).toHaveBeenCalledWith(
-      jasmine.objectContaining({analysisName: 'Q3', analysisType: 'standard'}),
+      jasmine.objectContaining({
+        analysisName: 'Q3',
+        analysisType: 'standard',
+        videos: [jasmine.objectContaining({videoName: 'v.mp4', unlisted: true})],
+      }),
     );
     expect(navigateSpy).toHaveBeenCalledWith(['/list']);
   });
