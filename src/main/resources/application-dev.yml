@@ -24,9 +24,6 @@ google:
       name: gemini-2.5-pro
 
 spring:
-  autoconfigure:
-    exclude:
-      - com.google.cloud.spring.autoconfigure.storage.GcpStorageAutoConfiguration
   cloud:
     gcp:
       firestore:
@@ -42,7 +39,7 @@ app:
   uploads-bucket: ${UPLOADS_BUCKET:bulkaibcd-uploads-local}
   boq:
     hybrid-api-url: ${BOQ_HYBRID_API_URL:https://autopush-bulkaibcd.hybrid.sandbox.googleapis.com}
-    hybrid-api-service-name: ${BOQ_HYBRID_API_SERVICE_NAME:staging-bulkaibcd.hybrid.googleapis.com}
+    hybrid-api-service-name: ${BOQ_HYBRID_API_SERVICE_NAME:bulkaibcd.hybrid.googleapis.com}
 
 logging:
   level:

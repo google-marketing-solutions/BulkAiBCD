@@ -14,53 +14,92 @@
  * limitations under the License.
  */
 
-package com.bulkaibcd.config;
-
-import com.google.cloud.hybrid.connect.c2pauthorizer.client.C2PAuthorizerClientEnvironment;
-import com.google.cloud.hybrid.connect.c2pauthorizer.client.HelheimTokenRefresher;
-import java.net.http.HttpClient;
-import java.time.Duration;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
-/**
- * A configuration provider for Boq Hybrid API client, HTTP transport, and token refreshers.
- */
-@Configuration
-@Slf4j
-public class BoqHybridConfig {
-
-  /**
-   * Builds an {@link HttpClient} configured with standard connect timeouts for Hybrid API RPCs.
-   *
-   * @return the configured HTTP client instance
-   */
-  @Bean
-  public HttpClient boqHttpClient() {
-    return HttpClient.newBuilder()
-        .connectTimeout(Duration.ofSeconds(30))
-        .build();
-  }
-
-  /**
-   * Builds a {@link HelheimTokenRefresher} configured to periodically refresh tokens for Boq RPCs.
-   *
-   * @param serviceName the registered OnePlatform service name ending in .hybrid.googleapis.com
-   * @return the configured Helheim token refresher instance
-   */
-  @Bean
-  public HelheimTokenRefresher helheimTokenRefresher(
-      @Value("${app.boq.hybrid-api-service-name:staging-bulkaibcd.hybrid.googleapis.com}")
-          String serviceName) {
-    try {
-      return HelheimTokenRefresher.builder()
-          .setServiceName(serviceName)
-          .setEnvironment(C2PAuthorizerClientEnvironment.STAGING)
+  package com.bulkaibcd.config;
+  
+  import com.bulkaibcd.proto.InputServiceGrpc;
+  import com.google.auth.oauth2.GoogleCredentials;
+  import com.google.cloud.hybrid.connect.c2pauthorizer.client.C2PAuthorizerClientEnvironment;
+  import com.google.cloud.hybrid.connect.c2pauthorizer.client.HelheimTokenRefresher;
+  import io.grpc.CallCredentials;
+  import io.grpc.CompositeCallCredentials;
+  import io.grpc.ManagedChannel;
+  import io.grpc.ManagedChannelBuilder;
+  import io.grpc.auth.MoreCallCredentials;
+  import java.util.Collections;
+  import lombok.extern.slf4j.Slf4j;
+  import org.springframework.beans.factory.annotation.Autowired;
+  import org.springframework.beans.factory.annotation.Qualifier;
+  import org.springframework.beans.factory.annotation.Value;
+  import org.springframework.context.annotation.Bean;
+  import org.springframework.context.annotation.Configuration;
+  
+  @Configuration
+  @Slf4j
+  public class BoqHybridConfig {
+  
+    @Bean
+    public HelheimTokenRefresher helheimTokenRefresher(
+        @Value("${app.boq.hybrid-api-service-name:staging-bulkaibcd.hybrid.googleapis.com}")
+            String serviceName) {
+      try {
+        log.info("Initializing HelheimTokenRefresher for service: {}", serviceName);
+        return HelheimTokenRefresher.builder()
+            .setServiceName(serviceName)
+            .setEnvironment(C2PAuthorizerClientEnvironment.STAGING)
+            .build();
+      } catch (Exception e) {
+        log.warn("Could not initialize HelheimTokenRefresher bean: {}", e.getMessage());
+        return null;
+      }
+    }
+  
+    @Bean("boqGrpcManagedChannel")
+    public ManagedChannel boqGrpcManagedChannel(
+        @Value("${app.boq.hybrid-api-url:https://autopush-bulkaibcd.hybrid.sandbox.googleapis.com}")
+            String rawUrl) {
+      String host = rawUrl.replace("https://", "").replace("http://", "").split("/")[0];
+      int port = 443;
+      if (host.contains(":")) {
+        String[] parts = host.split(":");
+        host = parts[0];
+        port = Integer.parseInt(parts[1]);
+      }
+      return ManagedChannelBuilder.forAddress(host, port)
+          .useTransportSecurity()
           .build();
-    } catch (Exception e) {
-      throw new IllegalStateException("Could not initialize HelheimTokenRefresher", e);
+    }
+  
+    @Bean("boqCompositeCallCredentials")
+    public CallCredentials boqCompositeCallCredentials(
+        @Autowired(required = false) HelheimTokenRefresher helheimTokenRefresher) {
+      try {
+        GoogleCredentials credentials =
+            GoogleCredentials.getApplicationDefault()
+                .createScoped(Collections.singletonList("https://www.googleapis.com/auth/cloud-platform"));
+        CallCredentials oauthCreds = MoreCallCredentials.from(credentials);
+  
+        if (helheimTokenRefresher != null) {
+          CallCredentials helheimCreds = helheimTokenRefresher.getHelheimTokenCallCredentials();
+          return new CompositeCallCredentials(oauthCreds, helheimCreds);
+        }
+        return oauthCreds;
+      } catch (Exception e) {
+        log.warn("Could not create gRPC CompositeCallCredentials: {}", e.getMessage());
+        return null;
+      }
+    }
+  
+    @Bean
+    public InputServiceGrpc.InputServiceBlockingStub inputServiceBlockingStub(
+        @Qualifier("boqGrpcManagedChannel") ManagedChannel boqGrpcManagedChannel,
+        @Autowired(required = false) @Qualifier("boqCompositeCallCredentials") CallCredentials boqCompositeCallCredentials) {
+      InputServiceGrpc.InputServiceBlockingStub stub =
+          InputServiceGrpc.newBlockingStub(boqGrpcManagedChannel);
+      if (boqCompositeCallCredentials != null) {
+        stub = stub.withCallCredentials(boqCompositeCallCredentials);
+      }
+      return stub;
     }
   }
-}
+  
+  

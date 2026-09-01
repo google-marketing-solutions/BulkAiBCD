@@ -33,7 +33,7 @@ import {AnalysisConfigComponent} from './analysis-config/analysis-config.compone
 import {InputQueueComponent} from './input-queue/input-queue.component';
 
 const DEFAULT_REQUESTER_ID = 'default-user';
-const MAX_VIDEOS_PER_ANALYSIS = 25;
+const MAX_VIDEOS_PER_ANALYSIS = 1999;
 
 /**
  * Component for starting a new analysis.

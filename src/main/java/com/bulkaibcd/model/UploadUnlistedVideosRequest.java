@@ -33,6 +33,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class UploadUnlistedVideosRequest {
 
+  @JsonProperty("request_id")
+  @JsonAlias("requestId")
+  private String requestId;
+
   @JsonProperty("unlisted_youtube_video_ids")
   @JsonAlias("unlistedYoutubeVideoIds")
   private List<String> unlistedYoutubeVideoIds;

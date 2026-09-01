@@ -17,6 +17,7 @@
 package com.bulkaibcd.model;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -31,7 +32,12 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class UploadStatusResponse {
+
+  @JsonProperty("request_id")
+  @JsonAlias("requestId")
+  private String requestId;
 
   @JsonProperty("total_count")
   @JsonAlias("totalCount")
@@ -54,6 +60,6 @@ public class UploadStatusResponse {
   private boolean allCompleted;
 
   @JsonProperty("video_upload_statuses")
-  @JsonAlias({"videoUploadStatuses", "video_upload_status_infos", "videoUploadStatusInfos"})
+  @JsonAlias({"videos", "videoUploadStatuses", "video_upload_status_infos", "videoUploadStatusInfos", "videoSources", "video_sources"})
   private List<VideoUploadStatusInfo> videoUploadStatuses;
 }

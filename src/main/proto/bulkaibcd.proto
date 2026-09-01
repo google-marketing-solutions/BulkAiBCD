@@ -1,0 +1,74 @@
+syntax = "proto3";
+
+// NOTE: This package name MUST match the Boq service definition in Google3,
+// because gRPC uses it on the wire: /corp.gtech.ads.solutions.bulkaibcd.InputService/...
+package corp.gtech.ads.solutions.bulkaibcd;
+
+// NOTE: This controls the generated Java package in your Spring Boot application.
+option java_package = "com.bulkaibcd.proto";
+option java_multiple_files = true;
+
+message GetAnalysisProgressRequest {
+  string analysis_id = 1;
+}
+
+message GetAnalysisProgressResponse {
+  int32 progress_percentage = 1;
+}
+
+message UploadUnlistedVideosToGcsRequest {
+  string request_id = 1;
+  string gcs_uri_prefix = 2;
+  repeated string unlisted_youtube_video_ids = 3;
+  string user_id = 4;
+  string analysis_name = 5;
+}
+
+enum UploadStatus {
+  UPLOAD_STATUS_UNSPECIFIED = 0;
+  UPLOAD_PENDING = 1;
+  UPLOAD_IN_PROGRESS = 2;
+  UPLOAD_COMPLETED = 3;
+  UPLOAD_FAILED = 4;
+}
+
+message VideoSource {
+  string video_id = 5;
+  string unlisted_youtube_url = 12;
+  UploadStatus upload_status = 7;
+  string error_message = 8;
+}
+
+message UploadUnlistedVideosToGcsResponse {
+  string request_id = 1;
+  int32 queued_count = 2;
+  repeated VideoSource video_sources = 3;
+}
+
+message GetUploadStatusRequest {
+  string request_id = 1;
+}
+
+message VideoUploadStatusInfo {
+  string video_id = 1;
+  string video_name = 2;
+  UploadStatus upload_status = 3;
+  string gcs_path = 4;
+  string error_message = 5;
+}
+
+message GetUploadStatusResponse {
+  string request_id = 1;
+  bool all_completed = 2;
+  int32 total_count = 3;
+  int32 completed_count = 4;
+  int32 failed_count = 5;
+  int32 in_progress_count = 6;
+  repeated VideoUploadStatusInfo videos = 7;
+}
+
+service InputService {
+  rpc GetAnalysisProgress(GetAnalysisProgressRequest) returns (GetAnalysisProgressResponse);
+  rpc UploadUnlistedVideosToGcs(UploadUnlistedVideosToGcsRequest) returns (UploadUnlistedVideosToGcsResponse);
+  rpc GetUploadStatus(GetUploadStatusRequest) returns (GetUploadStatusResponse);
+}

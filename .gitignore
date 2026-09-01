@@ -6,6 +6,7 @@
 /ui/node_modules/
 /ui/dist/
 /ui/.angular/
+/ui/coverage/
 /ui/cypress/screenshots/
 /ui/cypress/videos/
 /ui/cypress/downloads/
@@ -29,3 +30,9 @@
 *.swp
 *.swo
 *.log
+
+# Rules & Guides
+development-rules.md
+java-readability-rules.md
+hybrid-libraries-guide.md
+*Client Integration Guide*

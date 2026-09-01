@@ -190,6 +190,7 @@ public class PrepareAnalysisService
 
               UploadUnlistedVideosRequest request =
                   UploadUnlistedVideosRequest.builder()
+                      .requestId(java.util.UUID.randomUUID().toString())
                       .unlistedYoutubeVideoIds(unlistedIds)
                       .gcsUriPrefix(gcsUriPrefix)
                       .userId(userId)

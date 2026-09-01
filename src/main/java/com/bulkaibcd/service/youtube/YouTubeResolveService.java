@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -47,20 +48,23 @@ public class YouTubeResolveService {
           "(?:https?://)?(?:www\\.)?(?:youtube\\.com/(?:watch\\?v=|embed/|v/|shorts/)|youtu\\.be/)([a-zA-Z0-9_-]{11})|^([a-zA-Z0-9_-]{11})$");
   private static final Pattern TITLE_TAG_PATTERN =
       Pattern.compile("<title>(.*?)</title>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-  private static final Pattern UNLISTED_JSON_PATTERN =
-      Pattern.compile("\"isUnlisted\":\\s*true", Pattern.CASE_INSENSITIVE);
-  private static final Pattern UNLISTED_META_PATTERN =
-      Pattern.compile("<meta[^>]*itemprop=[\"']unlisted[\"'][^>]*content=[\"']true[\"']", Pattern.CASE_INSENSITIVE);
+  private static final Pattern UNLISTED_PATTERN =
+      Pattern.compile(
+          "\"isUnlisted\"\\s*:\\s*true|PRIVACY_UNLISTED|\"privacyStatus\"\\s*:\\s*\"UNLISTED\"|<meta[^>]*itemprop=[\"']unlisted[\"'][^>]*content=[\"']true[\"']",
+          Pattern.CASE_INSENSITIVE);
 
   private static final String OEMBED_URL_TEMPLATE =
       "https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=%s&format=json";
   private static final String WATCH_URL_TEMPLATE = "https://www.youtube.com/watch?v=%s";
   private static final String USER_AGENT_HEADER =
-      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
+  private static final String CONSENT_COOKIE =
+      "SOCS=CAESEwgDEgk2OTg5ODk4OTQaAmVuIAEaBgiA_LyaBg; CONSENT=YES+cb.20210328-17-p0.en+FX+410; PREF=hl=en";
 
   private final ObjectMapper objectMapper;
   private final HttpClient httpClient;
 
+  @Autowired
   public YouTubeResolveService(ObjectMapper objectMapper) {
     this(
         objectMapper,
@@ -133,6 +137,7 @@ public class YouTubeResolveService {
               .uri(URI.create(canonicalUrl))
               .header("User-Agent", USER_AGENT_HEADER)
               .header("Accept-Language", "en-US,en;q=0.9")
+              .header("Cookie", CONSENT_COOKIE)
               .timeout(Duration.ofSeconds(5))
               .GET()
               .build();
@@ -142,12 +147,15 @@ public class YouTubeResolveService {
 
       if (watchResponse.statusCode() == 200) {
         String body = watchResponse.body();
-        isUnlisted = UNLISTED_JSON_PATTERN.matcher(body).find() || UNLISTED_META_PATTERN.matcher(body).find();
+        isUnlisted = UNLISTED_PATTERN.matcher(body).find();
 
         Matcher titleMatcher = TITLE_TAG_PATTERN.matcher(body);
         if (titleMatcher.find()) {
           String rawTitle = titleMatcher.group(1).trim();
-          title = cleanHtmlEntities(rawTitle.replaceFirst(" - YouTube$", ""));
+          String cleaned = cleanHtmlEntities(rawTitle.replaceFirst("\\s*-\\s*YouTube$", ""));
+          if (!cleaned.isBlank() && !"- YouTube".equals(cleaned) && !"YouTube".equals(cleaned)) {
+            title = cleaned;
+          }
         }
       } else {
         log.warn("YouTubeResolveService: Watch page lookup returned HTTP {} for video ID: {}", watchResponse.statusCode(), videoId);
@@ -156,7 +164,7 @@ public class YouTubeResolveService {
       log.warn("YouTubeResolveService: Failed to inspect watch page for video ID: {}", videoId, e);
     }
 
-    if (title == null || title.isBlank()) {
+    if (title == null || title.isBlank() || "- YouTube".equals(title) || "YouTube".equals(title)) {
       title = fetchTitleFromOEmbed(videoId);
     }
 

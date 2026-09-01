@@ -53,3 +53,17 @@
     color: #1a73e8;
   }
 }
+
+.validate-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-spinner {
+  ::ng-deep circle {
+    stroke: currentColor;
+  }
+}
+
