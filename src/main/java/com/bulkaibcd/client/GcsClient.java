@@ -98,6 +98,23 @@ public class GcsClient {
     }
   }
 
+  /**
+   * Creates a blob in the specified bucket with the provided byte content and content type.
+   *
+   * @param bucket the target GCS bucket name
+   * @param objectPath the relative path/key of the object
+   * @param content the binary content of the blob
+   * @param contentType the MIME type of the content
+   * @return the created Blob instance
+   */
+  public Blob createBlob(String bucket, String objectPath, byte[] content, String contentType) {
+    BlobInfo blobInfo =
+        BlobInfo.newBuilder(bucket, objectPath)
+            .setContentType(contentType != null ? contentType : "image/jpeg")
+            .build();
+    return storage.create(blobInfo, content);
+  }
+
   public URL signUrl(
       BlobInfo blobInfo, long duration, TimeUnit unit, Storage.SignUrlOption... options) {
     return storage.signUrl(blobInfo, duration, unit, options);

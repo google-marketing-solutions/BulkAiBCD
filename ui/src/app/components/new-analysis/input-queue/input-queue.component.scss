@@ -16,6 +16,7 @@
 
 :host {
   display: block;
+  min-width: 0;
 }
 
 .video-format-badge {
@@ -25,6 +26,7 @@
   border-radius: 4px;
   margin-left: 8px;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .unlisted-badge {
@@ -36,6 +38,7 @@
   border-radius: 4px;
   margin-left: 8px;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .queue-card {
@@ -45,6 +48,7 @@
   display: flex;
   flex-direction: column;
   min-height: 480px;
+  min-width: 0;
 }
 
 .queue-title {
@@ -61,12 +65,14 @@
   overflow-y: auto;
   max-height: 360px;
   padding-right: 4px;
+  min-width: 0;
 }
 
 .group {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-width: 0;
 }
 
 .group-header {
@@ -81,6 +87,7 @@
   font-weight: 600;
   color: rgba(0, 0, 0, 0.72);
   user-select: none;
+  min-width: 0;
 
   &:hover { background: rgba(26, 115, 232, 0.08); }
   &:focus-visible { outline: 2px solid #1a73e8; outline-offset: 2px; }
@@ -90,6 +97,7 @@
     font-size: 18px;
     width: 18px;
     height: 18px;
+    flex-shrink: 0;
   }
 
   .source-icon {
@@ -97,9 +105,16 @@
     font-size: 18px;
     width: 18px;
     height: 18px;
+    flex-shrink: 0;
   }
 
-  .group-label { flex: 1; }
+  .group-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
 
   .group-count {
     background: rgba(26, 115, 232, 0.12);
@@ -108,6 +123,7 @@
     border-radius: 10px;
     font-size: 12px;
     font-weight: 600;
+    flex-shrink: 0;
   }
 }
 
@@ -116,6 +132,7 @@
   flex-direction: column;
   gap: 6px;
   margin-left: 8px;
+  min-width: 0;
 }
 
 .video-item {
@@ -125,6 +142,7 @@
   background: white;
   padding: 8px 12px;
   border-radius: 6px;
+  min-width: 0;
 
   .thumb {
     width: 56px;
@@ -152,12 +170,16 @@
   }
 
   .video-name {
-    flex: 1;
+    flex: 1 1 0;
     min-width: 0;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
     font-size: 14px;
+  }
+
+  button {
+    flex-shrink: 0;
   }
 }
 

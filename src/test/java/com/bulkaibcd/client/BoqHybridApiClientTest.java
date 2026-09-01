@@ -30,7 +30,6 @@ import com.bulkaibcd.proto.InputServiceGrpc;
 import com.bulkaibcd.proto.UploadStatus;
 import com.bulkaibcd.proto.UploadUnlistedVideosToGcsRequest;
 import com.bulkaibcd.proto.UploadUnlistedVideosToGcsResponse;
-import com.bulkaibcd.proto.VideoSource;
 import com.bulkaibcd.proto.VideoUploadStatusInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.grpc.ManagedChannel;

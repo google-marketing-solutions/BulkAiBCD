@@ -24,30 +24,68 @@ import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.Permission;
 import com.google.api.services.slides.v1.Slides;
-import com.google.api.services.slides.v1.model.*;
+import com.google.api.services.slides.v1.model.AffineTransform;
+import com.google.api.services.slides.v1.model.BatchUpdatePresentationRequest;
+import com.google.api.services.slides.v1.model.DeleteObjectRequest;
+import com.google.api.services.slides.v1.model.DeleteTextRequest;
+import com.google.api.services.slides.v1.model.Dimension;
+import com.google.api.services.slides.v1.model.DuplicateObjectRequest;
+import com.google.api.services.slides.v1.model.ImageProperties;
+import com.google.api.services.slides.v1.model.InsertTextRequest;
+import com.google.api.services.slides.v1.model.Link;
+import com.google.api.services.slides.v1.model.OpaqueColor;
+import com.google.api.services.slides.v1.model.OptionalColor;
+import com.google.api.services.slides.v1.model.Page;
+import com.google.api.services.slides.v1.model.PageElement;
+import com.google.api.services.slides.v1.model.Presentation;
+import com.google.api.services.slides.v1.model.Range;
+import com.google.api.services.slides.v1.model.ReplaceAllTextRequest;
+import com.google.api.services.slides.v1.model.ReplaceImageRequest;
+import com.google.api.services.slides.v1.model.Request;
+import com.google.api.services.slides.v1.model.RgbColor;
+import com.google.api.services.slides.v1.model.ShapeBackgroundFill;
+import com.google.api.services.slides.v1.model.ShapeProperties;
+import com.google.api.services.slides.v1.model.SolidFill;
+import com.google.api.services.slides.v1.model.SubstringMatchCriteria;
+import com.google.api.services.slides.v1.model.TextStyle;
+import com.google.api.services.slides.v1.model.UpdateImagePropertiesRequest;
+import com.google.api.services.slides.v1.model.UpdatePageElementTransformRequest;
+import com.google.api.services.slides.v1.model.UpdateShapePropertiesRequest;
+import com.google.api.services.slides.v1.model.UpdateSlidesPositionRequest;
+import com.google.api.services.slides.v1.model.UpdateTextStyleRequest;
+import com.google.cloud.storage.BlobInfo;
+import com.google.cloud.storage.HttpMethod;
+import com.google.cloud.storage.Storage.SignUrlOption;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.Builder;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 /** Client gateway responsible for generating bulk Google Slides pitch decks. */
 @Component
 @Slf4j
-@RequiredArgsConstructor
 public class GoogleSlidesClient {
 
   private static final String TEMPLATE_CLASSPATH = "/templates/master_pitch_deck.pptx";
@@ -56,11 +94,16 @@ public class GoogleSlidesClient {
   private static final String SLIDES_MIME = "application/vnd.google-apps.presentation";
 
   private final UserGoogleApiFactory userApis;
+  private final GcsClient gcsClient;
+  private final String bucket;
+
   private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE;
 
   private static final Pattern YOUTUBE_ID_PATTERN =
       Pattern.compile(
           "(?:https?:\\/\\/)?(?:www\\.)?(?:youtube\\.com\\/(?:watch\\?v=|embed\\/|v\\/|shorts\\/)|youtu\\.be\\/)([\\w-]{11})");
+  private static final Pattern DRIVE_ID_PATTERN =
+      Pattern.compile("/file/d/([A-Za-z0-9_-]+)|[?&]id=([A-Za-z0-9_-]+)");
 
   private static final double DETAIL_WIDTH_EMU = 3.94 * 914400;
   private static final double DETAIL_HEIGHT_EMU = 2.21 * 914400;
@@ -76,6 +119,23 @@ public class GoogleSlidesClient {
       createColor(219f / 255f, 68f / 255f, 55f / 255f);
   private static final RgbColor COLOR_GREY = createColor(117f / 255f, 117f / 255f, 117f / 255f);
 
+  /**
+   * Constructs a GoogleSlidesClient with the required API factory, GCS client, and bucket.
+   *
+   * @param userApis the factory creating user-scoped Google Drive and Slides clients
+   * @param gcsClient the client for Google Cloud Storage operations
+   * @param bucket the uploads bucket name for caching thumbnails
+   */
+  @Autowired
+  public GoogleSlidesClient(
+      UserGoogleApiFactory userApis,
+      GcsClient gcsClient,
+      @Value("${app.uploads-bucket:}") String bucket) {
+    this.userApis = userApis;
+    this.gcsClient = gcsClient;
+    this.bucket = bucket;
+  }
+
   @Builder
   public record PitchDeckParams(
       String userAccessToken,
@@ -85,11 +145,26 @@ public class GoogleSlidesClient {
       List<String> allFeatures,
       List<VideoMetadataEntity> videos) {}
 
-  private String resolveThumbnailUrl(VideoMetadataEntity video) {
-    if (StringUtils.hasText(video.getThumbnailUrl())) {
-      return video.getThumbnailUrl();
-    }
+  String resolveThumbnailUrl(VideoMetadataEntity video) {
+    return doResolveThumbnailUrl(video, null);
+  }
 
+  private String resolveThumbnailUrl(
+      VideoMetadataEntity video, String userAccessToken, Map<String, String> cache) {
+    String cacheKey =
+        StringUtils.hasText(video.getVideoId()) ? video.getVideoId() : video.getVideoName();
+    if (cacheKey != null && cache.containsKey(cacheKey)) {
+      return cache.get(cacheKey);
+    }
+    String resolved = doResolveThumbnailUrl(video, userAccessToken);
+    if (cacheKey != null) {
+      cache.put(cacheKey, resolved);
+    }
+    return resolved;
+  }
+
+  private String doResolveThumbnailUrl(VideoMetadataEntity video, String userAccessToken) {
+    // 1. YouTube videos have reliable, public, short CDN thumbnail URLs
     if (StringUtils.hasText(video.getVideoUrl())) {
       Matcher matcher = YOUTUBE_ID_PATTERN.matcher(video.getVideoUrl());
       if (matcher.find()) {
@@ -97,9 +172,149 @@ public class GoogleSlidesClient {
         return "https://i.ytimg.com/vi/" + ytId + "/hqdefault.jpg";
       }
     }
+
+    String thumb = video.getThumbnailUrl();
+
+    // 2. Base64 data URI (local file upload) -> decode, upload to GCS, generate signed GET URL
+    if (StringUtils.hasText(thumb) && thumb.startsWith("data:")) {
+      String signed = uploadBase64ThumbnailToGcs(thumb);
+      if (signed != null) {
+        return signed;
+      }
+      return DEFAULT_THUMBNAIL_URL;
+    }
+
+    // 3. Drive thumbnail or remote URL (e.g. googleusercontent.com / drive.google.com) ->
+    //    Download using userAccessToken, upload to GCS, generate signed GET URL
+    if (StringUtils.hasText(thumb)
+        && (thumb.contains("googleusercontent.com") || thumb.contains("drive.google.com"))) {
+      String signed = downloadAndUploadRemoteThumbnail(thumb, userAccessToken);
+      if (signed != null) {
+        return signed;
+      }
+      return DEFAULT_THUMBNAIL_URL;
+    }
+
+    // 4. Drive video URL without explicit thumbnail -> extract Drive file ID and fetch thumbnail
+    if (!StringUtils.hasText(thumb) && StringUtils.hasText(video.getVideoUrl())) {
+      Matcher driveMatcher = DRIVE_ID_PATTERN.matcher(video.getVideoUrl());
+      if (driveMatcher.find()) {
+        String fileId =
+            driveMatcher.group(1) != null ? driveMatcher.group(1) : driveMatcher.group(2);
+        String driveThumbUrl = "https://lh3.googleusercontent.com/u/0/d/" + fileId + "=s400";
+        String signed = downloadAndUploadRemoteThumbnail(driveThumbUrl, userAccessToken);
+        if (signed != null) {
+          return signed;
+        }
+      }
+    }
+
+    // 5. Any other existing public HTTP/HTTPS URL within 2048 characters
+    if (StringUtils.hasText(thumb)
+        && thumb.length() <= 2048
+        && (thumb.startsWith("http://") || thumb.startsWith("https://"))) {
+      return thumb;
+    }
+
     return DEFAULT_THUMBNAIL_URL;
   }
 
+  private String uploadBase64ThumbnailToGcs(String dataUri) {
+    if (!StringUtils.hasText(bucket) || gcsClient == null) {
+      log.warn("GoogleSlidesClient: Cannot cache base64 thumbnail; bucket or gcsClient not configured");
+      return null;
+    }
+    try {
+      int comma = dataUri.indexOf(',');
+      String base64Data = comma >= 0 ? dataUri.substring(comma + 1) : dataUri;
+      byte[] bytes = Base64.getDecoder().decode(base64Data.trim());
+      String objectName = "thumbnails/" + UUID.randomUUID() + ".jpg";
+      gcsClient.createBlob(bucket, objectName, bytes, "image/jpeg");
+      BlobInfo blobInfo = BlobInfo.newBuilder(bucket, objectName).build();
+      URL signed =
+          gcsClient.signUrl(
+              blobInfo,
+              60,
+              TimeUnit.MINUTES,
+              SignUrlOption.httpMethod(HttpMethod.GET),
+              SignUrlOption.withV4Signature());
+      log.info("GoogleSlidesClient: Generated on-the-fly signed thumbnail URL for uploaded video");
+      return signed.toString();
+    } catch (Exception e) {
+      log.warn("GoogleSlidesClient: Failed to upload base64 thumbnail to GCS: {}", e.getMessage());
+      return null;
+    }
+  }
+
+  private String downloadAndUploadRemoteThumbnail(String remoteUrl, String userAccessToken) {
+    if (!StringUtils.hasText(bucket) || gcsClient == null) {
+      log.warn("GoogleSlidesClient: Cannot cache remote thumbnail; bucket or gcsClient not configured");
+      return null;
+    }
+    try {
+      byte[] bytes = fetchRemoteImageBytes(remoteUrl, userAccessToken);
+      if (bytes == null || bytes.length == 0) {
+        log.warn("GoogleSlidesClient: No bytes returned for remote thumbnail {}", remoteUrl);
+        return null;
+      }
+      String objectName = "thumbnails/" + UUID.randomUUID() + ".jpg";
+      gcsClient.createBlob(bucket, objectName, bytes, "image/jpeg");
+      BlobInfo blobInfo = BlobInfo.newBuilder(bucket, objectName).build();
+      URL signed =
+          gcsClient.signUrl(
+              blobInfo,
+              60,
+              TimeUnit.MINUTES,
+              SignUrlOption.httpMethod(HttpMethod.GET),
+              SignUrlOption.withV4Signature());
+      log.info("GoogleSlidesClient: Successfully fetched Drive thumbnail, cached in GCS, and signed URL");
+      return signed.toString();
+    } catch (Exception e) {
+      log.warn("GoogleSlidesClient: Failed to download and cache remote thumbnail: {}", e.getMessage());
+      return null;
+    }
+  }
+
+  private byte[] fetchRemoteImageBytes(String remoteUrl, String userAccessToken) throws IOException {
+    String currentUrl = remoteUrl;
+    for (int i = 0; i < 3; i++) {
+      HttpURLConnection conn = (HttpURLConnection) new URL(currentUrl).openConnection();
+      conn.setRequestMethod("GET");
+      conn.setConnectTimeout(5000);
+      conn.setReadTimeout(5000);
+      conn.setInstanceFollowRedirects(false);
+      if (StringUtils.hasText(userAccessToken)) {
+        conn.setRequestProperty("Authorization", "Bearer " + userAccessToken);
+      }
+      int code = conn.getResponseCode();
+      if (code == HttpURLConnection.HTTP_OK) {
+        try (InputStream in = conn.getInputStream()) {
+          return in.readAllBytes();
+        }
+      } else if (code == HttpURLConnection.HTTP_MOVED_TEMP
+          || code == HttpURLConnection.HTTP_MOVED_PERM
+          || code == HttpURLConnection.HTTP_SEE_OTHER
+          || code == 307
+          || code == 308) {
+        String location = conn.getHeaderField("Location");
+        if (StringUtils.hasText(location)) {
+          currentUrl = location;
+          continue;
+        }
+      }
+      log.warn("GoogleSlidesClient: HTTP {} when fetching remote image {}", code, currentUrl);
+      return null;
+    }
+    return null;
+  }
+
+  /**
+   * Generates a bulk Google Slides pitch deck presentation populated with analysis findings.
+   *
+   * @param p the parameters required to build the pitch deck
+   * @return the URL of the generated Google Slides presentation
+   * @throws IOException if Google Drive or Slides API operations fail
+   */
   public String generateBulkPitchDeck(PitchDeckParams p) throws IOException {
     String userAccessToken = p.userAccessToken();
     String brandName = p.brandName();
@@ -129,6 +344,8 @@ public class GoogleSlidesClient {
     if (videos == null || videos.isEmpty()) {
       return makePublicAndGetUrl(drive, presentationId);
     }
+
+    Map<String, String> thumbnailCache = new HashMap<>();
 
     List<List<NotDetectedFeatureEntity>> missingFeaturesPerVideo = new ArrayList<>();
     int[] missingSlidesCount = new int[videos.size()];
@@ -247,7 +464,7 @@ public class GoogleSlidesClient {
           getPageElementByDescription(summarySlide, thumbnailPlaceholder)
               .ifPresent(
                   el -> {
-                    String thumbUrl = resolveThumbnailUrl(video);
+                    String thumbUrl = resolveThumbnailUrl(video, userAccessToken, thumbnailCache);
                     batchRequests.add(resizeImage(el, SUMMARY_WIDTH_EMU, SUMMARY_HEIGHT_EMU));
                     batchRequests.add(replaceImage(el.getObjectId(), thumbUrl));
                     if (StringUtils.hasText(video.getVideoUrl())) {
@@ -314,7 +531,7 @@ public class GoogleSlidesClient {
       getPageElementByDescription(detailSlide, "THUMBNAIL")
           .ifPresent(
               el -> {
-                String thumbUrl = resolveThumbnailUrl(video);
+                String thumbUrl = resolveThumbnailUrl(video, userAccessToken, thumbnailCache);
                 batchRequests.add(resizeImage(el, DETAIL_WIDTH_EMU, DETAIL_HEIGHT_EMU));
                 batchRequests.add(replaceImage(el.getObjectId(), thumbUrl));
                 if (StringUtils.hasText(video.getVideoUrl())) {
