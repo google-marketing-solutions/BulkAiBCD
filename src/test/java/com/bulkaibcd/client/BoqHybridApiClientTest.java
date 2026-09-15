@@ -193,11 +193,30 @@ class BoqHybridApiClientTest {
     UploadUnlistedVideosRequest request =
         UploadUnlistedVideosRequest.builder()
             .unlistedYoutubeVideoIds(List.of("vid1"))
+            .userId("jdoe")
             .build();
 
     assertThatThrownBy(() -> client.uploadUnlistedVideosToGcs(request))
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining("UNAVAILABLE");
+  }
+
+  /**
+   * The Boq backend attributes its access log to user_id, so a request that cannot name a requester
+   * must never reach the wire.
+   */
+  @Test
+  void uploadUnlistedVideosToGcsRefusesAnUnattributedRequest() {
+    UploadUnlistedVideosRequest request =
+        UploadUnlistedVideosRequest.builder()
+            .unlistedYoutubeVideoIds(List.of("vid1"))
+            .build();
+
+    assertThatThrownBy(() -> client.uploadUnlistedVideosToGcs(request))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("without a requester");
+
+    assertThat(serviceImpl.lastUploadRequest.get()).isNull();
   }
 
   @Test

@@ -56,6 +56,12 @@ import reactor.core.scheduler.Schedulers;
 public class PrepareAnalysisService
     implements ApiService<Map<String, String>, ResponseEntity<String>> {
 
+  /**
+   * Placeholder requester written by clients before identity was captured server-side. Analyses
+   * still carrying it cannot be attributed and must not reach the Boq backend.
+   */
+  private static final String LEGACY_REQUESTER_ID = "default-user";
+
   private final VideoInputRepository videoInputRepository;
   private final AnalysisRequestRepository analysisRequestRepository;
   private final VideoMetadataRepository videoMetadataRepository;
@@ -66,6 +72,7 @@ public class PrepareAnalysisService
 
   @Value("${app.uploads-bucket}")
   private String uploadsBucket;
+
 
   /**
    * Executes the preparation workflow for an analysis job.
@@ -185,17 +192,32 @@ public class PrepareAnalysisService
         .findById(analysisId)
         .flatMap(
             parent -> {
-              String userId = parent.getRequesterId() != null ? parent.getRequesterId() : "default-user";
+              String requesterLdap = parent.getRequesterId();
+              if (requesterLdap == null
+                  || requesterLdap.isBlank()
+                  || LEGACY_REQUESTER_ID.equals(requesterLdap)) {
+                // The Boq backend attributes its Gin log entry to this value, so an unattributed
+                // call would record a prod data access against nobody. Fail the job instead.
+                return Mono.error(
+                    new IllegalStateException(
+                        "Refusing unattributed Boq upload for analysisId: " + analysisId));
+              }
               String analysisName = parent.getAnalysisName() != null ? parent.getAnalysisName() : "unlisted_analysis";
+
+              log.info(
+                  "PrepareAnalysisService: Attributing Boq upload for analysisId: {} to requester: {}",
+                  analysisId,
+                  requesterLdap);
 
               UploadUnlistedVideosRequest request =
                   UploadUnlistedVideosRequest.builder()
                       .requestId(java.util.UUID.randomUUID().toString())
                       .unlistedYoutubeVideoIds(unlistedIds)
                       .gcsUriPrefix(gcsUriPrefix)
-                      .userId(userId)
+                      .userId(requesterLdap)
                       .analysisName(analysisName)
                       .build();
+
 
               return Mono.fromCallable(() -> boqInputServiceClient.uploadUnlistedVideosToGcs(request))
                   .subscribeOn(Schedulers.boundedElastic())

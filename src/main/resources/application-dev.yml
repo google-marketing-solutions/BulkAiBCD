@@ -37,6 +37,11 @@ spring:
 app:
   backend-url: http://localhost:8080
   uploads-bucket: ${UPLOADS_BUCKET:bulkaibcd-uploads-local}
+  identity:
+    # No IAP in front of a laptop, so stand in for the assertion. Deliberately absent from
+    # application-prod.yml: a prod container missing its IAP headers must fail closed rather
+    # than invent an identity.
+    dev-ldap: ${DEV_LDAP:localdev}
   boq:
     hybrid-api-url: ${BOQ_HYBRID_API_URL:https://autopush-bulkaibcd.hybrid.sandbox.googleapis.com}
     hybrid-api-service-name: ${BOQ_HYBRID_API_SERVICE_NAME:bulkaibcd.hybrid.googleapis.com}
@@ -44,3 +49,5 @@ app:
 logging:
   level:
     com.bulkaibcd: DEBUG
+    bulkaibcd-access: INFO
+

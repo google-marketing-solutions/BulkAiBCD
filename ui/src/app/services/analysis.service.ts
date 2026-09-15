@@ -56,7 +56,8 @@ export interface SignedUploadUrl {
  */
 export interface AnalysisRequest {
   analysisId?: string;
-  requesterId: string;
+  /** Server-derived from the IAP assertion; never sent by the client. */
+  requesterId?: string;
   analysisName: string;
   analysisType: string;
   analysisStatus?: string;
@@ -116,15 +117,16 @@ export class AnalysisService {
   }
 
   /**
-   * Lists analyses requested by the specified user.
+   * Lists analyses belonging to the signed-in user.
    *
-   * @param requesterId the user identifier
-   * @returns an Observable emitting the list of analysis records
+   * The backend derives the requester from the IAP assertion, so no identifier is
+   * passed here. It previously came from the URL, which let anyone read another
+   * user's jobs by editing it.
+   *
+   * @returns an Observable emitting the caller's analysis records
    */
-  listAnalyses(requesterId: string): Observable<AnalysisRequest[]> {
-    return this.http.get<AnalysisRequest[]>(
-      `${this.apiUrl}/input/list/${requesterId}`,
-    );
+  listAnalyses(): Observable<AnalysisRequest[]> {
+    return this.http.get<AnalysisRequest[]>(`${this.apiUrl}/input/list`);
   }
 
   /**

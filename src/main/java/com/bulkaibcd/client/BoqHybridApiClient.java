@@ -65,12 +65,20 @@ public class BoqHybridApiClient implements BoqInputServiceClient {
         request.getGcsUriPrefix(),
         request.getUnlistedYoutubeVideoIds());
 
+    String requesterId = request.getUserId();
+    if (requesterId == null || requesterId.isBlank()) {
+      throw new IllegalArgumentException(
+          "Refusing Boq UploadUnlistedVideosToGcs without a requester: the backend attributes its"
+              + " access log to this value");
+    }
+
     UploadUnlistedVideosToGcsRequest.Builder protoRequestBuilder =
         UploadUnlistedVideosToGcsRequest.newBuilder()
             .setRequestId(request.getRequestId() != null ? request.getRequestId() : "")
             .setGcsUriPrefix(request.getGcsUriPrefix() != null ? request.getGcsUriPrefix() : "")
-            .setUserId(request.getUserId() != null ? request.getUserId() : "default-user")
+            .setUserId(requesterId)
             .setAnalysisName(request.getAnalysisName() != null ? request.getAnalysisName() : "");
+
 
     if (request.getUnlistedYoutubeVideoIds() != null) {
       protoRequestBuilder.addAllUnlistedYoutubeVideoIds(request.getUnlistedYoutubeVideoIds());

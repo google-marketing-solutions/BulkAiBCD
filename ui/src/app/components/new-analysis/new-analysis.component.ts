@@ -32,7 +32,6 @@ import {VideoInputTabsComponent} from './video-input-tabs/video-input-tabs.compo
 import {AnalysisConfigComponent} from './analysis-config/analysis-config.component';
 import {InputQueueComponent} from './input-queue/input-queue.component';
 
-const DEFAULT_REQUESTER_ID = 'default-user';
 const MAX_VIDEOS_PER_ANALYSIS = 1999;
 
 /**
@@ -138,7 +137,6 @@ export class NewAnalysisComponent implements OnInit {
     });
     this.analysisService
       .submitAnalysis({
-        requesterId: DEFAULT_REQUESTER_ID,
         analysisName: this.brandName.value ?? '',
         analysisType: this.analysisType.value ?? 'standard',
         customFeaturesLong: this.customFeatures.value?.long ?? [],

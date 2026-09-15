@@ -22,6 +22,12 @@ substitutions:
   _UPLOADS_BUCKET: bulkaibcd-uploads-${PROJECT_ID}
   _APP_BACKEND_URL: ""
   _IAP_CLIENT_ID: ""
+  # Audience claim carried by IAP assertions for this service. Read it from the
+  # "IAP assertion claims observed" log line after the first deploy, set it here, then flip
+  # _IAP_ENFORCE_AUDIENCE to true so assertions minted for other apps are rejected.
+  _IAP_AUDIENCE: ""
+  _IAP_ENFORCE_AUDIENCE: "false"
+
 
 steps:
   # 1. Build Frontend (Angular)
@@ -88,7 +94,7 @@ steps:
       - '--memory=4Gi'
       - '--cpu=2'
       - '--cpu-boost'
-      - '--set-env-vars=SPRING_PROFILES_ACTIVE=prod,GOOGLE_CLOUD_PROJECT=${PROJECT_ID},GOOGLE_CLOUD_LOCATION=${_REGION},CLOUD_TASKS_QUEUE=${_CLOUD_TASKS_QUEUE},CLOUD_TASKS_SERVICE_ACCOUNT=${_RUNTIME_SA},APP_BACKEND_URL=${_APP_BACKEND_URL},UPLOADS_BUCKET=${_UPLOADS_BUCKET},IAP_CLIENT_ID=${_IAP_CLIENT_ID}'
+      - '--set-env-vars=SPRING_PROFILES_ACTIVE=prod,GOOGLE_CLOUD_PROJECT=${PROJECT_ID},SPRING_CLOUD_GCP_LOGGING_PROJECT_ID=${PROJECT_ID},GOOGLE_CLOUD_LOCATION=${_REGION},CLOUD_TASKS_QUEUE=${_CLOUD_TASKS_QUEUE},CLOUD_TASKS_SERVICE_ACCOUNT=${_RUNTIME_SA},APP_BACKEND_URL=${_APP_BACKEND_URL},UPLOADS_BUCKET=${_UPLOADS_BUCKET},IAP_CLIENT_ID=${_IAP_CLIENT_ID},IAP_AUDIENCE=${_IAP_AUDIENCE},IAP_ENFORCE_AUDIENCE=${_IAP_ENFORCE_AUDIENCE}'
 
 options:
   logging: CLOUD_LOGGING_ONLY

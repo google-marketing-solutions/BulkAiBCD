@@ -19,7 +19,24 @@ class ListAnalysesServiceTest {
   @BeforeEach
   void setUp() {
     analysisRepo = mock(AnalysisRequestRepository.class);
-    service = new ListAnalysesService(analysisRepo);
+    service = new ListAnalysesService(analysisRepo, "default-user", false);
+  }
+
+  @Test
+  void appendsLegacyAnalysesSoHistoricWorkDoesNotVanish() {
+    ListAnalysesService withGrace =
+        new ListAnalysesService(analysisRepo, "default-user", true);
+    AnalysisRequestEntity own = AnalysisRequestEntity.builder().analysisId("1").requesterId("u1").build();
+    AnalysisRequestEntity legacy =
+        AnalysisRequestEntity.builder().analysisId("2").requesterId("default-user").build();
+    when(analysisRepo.findByRequesterIdOrderByCreatedAtDesc("u1")).thenReturn(Flux.just(own));
+    when(analysisRepo.findByRequesterIdOrderByCreatedAtDesc("default-user"))
+        .thenReturn(Flux.just(legacy));
+
+    StepVerifier.create(withGrace.execute("u1"))
+        .expectNext(own)
+        .expectNext(legacy)
+        .verifyComplete();
   }
 
   @Test
