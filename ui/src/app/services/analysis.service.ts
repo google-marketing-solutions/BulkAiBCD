@@ -292,4 +292,5 @@ export interface YouTubeVideoInfo {
   url: string;
   title: string;
   unlisted: boolean;
+  error_message?: string;
 }

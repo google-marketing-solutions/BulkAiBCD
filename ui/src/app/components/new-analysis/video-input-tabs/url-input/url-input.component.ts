@@ -112,15 +112,32 @@ export class UrlInputComponent {
     try {
       try {
         const resolvedList = await firstValueFrom(this.analysisService.resolveYouTubeUrls(valid));
-        const files: AnalysisVideoFile[] = resolvedList.map((res) => {
+        const files: AnalysisVideoFile[] = [];
+        let skippedUnlistedCount = 0;
+
+        for (const res of resolvedList) {
+          if (res.error_message) {
+            skippedUnlistedCount++;
+            continue;
+          }
           const label = res.title ? res.title : res.url;
           const file = new File([res.url], label, {type: 'youtube/url'}) as AnalysisVideoFile;
           file.sourceUrl = res.url;
           file.unlisted = res.unlisted;
-          return file;
-        });
+          files.push(file);
+        }
 
-        this.filesAdded.emit(files);
+        if (skippedUnlistedCount > 0) {
+          this.snackBar.open(
+            `Skipped ${skippedUnlistedCount} unlisted video${skippedUnlistedCount > 1 ? 's' : ''}: unlisted videos are not supported.`,
+            'Dismiss',
+            {duration: 6000},
+          );
+        }
+
+        if (files.length > 0) {
+          this.filesAdded.emit(files);
+        }
         this.urlsControl.reset('', {emitEvent: false});
         this.urlsControl.markAsPristine();
         this.urlsControl.markAsUntouched();

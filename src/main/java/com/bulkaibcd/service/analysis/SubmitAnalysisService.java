@@ -49,6 +49,14 @@ public class SubmitAnalysisService
   private final VideoInputRepository videoInputRepository;
   private final CloudTasksQueueClient cloudTasksQueueClient;
 
+  private boolean unlistedSupported = false;
+
+  // BEGIN-INTERNAL
+  {
+    unlistedSupported = true;
+  }
+  // END-INTERNAL
+
   /**
    * Executes the analysis submission workflow.
    *
@@ -61,6 +69,13 @@ public class SubmitAnalysisService
 
     List<SubmitAnalysisRequest.VideoInput> videos =
         request.getVideos() == null ? List.of() : request.getVideos();
+
+    boolean hasUnlisted =
+        videos.stream().anyMatch(v -> Boolean.TRUE.equals(v.getUnlisted()));
+    if (!unlistedSupported && hasUnlisted) {
+      return Mono.just(
+          ResponseEntity.badRequest().body("Unlisted YouTube videos are not supported."));
+    }
 
     return analysisRequestRepository
         .save(parent)

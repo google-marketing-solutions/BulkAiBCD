@@ -37,6 +37,14 @@ class YouTubeResolveServiceTest {
   private ObjectMapper objectMapper;
   private YouTubeResolveService service;
 
+  private boolean unlistedSupported = false;
+
+  // BEGIN-INTERNAL
+  {
+    unlistedSupported = true;
+  }
+  // END-INTERNAL
+
   @BeforeEach
   void setUp() {
     httpClient = mock(HttpClient.class);
@@ -90,6 +98,11 @@ class YouTubeResolveServiceTest {
               assertThat(info.getVideoId()).isEqualTo("dQw4w9WgXcQ");
               assertThat(info.getTitle()).isEqualTo("My Unlisted Video");
               assertThat(info.isUnlisted()).isTrue();
+              if (unlistedSupported) {
+                assertThat(info.getErrorMessage()).isNull();
+              } else {
+                assertThat(info.getErrorMessage()).isEqualTo("Unlisted YouTube videos are not supported.");
+              }
             })
         .verifyComplete();
   }
@@ -110,6 +123,7 @@ class YouTubeResolveServiceTest {
               assertThat(info.getVideoId()).isEqualTo("dQw4w9WgXcQ");
               assertThat(info.getTitle()).isEqualTo("Public Video");
               assertThat(info.isUnlisted()).isFalse();
+              assertThat(info.getErrorMessage()).isNull();
             })
         .verifyComplete();
   }
@@ -130,6 +144,11 @@ class YouTubeResolveServiceTest {
               assertThat(info.getVideoId()).isEqualTo("dQw4w9WgXcQ");
               assertThat(info.getTitle()).isEqualTo("Innertube Unlisted Video");
               assertThat(info.isUnlisted()).isTrue();
+              if (unlistedSupported) {
+                assertThat(info.getErrorMessage()).isNull();
+              } else {
+                assertThat(info.getErrorMessage()).isEqualTo("Unlisted YouTube videos are not supported.");
+              }
             })
         .verifyComplete();
   }

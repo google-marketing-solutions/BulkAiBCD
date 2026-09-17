@@ -42,6 +42,7 @@ resource "google_storage_bucket_iam_member" "runtime_uploads_admin" {
   member = "serviceAccount:${google_service_account.runtime.email}"
 }
 
+# BEGIN-INTERNAL
 # ----- Boq Backend SA: bucket-scoped storage admin --------------------------
 
 resource "google_storage_bucket_iam_member" "boq_uploads_admin" {
@@ -49,6 +50,7 @@ resource "google_storage_bucket_iam_member" "boq_uploads_admin" {
   role   = "roles/storage.objectAdmin"
   member = "serviceAccount:bulkaibcd-backend@gtech-ase-734781.iam.gserviceaccount.com"
 }
+# END-INTERNAL
 
 # ----- Cloud Build / compute SA: deploy permissions ------------------------
 

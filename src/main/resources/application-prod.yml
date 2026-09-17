@@ -35,9 +35,11 @@ app:
   iap:
     expected-audience: ${IAP_AUDIENCE:}
     enforce-audience: ${IAP_ENFORCE_AUDIENCE:false}
+  # BEGIN-INTERNAL
   boq:
     hybrid-api-url: ${BOQ_HYBRID_API_URL:https://autopush-bulkaibcd.hybrid.sandbox.googleapis.com}
     hybrid-api-service-name: ${BOQ_HYBRID_API_SERVICE_NAME:staging-bulkaibcd.hybrid.googleapis.com}
+  # END-INTERNAL
 
 
 # Disable external service health indicators from blocking container startup / readiness

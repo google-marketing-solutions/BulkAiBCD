@@ -42,9 +42,11 @@ app:
     # application-prod.yml: a prod container missing its IAP headers must fail closed rather
     # than invent an identity.
     dev-ldap: ${DEV_LDAP:localdev}
+  # BEGIN-INTERNAL
   boq:
     hybrid-api-url: ${BOQ_HYBRID_API_URL:https://autopush-bulkaibcd.hybrid.sandbox.googleapis.com}
     hybrid-api-service-name: ${BOQ_HYBRID_API_SERVICE_NAME:bulkaibcd.hybrid.googleapis.com}
+  # END-INTERNAL
 
 logging:
   level:

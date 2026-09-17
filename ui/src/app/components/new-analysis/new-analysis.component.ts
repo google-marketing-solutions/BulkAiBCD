@@ -155,8 +155,12 @@ export class NewAnalysisComponent implements OnInit {
         },
         error: (err) => {
           this.submitting.set(false);
+          const errorMsg =
+            typeof err?.error === 'string' && err.error.trim().length > 0
+              ? err.error
+              : (err?.message ?? 'unknown error');
           this.snackBar.open(
-            `Failed to submit: ${err?.message ?? 'unknown error'}`,
+            `Failed to submit: ${errorMsg}`,
             'Dismiss',
             {duration: 8000},
           );

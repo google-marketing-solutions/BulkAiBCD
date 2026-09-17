@@ -68,6 +68,14 @@ public class YouTubeResolveService {
   private final ObjectMapper objectMapper;
   private final HttpClient httpClient;
 
+  private boolean unlistedSupported = false;
+
+  // BEGIN-INTERNAL
+  {
+    unlistedSupported = true;
+  }
+  // END-INTERNAL
+
   @Autowired
   public YouTubeResolveService(ObjectMapper objectMapper) {
     this(
@@ -172,6 +180,10 @@ public class YouTubeResolveService {
     }
 
     boolean finalUnlisted = Boolean.TRUE.equals(isUnlisted);
+    String errorMessage =
+        (finalUnlisted && !unlistedSupported)
+            ? "Unlisted YouTube videos are not supported."
+            : null;
 
     log.info(
         "YouTubeResolveService: Resolved video ID: {} -> Title: '{}', Unlisted: {}",
@@ -184,6 +196,7 @@ public class YouTubeResolveService {
         .url(canonicalUrl)
         .title(title)
         .unlisted(finalUnlisted)
+        .errorMessage(errorMessage)
         .build();
   }
 
