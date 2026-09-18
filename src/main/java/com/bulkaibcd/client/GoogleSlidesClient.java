@@ -112,6 +112,15 @@ public class GoogleSlidesClient {
   private static final String DEFAULT_THUMBNAIL_URL =
       "https://www.gstatic.com/images/icons/material/system/2x/video_library_black_48dp.png";
 
+  /**
+   * Lifetime of the signed URLs used for locally uploaded assets. Seven days is the ceiling the V4
+   * signing scheme allows, so a deck shared beyond that window will need regenerating.
+   */
+  private static final long SIGNED_URL_TTL_DAYS = 7;
+
+  /** Shown in place of the asset URL on every slide, whatever the video's source. */
+  private static final String ASSET_LINK_LABEL = "View Video";
+
   private static final RgbColor COLOR_WHITE = createColor(1f, 1f, 1f);
   private static final RgbColor COLOR_DETECTED_GREEN =
       createColor(15f / 255f, 157f / 255f, 88f / 255f);
@@ -346,6 +355,9 @@ public class GoogleSlidesClient {
     }
 
     Map<String, String> thumbnailCache = new HashMap<>();
+    // Keyed by gcsObjectId. Signing is not free, and the summary and detail slides for the same
+    // video must resolve to an identical URL, so the result is shared across both passes.
+    Map<String, String> assetUrlCache = new HashMap<>();
 
     List<List<NotDetectedFeatureEntity>> missingFeaturesPerVideo = new ArrayList<>();
     int[] missingSlidesCount = new int[videos.size()];
@@ -461,14 +473,15 @@ public class GoogleSlidesClient {
                     batchRequests.add(updateTextColor(el.getObjectId(), COLOR_WHITE));
                   });
 
+          String summaryAssetUrl = resolveAssetUrl(video, assetUrlCache);
           getPageElementByDescription(summarySlide, thumbnailPlaceholder)
               .ifPresent(
                   el -> {
                     String thumbUrl = resolveThumbnailUrl(video, userAccessToken, thumbnailCache);
                     batchRequests.add(resizeImage(el, SUMMARY_WIDTH_EMU, SUMMARY_HEIGHT_EMU));
                     batchRequests.add(replaceImage(el.getObjectId(), thumbUrl));
-                    if (StringUtils.hasText(video.getVideoUrl())) {
-                      batchRequests.add(addLinkToElement(el, video.getVideoUrl()));
+                    if (StringUtils.hasText(summaryAssetUrl)) {
+                      batchRequests.add(addLinkToElement(el, summaryAssetUrl));
                     }
                   });
         } else {
@@ -507,12 +520,14 @@ public class GoogleSlidesClient {
       batchRequests.add(replaceAllTextOnSlide("VIDEO_COUNT", String.valueOf(videosCount), slideId));
       batchRequests.add(replaceAllTextOnSlide("ASSET_NAME", video.getVideoName(), slideId));
 
-      String displayLink =
-          video.getVideoUrl() != null && video.getVideoUrl().length() > 80
-              ? video.getVideoUrl().substring(0, 77) + "..."
-              : video.getVideoUrl();
+      String assetUrl = resolveAssetUrl(video, assetUrlCache);
       batchRequests.add(
-          replaceAllTextOnSlide("ASSET_LINK", displayLink != null ? displayLink : "", slideId));
+          replaceAllTextOnSlide("ASSET_LINK", assetLinkDisplayText(assetUrl), slideId));
+      if (StringUtils.hasText(assetUrl)) {
+        // Runs after the token replacement above, so it styles the substituted text.
+        getPageElementByDescription(detailSlide, "ASSET_LINK_PLACEHOLDER")
+            .ifPresent(el -> batchRequests.add(addLinkToText(el.getObjectId(), assetUrl)));
+      }
       batchRequests.add(replaceAllTextOnSlide("ADHERENCE_PERC", score + "%", slideId));
       batchRequests.add(replaceAllTextOnSlide("ASSET_RESULT", category, slideId));
       batchRequests.add(replaceAllTextOnSlide("ADHERENCE_CATEGORY", category, slideId));
@@ -534,8 +549,8 @@ public class GoogleSlidesClient {
                 String thumbUrl = resolveThumbnailUrl(video, userAccessToken, thumbnailCache);
                 batchRequests.add(resizeImage(el, DETAIL_WIDTH_EMU, DETAIL_HEIGHT_EMU));
                 batchRequests.add(replaceImage(el.getObjectId(), thumbUrl));
-                if (StringUtils.hasText(video.getVideoUrl())) {
-                  batchRequests.add(addLinkToElement(el, video.getVideoUrl()));
+                if (StringUtils.hasText(assetUrl)) {
+                  batchRequests.add(addLinkToElement(el, assetUrl));
                 }
               });
 
@@ -805,6 +820,102 @@ public class GoogleSlidesClient {
                   .setShapeProperties(new ShapeProperties().setLink(link))
                   .setFields("link"));
     }
+  }
+
+  /**
+   * Turns every text run in a shape into a hyperlink.
+   *
+   * <p>Only safe because the {@code ASSET_LINK_PLACEHOLDER} shape in the template holds the token
+   * and nothing else, so linking the whole range cannot swallow surrounding copy.
+   *
+   * @param objectId the shape whose text should become a link
+   * @param url the link target
+   * @return the batch request applying the link
+   */
+  private Request addLinkToText(String objectId, String url) {
+    return new Request()
+        .setUpdateTextStyle(
+            new UpdateTextStyleRequest()
+                .setObjectId(objectId)
+                .setTextRange(new Range().setType("ALL"))
+                .setStyle(new TextStyle().setLink(new Link().setUrl(url)))
+                .setFields("link"));
+  }
+
+  /**
+   * Resolves a clickable URL for a video.
+   *
+   * <p>URL-sourced videos (YouTube/Drive) carry their original {@code videoUrl}. Locally uploaded
+   * files never get one — they only have a {@code gcsObjectId} pointing at a private object — so a
+   * signed URL is minted for those. Results are cached per object so the summary and detail slides
+   * point at the identical URL and each object is signed at most once per deck.
+   *
+   * @param video the video whose asset link is required
+   * @param cache per-deck cache keyed by {@code gcsObjectId}; mutated by this call
+   * @return a clickable URL, or {@code null} when none can be produced
+   */
+  private String resolveAssetUrl(VideoMetadataEntity video, Map<String, String> cache) {
+    if (StringUtils.hasText(video.getVideoUrl())) {
+      return video.getVideoUrl();
+    }
+    String gcsObjectId = video.getGcsObjectId();
+    if (!StringUtils.hasText(gcsObjectId)) {
+      return null;
+    }
+    if (cache.containsKey(gcsObjectId)) {
+      return cache.get(gcsObjectId);
+    }
+    String signed = signGcsObject(gcsObjectId);
+    cache.put(gcsObjectId, signed);
+    return signed;
+  }
+
+  /**
+   * Mints a V4 signed GET URL for a {@code bucket/object} identifier.
+   *
+   * @param gcsObjectId the stored identifier, formatted as {@code bucket/object}
+   * @return the signed URL, or {@code null} if it could not be produced
+   */
+  private String signGcsObject(String gcsObjectId) {
+    if (gcsClient == null) {
+      log.warn("GoogleSlidesClient: Cannot sign {}; gcsClient not configured", gcsObjectId);
+      return null;
+    }
+    int slash = gcsObjectId.indexOf('/');
+    if (slash <= 0 || slash == gcsObjectId.length() - 1) {
+      log.warn("GoogleSlidesClient: Cannot sign malformed gcsObjectId {}", gcsObjectId);
+      return null;
+    }
+    try {
+      BlobInfo blobInfo =
+          BlobInfo.newBuilder(gcsObjectId.substring(0, slash), gcsObjectId.substring(slash + 1))
+              .build();
+      URL signed =
+          gcsClient.signUrl(
+              blobInfo,
+              SIGNED_URL_TTL_DAYS,
+              TimeUnit.DAYS,
+              SignUrlOption.httpMethod(HttpMethod.GET),
+              SignUrlOption.withV4Signature());
+      return signed.toString();
+    } catch (Exception e) {
+      log.warn("GoogleSlidesClient: Failed to sign asset URL for {}", gcsObjectId, e);
+      return null;
+    }
+  }
+
+  /**
+   * Chooses the text rendered in place of the {@code ASSET_LINK} token.
+   *
+   * <p>Every source type shows the same label. A raw URL is poor slide copy — signed URLs run to
+   * several hundred characters, and truncating one leaves a meaningless fragment — so the URL is
+   * carried as a hyperlink on this text instead of being displayed.
+   *
+   * @param assetUrl the resolved link target, possibly {@code null}
+   * @return the label when there is something to link to, otherwise an empty string
+   */
+  private static String assetLinkDisplayText(String assetUrl) {
+    return StringUtils.hasText(assetUrl) ? ASSET_LINK_LABEL : "";
   }
 
   private double toEmu(Dimension dimension) {
