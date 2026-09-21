@@ -515,6 +515,8 @@ public class GoogleSlidesClient {
               : Collections.emptySet();
       int score = calculateAverageScore(video);
       String category = categoryFor(score);
+      int totalFeatures = relevant.size();
+      int detectedFeatures = totalFeatures - notRelevant.size();
 
       batchRequests.add(replaceAllTextOnSlide("ASSET_NUMBER", String.valueOf(i + 1), slideId));
       batchRequests.add(replaceAllTextOnSlide("VIDEO_COUNT", String.valueOf(videosCount), slideId));
@@ -532,9 +534,9 @@ public class GoogleSlidesClient {
       batchRequests.add(replaceAllTextOnSlide("ASSET_RESULT", category, slideId));
       batchRequests.add(replaceAllTextOnSlide("ADHERENCE_CATEGORY", category, slideId));
       batchRequests.add(
-          replaceAllTextOnSlide("ADHERENCE_X", String.valueOf(detected.size()), slideId));
+          replaceAllTextOnSlide("ADHERENCE_X", String.valueOf(detectedFeatures), slideId));
       batchRequests.add(
-          replaceAllTextOnSlide("ADHERENCE_Y", String.valueOf(allFeatures.size()), slideId));
+          replaceAllTextOnSlide("ADHERENCE_Y", String.valueOf(totalFeatures), slideId));
 
       getPageElementByDescription(detailSlide, "ADHERENCE_CATEGORY")
           .ifPresent(
@@ -697,24 +699,9 @@ public class GoogleSlidesClient {
   }
 
   private int calculateAverageScore(VideoMetadataEntity v) {
-    int total = 0, count = 0;
-    if (v.getAScore() != null) {
-      total += v.getAScore();
-      count++;
-    }
-    if (v.getBScore() != null) {
-      total += v.getBScore();
-      count++;
-    }
-    if (v.getCScore() != null) {
-      total += v.getCScore();
-      count++;
-    }
-    if (v.getDScore() != null) {
-      total += v.getDScore();
-      count++;
-    }
-    return count == 0 ? 0 : total / count;
+    int total = v.getRelevantFeatures().size();
+    int relevant = v.getNotDetected().size();
+    return total == 0 ? 0 : (relevant * 100) / total;
   }
 
   private static String categoryFor(int score) {

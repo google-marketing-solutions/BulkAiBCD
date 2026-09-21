@@ -147,18 +147,35 @@ class GoogleSlidesClientTest {
   void testCalculateAverageScore() {
     VideoMetadataEntity video =
         VideoMetadataEntity.builder()
-            .aScore(80)
-            .bScore(60)
-            .cScore(70)
-            .dScore(90)
+            .relevantFeatures(List.of("f1", "f2", "f3", "f4"))
+            .notDetected(List.of("f1", "f2", "f3"))
             .build();
 
     int score = ReflectionTestUtils.invokeMethod(client, "calculateAverageScore", video);
     assertThat(score).isEqualTo(75);
 
-    VideoMetadataEntity empty = VideoMetadataEntity.builder().build();
+    // A video with no relevant features must not divide by zero.
+    VideoMetadataEntity empty =
+        VideoMetadataEntity.builder().relevantFeatures(List.of()).notDetected(List.of()).build();
     int emptyScore = ReflectionTestUtils.invokeMethod(client, "calculateAverageScore", empty);
     assertThat(emptyScore).isEqualTo(0);
+  }
+
+  /** The score is derived from feature counts now, so the legacy A/B/C/D fields are inert. */
+  @Test
+  void testCalculateAverageScoreIgnoresAbcdScores() {
+    VideoMetadataEntity video =
+        VideoMetadataEntity.builder()
+            .aScore(80)
+            .bScore(60)
+            .cScore(70)
+            .dScore(90)
+            .relevantFeatures(List.of("f1", "f2"))
+            .notDetected(List.of("f1"))
+            .build();
+
+    int score = ReflectionTestUtils.invokeMethod(client, "calculateAverageScore", video);
+    assertThat(score).isEqualTo(50);
   }
 
   @Test
