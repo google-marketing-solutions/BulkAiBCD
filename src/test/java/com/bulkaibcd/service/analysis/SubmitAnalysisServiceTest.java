@@ -29,6 +29,14 @@ class SubmitAnalysisServiceTest {
   private CloudTasksQueueClient cloudTasksClient;
   private SubmitAnalysisService service;
 
+  private boolean unlistedSupported = false;
+
+  // BEGIN-INTERNAL
+  {
+    unlistedSupported = true;
+  }
+  // END-INTERNAL
+
   @BeforeEach
   void setUp() {
     analysisRepo = mock(AnalysisRequestRepository.class);
@@ -83,5 +91,35 @@ class SubmitAnalysisServiceTest {
         .verifyComplete();
 
     verify(analysisRepo).deleteById(anyString());
+  }
+
+  @Test
+  void submitWithUnlistedVideoBehavesAppropriately() throws Exception {
+    when(analysisRepo.save(any())).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
+    when(videoInputRepo.save(any())).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
+
+    SubmitAnalysisRequest req =
+        SubmitAnalysisRequest.builder()
+            .analysisName("Unlisted Test")
+            .videos(
+                List.of(
+                    SubmitAnalysisRequest.VideoInput.builder()
+                        .videoName("Unlisted Vid")
+                        .unlisted(true)
+                        .build()))
+            .build();
+
+    StepVerifier.create(service.execute(req))
+        .assertNext(
+            resp -> {
+              if (unlistedSupported) {
+                assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+                assertThat(resp.getBody()).isNotBlank();
+              } else {
+                assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+                assertThat(resp.getBody()).isEqualTo("Unlisted YouTube videos are not supported.");
+              }
+            })
+        .verifyComplete();
   }
 }

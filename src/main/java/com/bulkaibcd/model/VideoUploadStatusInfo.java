@@ -17,6 +17,7 @@
 package com.bulkaibcd.model;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,6 +31,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class VideoUploadStatusInfo {
 
   @JsonProperty("video_id")
@@ -37,13 +39,14 @@ public class VideoUploadStatusInfo {
   private String videoId;
 
   @JsonProperty("status")
+  @JsonAlias({"status", "uploadStatus", "upload_status"})
   private String status;
 
   @JsonProperty("gcs_path")
-  @JsonAlias("gcsPath")
+  @JsonAlias({"gcsPath", "gcs_path", "unlistedYoutubeUrl", "unlisted_youtube_url"})
   private String gcsPath;
 
   @JsonProperty("error_message")
-  @JsonAlias("errorMessage")
+  @JsonAlias({"errorMessage", "error_message"})
   private String errorMessage;
 }

@@ -117,6 +117,20 @@ class GcsClientTest {
   }
 
   @Test
+  void createBlobDelegatesToStorage() {
+    BlobInfo blobInfo =
+        BlobInfo.newBuilder("bucket", "thumbnails/thumb.jpg")
+            .setContentType("image/jpeg")
+            .build();
+    Blob mockBlob = mock(Blob.class);
+    byte[] content = new byte[] {1, 2, 3};
+    when(storage.create(eq(blobInfo), eq(content))).thenReturn(mockBlob);
+
+    Blob result = client.createBlob("bucket", "thumbnails/thumb.jpg", content, "image/jpeg");
+    assertThat(result).isEqualTo(mockBlob);
+  }
+
+  @Test
   void signUrlDelegatesToStorage() throws Exception {
     BlobInfo blobInfo = BlobInfo.newBuilder("bucket", "object").build();
     URL expectedUrl = new URL("https://storage.googleapis.com/bucket/object?signed");

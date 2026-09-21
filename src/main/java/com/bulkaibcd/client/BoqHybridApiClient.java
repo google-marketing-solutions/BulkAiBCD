@@ -20,74 +20,38 @@ import com.bulkaibcd.model.UploadStatusRequest;
 import com.bulkaibcd.model.UploadStatusResponse;
 import com.bulkaibcd.model.UploadUnlistedVideosRequest;
 import com.bulkaibcd.model.UploadUnlistedVideosResponse;
+import com.bulkaibcd.proto.GetAnalysisProgressRequest;
+import com.bulkaibcd.proto.GetAnalysisProgressResponse;
+import com.bulkaibcd.proto.GetUploadStatusRequest;
+import com.bulkaibcd.proto.GetUploadStatusResponse;
+import com.bulkaibcd.proto.InputServiceGrpc;
+import com.bulkaibcd.proto.UploadUnlistedVideosToGcsRequest;
+import com.bulkaibcd.proto.UploadUnlistedVideosToGcsResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.auth.oauth2.GoogleCredentials;
-import com.google.cloud.hybrid.connect.c2pauthorizer.client.HelheimTokenRefresher;
-import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import com.google.protobuf.util.JsonFormat;
+import io.grpc.StatusRuntimeException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
-import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
- * A client implementation for invoking Boq InputService RPCs through the Google Hybrid API gateway.
+ * A client implementation for invoking Boq InputService RPCs through the Google Hybrid API gateway over gRPC.
  */
 @Component
 @Slf4j
 public class BoqHybridApiClient implements BoqInputServiceClient {
 
-  private static final String UPLOAD_RPC_PATH = "/bulkaibcd.InputService/UploadUnlistedVideosToGcs";
-  private static final String STATUS_RPC_PATH = "/bulkaibcd.InputService/GetUploadStatus";
-  private static final String HEADER_AUTHORIZATION = "Authorization";
-  private static final String HEADER_CONTENT_TYPE = "Content-Type";
-  private static final String MEDIA_TYPE_JSON = "application/json";
-
-  private final String baseUrl;
+  private final InputServiceGrpc.InputServiceBlockingStub inputServiceStub;
   private final ObjectMapper objectMapper;
-  private final HttpClient httpClient;
-  private final GoogleCredentials credentials;
-  private final HelheimTokenRefresher helheimTokenRefresher;
-  private final Supplier<String> tokenSupplier;
 
+  @Autowired
   public BoqHybridApiClient(
-      @Value("${app.boq.hybrid-api-url:https://autopush-bulkaibcd.hybrid.sandbox.googleapis.com}")
-          String baseUrl,
-      ObjectMapper objectMapper,
-      HttpClient boqHttpClient,
-      @Autowired(required = false) HelheimTokenRefresher helheimTokenRefresher) {
-    this(baseUrl, objectMapper, boqHttpClient, initCredentials(), helheimTokenRefresher, null);
-  }
-
-  BoqHybridApiClient(
-      String baseUrl,
-      ObjectMapper objectMapper,
-      HttpClient httpClient,
-      GoogleCredentials credentials,
-      Supplier<String> tokenSupplier) {
-    this(baseUrl, objectMapper, httpClient, credentials, null, tokenSupplier);
-  }
-
-  BoqHybridApiClient(
-      String baseUrl,
-      ObjectMapper objectMapper,
-      HttpClient httpClient,
-      GoogleCredentials credentials,
-      HelheimTokenRefresher helheimTokenRefresher,
-      Supplier<String> tokenSupplier) {
-    this.baseUrl = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
+      InputServiceGrpc.InputServiceBlockingStub inputServiceStub,
+      ObjectMapper objectMapper) {
+    this.inputServiceStub = inputServiceStub;
     this.objectMapper = objectMapper;
-    this.httpClient = httpClient;
-    this.credentials = credentials;
-    this.helheimTokenRefresher = helheimTokenRefresher;
-    this.tokenSupplier = tokenSupplier;
   }
 
   @Override
@@ -100,145 +64,126 @@ public class BoqHybridApiClient implements BoqInputServiceClient {
         request.getUserId(),
         request.getGcsUriPrefix(),
         request.getUnlistedYoutubeVideoIds());
+
+    String requesterId = request.getUserId();
+    if (requesterId == null || requesterId.isBlank()) {
+      throw new IllegalArgumentException(
+          "Refusing Boq UploadUnlistedVideosToGcs without a requester: the backend attributes its"
+              + " access log to this value");
+    }
+
+    UploadUnlistedVideosToGcsRequest.Builder protoRequestBuilder =
+        UploadUnlistedVideosToGcsRequest.newBuilder()
+            .setRequestId(request.getRequestId() != null ? request.getRequestId() : "")
+            .setGcsUriPrefix(request.getGcsUriPrefix() != null ? request.getGcsUriPrefix() : "")
+            .setUserId(requesterId)
+            .setAnalysisName(request.getAnalysisName() != null ? request.getAnalysisName() : "");
+
+
+    if (request.getUnlistedYoutubeVideoIds() != null) {
+      protoRequestBuilder.addAllUnlistedYoutubeVideoIds(request.getUnlistedYoutubeVideoIds());
+    }
+
+    UploadUnlistedVideosToGcsRequest protoRequest = protoRequestBuilder.build();
+
     try {
-      String requestJson = objectMapper.writeValueAsString(request);
-      String responseBody = sendRpcRequest(UPLOAD_RPC_PATH, requestJson);
-      UploadUnlistedVideosResponse response =
-          objectMapper.readValue(responseBody, UploadUnlistedVideosResponse.class);
+      Instant start = Instant.now();
+      UploadUnlistedVideosToGcsResponse protoResponse =
+          inputServiceStub.uploadUnlistedVideosToGcs(protoRequest);
+      long durationMs = Duration.between(start, Instant.now()).toMillis();
+
       log.info(
-          "BoqHybridApiClient: UploadUnlistedVideosToGcs succeeded. Assigned batch requestId: {}",
-          response.getRequestId());
-      return response;
-    } catch (IOException | InterruptedException e) {
-      log.error("BoqHybridApiClient: Failed to upload unlisted videos to GCS", e);
-      throw new IllegalStateException("Failed to call UploadUnlistedVideosToGcs RPC", e);
+          "BoqHybridApiClient: UploadUnlistedVideosToGcs succeeded in {} ms. Assigned batch requestId: {}",
+          durationMs,
+          protoResponse.getRequestId());
+
+      String jsonResponse = JsonFormat.printer().includingDefaultValueFields().print(protoResponse);
+      return objectMapper.readValue(jsonResponse, UploadUnlistedVideosResponse.class);
+    } catch (StatusRuntimeException e) {
+      log.error(
+          "BoqHybridApiClient: gRPC UploadUnlistedVideosToGcs failed with status {}: {}",
+          e.getStatus().getCode(),
+          e.getStatus().getDescription(),
+          e);
+      throw new IllegalStateException(
+          String.format("Boq RPC failed with gRPC status %s: %s", e.getStatus().getCode(), e.getStatus().getDescription()),
+          e);
+    } catch (Exception e) {
+      log.error("BoqHybridApiClient: Failed to process UploadUnlistedVideosToGcs response", e);
+      throw new IllegalStateException("Failed to execute UploadUnlistedVideosToGcs", e);
     }
   }
 
   @Override
   public UploadStatusResponse getUploadStatus(String requestId) {
     log.info("BoqHybridApiClient: Polling GetUploadStatus for batch requestId: {}", requestId);
+
+    GetUploadStatusRequest protoRequest =
+        GetUploadStatusRequest.newBuilder()
+            .setRequestId(requestId != null ? requestId : "")
+            .build();
+
     try {
-      UploadStatusRequest statusRequest =
-          UploadStatusRequest.builder().requestId(requestId).build();
-      String requestJson = objectMapper.writeValueAsString(statusRequest);
-      String responseBody = sendRpcRequest(STATUS_RPC_PATH, requestJson);
-      UploadStatusResponse response =
-          objectMapper.readValue(responseBody, UploadStatusResponse.class);
+      Instant start = Instant.now();
+      GetUploadStatusResponse protoResponse = inputServiceStub.getUploadStatus(protoRequest);
+      long durationMs = Duration.between(start, Instant.now()).toMillis();
+
       log.info(
-          "BoqHybridApiClient: GetUploadStatus for requestId: {} -> allCompleted: {}, completed: {}/{}, inProgress: {}, failed: {}",
+          "BoqHybridApiClient: GetUploadStatus for requestId: {} completed in {} ms -> allCompleted: {}, completed: {}/{}, inProgress: {}, failed: {}",
           requestId,
-          response.isAllCompleted(),
-          response.getCompletedCount(),
-          response.getTotalCount(),
-          response.getInProgressCount(),
-          response.getFailedCount());
-      return response;
-    } catch (IOException | InterruptedException e) {
-      log.error("BoqHybridApiClient: Failed to get upload status for request ID: {}", requestId, e);
-      throw new IllegalStateException("Failed to call GetUploadStatus RPC", e);
-    }
-  }
+          durationMs,
+          protoResponse.getAllCompleted(),
+          protoResponse.getCompletedCount(),
+          protoResponse.getTotalCount(),
+          protoResponse.getInProgressCount(),
+          protoResponse.getFailedCount());
 
-  private String sendRpcRequest(String rpcPath, String requestBodyJson)
-      throws IOException, InterruptedException {
-    String endpointUrl = baseUrl + rpcPath;
-    String accessToken = fetchAccessToken();
-    String helheimToken = resolveHelheimToken();
-
-    log.info(
-        "BoqHybridApiClient: Dispatching RPC to {} [Auth Token: {}, Helheim Token: {}]",
-        endpointUrl,
-        accessToken != null ? "PRESENT" : "MISSING",
-        helheimToken != null ? "PRESENT" : "MISSING");
-    log.debug("BoqHybridApiClient: Request Payload: {}", requestBodyJson);
-
-    HttpRequest.Builder requestBuilder =
-        HttpRequest.newBuilder()
-            .uri(URI.create(endpointUrl))
-            .timeout(Duration.ofSeconds(60))
-            .header(HEADER_CONTENT_TYPE, MEDIA_TYPE_JSON)
-            .POST(HttpRequest.BodyPublishers.ofString(requestBodyJson));
-
-    if (accessToken != null && !accessToken.isBlank()) {
-      requestBuilder.header(HEADER_AUTHORIZATION, "Bearer " + accessToken);
-    }
-
-    if (helheimToken != null && !helheimToken.isBlank()) {
-      requestBuilder.header(HelheimTokenRefresher.getHelheimTokenHeader(), helheimToken);
-    }
-
-    Instant start = Instant.now();
-    HttpRequest request = requestBuilder.build();
-    HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-    long durationMs = java.time.Duration.between(start, Instant.now()).toMillis();
-
-    log.info(
-        "BoqHybridApiClient: Received HTTP {} from {} ({} ms)",
-        response.statusCode(),
-        endpointUrl,
-        durationMs);
-    log.debug("BoqHybridApiClient: Response Payload: {}", response.body());
-
-    if (response.statusCode() != 200) {
+      String jsonResponse = JsonFormat.printer().includingDefaultValueFields().print(protoResponse);
+      return objectMapper.readValue(jsonResponse, UploadStatusResponse.class);
+    } catch (StatusRuntimeException e) {
       log.error(
-          "BoqHybridApiClient: RPC to {} failed with HTTP {}. Response Body: {}",
-          endpointUrl,
-          response.statusCode(),
-          response.body());
+          "BoqHybridApiClient: gRPC GetUploadStatus failed for requestId {} with status {}: {}",
+          requestId,
+          e.getStatus().getCode(),
+          e.getStatus().getDescription(),
+          e);
       throw new IllegalStateException(
-          String.format("Boq RPC failed with HTTP %d: %s", response.statusCode(), response.body()));
+          String.format("Boq RPC GetUploadStatus failed with gRPC status %s: %s", e.getStatus().getCode(), e.getStatus().getDescription()),
+          e);
+    } catch (Exception e) {
+      log.error("BoqHybridApiClient: Failed to process GetUploadStatus response", e);
+      throw new IllegalStateException("Failed to execute GetUploadStatus", e);
     }
-
-    return response.body();
   }
 
-  private String fetchAccessToken() {
-    if (credentials == null) {
-      return null;
-    }
+  /**
+   * Retrieves analysis progress percentage for a given analysis ID.
+   *
+   * @param analysisId the ID of the analysis
+   * @return progress percentage (-1 to 100)
+   */
+  public int getAnalysisProgress(String analysisId) {
+    log.info("BoqHybridApiClient: Calling GetAnalysisProgress for analysisId: {}", analysisId);
+
+    GetAnalysisProgressRequest protoRequest =
+        GetAnalysisProgressRequest.newBuilder()
+            .setAnalysisId(analysisId != null ? analysisId : "")
+            .build();
+
     try {
-      credentials.refreshIfExpired();
-      if (credentials.getAccessToken() != null) {
-        return credentials.getAccessToken().getTokenValue();
-      }
-    } catch (IOException e) {
-      log.warn("BoqHybridApiClient: Could not refresh Google ADC access token", e);
+      GetAnalysisProgressResponse protoResponse =
+          inputServiceStub.getAnalysisProgress(protoRequest);
+      return protoResponse.getProgressPercentage();
+    } catch (StatusRuntimeException e) {
+      log.error(
+          "BoqHybridApiClient: gRPC GetAnalysisProgress failed for analysisId {} with status {}: {}",
+          analysisId,
+          e.getStatus().getCode(),
+          e.getStatus().getDescription(),
+          e);
+      throw new IllegalStateException(
+          String.format("Boq RPC GetAnalysisProgress failed with gRPC status %s: %s", e.getStatus().getCode(), e.getStatus().getDescription()),
+          e);
     }
-    return null;
-  }
-
-  private static GoogleCredentials initCredentials() {
-    try {
-      return GoogleCredentials.getApplicationDefault()
-          .createScoped(List.of("https://www.googleapis.com/auth/cloud-platform"));
-    } catch (IOException e) {
-      log.warn("BoqHybridApiClient: Could not obtain Google Application Default Credentials", e);
-      return null;
-    }
-  }
-
-  private String resolveHelheimToken() {
-    if (tokenSupplier != null) {
-      String token = tokenSupplier.get();
-      if (token != null && !token.isBlank()) {
-        return token;
-      }
-    }
-    if (helheimTokenRefresher != null) {
-      try {
-        String token = helheimTokenRefresher.getHelheimToken().get();
-        if (token != null && !token.isBlank()) {
-          return token;
-        }
-      } catch (Exception e) {
-        log.warn("BoqHybridApiClient: Could not retrieve dynamic Helheim token from refresher", e);
-      }
-    }
-    String token = System.getenv("HELHEIM_TOKEN");
-    if (token != null && !token.isBlank()) {
-      return token;
-    }
-    return System.getProperty("helheim.token");
   }
 }

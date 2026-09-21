@@ -41,7 +41,6 @@ export interface Job {
   customFeatures: { long: string[], short: string[] };
 }
 
-const DEFAULT_REQUESTER_ID = 'default-user';
 const POLL_MS = 5000;
 
 @Component({
@@ -99,7 +98,7 @@ export class JobsTableComponent implements OnInit {
     // column is the continuous indicator. Surfacing a second pulsing indicator
     // on every 5s poll caused the whole table to jitter up and down.
     this.analysisService
-      .listAnalyses(DEFAULT_REQUESTER_ID)
+      .listAnalyses()
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((rows: AnalysisRequest[]) => {

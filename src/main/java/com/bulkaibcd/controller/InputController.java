@@ -19,6 +19,7 @@ package com.bulkaibcd.controller;
 import com.bulkaibcd.model.AnalysisRequestEntity;
 import com.bulkaibcd.model.SubmitAnalysisRequest;
 import com.bulkaibcd.model.YouTubeVideoInfoDto;
+import com.bulkaibcd.service.analysis.AnalysisAccessGuard;
 import com.bulkaibcd.service.analysis.CancelAnalysisService;
 import com.bulkaibcd.service.analysis.DeleteAnalysisService;
 import com.bulkaibcd.service.analysis.GetAnalysisService;
@@ -26,10 +27,12 @@ import com.bulkaibcd.service.analysis.ListAnalysesService;
 import com.bulkaibcd.service.analysis.SubmitAnalysisService;
 import com.bulkaibcd.service.drive.DriveResolveService;
 import com.bulkaibcd.service.youtube.YouTubeResolveService;
+import com.bulkaibcd.web.RequesterContext;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -43,6 +46,11 @@ import reactor.core.publisher.Mono;
 
 /**
  * A controller handling video analysis input submission, URL resolution, and lifecycle endpoints.
+ *
+ * <p>Every endpoint that touches a stored analysis derives the caller from the verified IAP
+ * assertion rather than from the request. Client-supplied identity is ignored outright: the browser
+ * bundle is not a trustworthy source for the field that both scopes the data and attributes the
+ * downstream Boq call.
  */
 @RestController
 @RequestMapping("/api/v2/input")
@@ -57,15 +65,28 @@ public class InputController {
   private final GetAnalysisService getAnalysisService;
   private final CancelAnalysisService cancelAnalysisService;
   private final DeleteAnalysisService deleteAnalysisService;
+  private final AnalysisAccessGuard analysisAccessGuard;
+  private final RequesterContext requesterContext;
 
   /**
    * Submits a new batch video analysis job for processing.
    *
+   * <p>The requester recorded against the job is taken from the IAP assertion, overwriting whatever
+   * the client sent.
+   *
    * @param request the submission payload containing metadata and video inputs
-   * @return a reactive {@link Mono} with the generated analysis ID
+   * @return a reactive {@link Mono} with the generated analysis ID, or 401 when unattributable
    */
   @PostMapping("/submit")
   public Mono<ResponseEntity<String>> submitAnalysis(@RequestBody SubmitAnalysisRequest request) {
+    String requesterId = requesterContext.current().attributionId();
+    if (requesterId == null) {
+      log.warn("InputController: rejecting unattributed analysis submission");
+      return Mono.just(
+          ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+              .body("Caller identity could not be verified"));
+    }
+    request.setRequesterId(requesterId);
     return submitAnalysisService.execute(request);
   }
 
@@ -93,46 +114,65 @@ public class InputController {
   }
 
   /**
-   * Lists all analysis jobs requested by a given user.
+   * Lists the analysis jobs belonging to the calling user.
    *
-   * @param requesterId the user identifier
-   * @return a reactive {@link Flux} of analysis request entities
+   * <p>The requester is no longer accepted as a path variable; doing so let any signed-in user read
+   * another user's job list simply by editing the URL.
+   *
+   * @return a reactive {@link Flux} of analysis request entities owned by the caller
    */
-  @GetMapping("/list/{requesterId}")
-  public Flux<AnalysisRequestEntity> listAnalyses(@PathVariable String requesterId) {
+  @GetMapping("/list")
+  public Flux<AnalysisRequestEntity> listAnalyses() {
+    String requesterId = requesterContext.current().attributionId();
+    if (requesterId == null) {
+      log.warn("InputController: rejecting unattributed analysis list request");
+      return Flux.empty();
+    }
     return listAnalysesService.execute(requesterId);
   }
 
   /**
-   * Retrieves the status and details of a single analysis job.
+   * Retrieves the status and details of a single analysis job owned by the caller.
    *
    * @param analysisId the unique analysis identifier
-   * @return a reactive {@link Mono} with the analysis entity
+   * @return a reactive {@link Mono} with the analysis entity, or 404 when absent or not the
+   *     caller's
    */
   @GetMapping("/{analysisId}")
   public Mono<ResponseEntity<AnalysisRequestEntity>> getAnalysis(@PathVariable String analysisId) {
-    return getAnalysisService.execute(analysisId);
+    return guard(analysisId)
+        .flatMap(allowed -> getAnalysisService.execute(analysisId))
+        .defaultIfEmpty(ResponseEntity.notFound().build());
   }
 
   /**
-   * Cancels an ongoing analysis job.
+   * Cancels an ongoing analysis job owned by the caller.
    *
    * @param analysisId the unique analysis identifier
    * @return a reactive {@link Mono} indicating cancellation status
    */
   @PostMapping("/{analysisId}/cancel")
   public Mono<ResponseEntity<String>> cancelAnalysis(@PathVariable String analysisId) {
-    return cancelAnalysisService.execute(analysisId);
+    return guard(analysisId)
+        .flatMap(allowed -> cancelAnalysisService.execute(analysisId))
+        .defaultIfEmpty(ResponseEntity.notFound().build());
   }
 
   /**
-   * Deletes an analysis record and its child records.
+   * Deletes an analysis record and its child records, provided the caller owns it.
    *
    * @param analysisId the unique analysis identifier
    * @return a reactive {@link Mono} indicating deletion status
    */
   @DeleteMapping("/{analysisId}")
   public Mono<ResponseEntity<String>> deleteAnalysis(@PathVariable String analysisId) {
-    return deleteAnalysisService.execute(analysisId);
+    return guard(analysisId)
+        .flatMap(allowed -> deleteAnalysisService.execute(analysisId))
+        .defaultIfEmpty(ResponseEntity.notFound().build());
+  }
+
+  /** Emits once when the caller may act on the analysis, and completes empty otherwise. */
+  private Mono<AnalysisRequestEntity> guard(String analysisId) {
+    return analysisAccessGuard.requireAccess(analysisId, requesterContext.current().attributionId());
   }
 }

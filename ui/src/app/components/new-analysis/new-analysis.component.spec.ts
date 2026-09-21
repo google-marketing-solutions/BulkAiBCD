@@ -107,16 +107,16 @@ describe('NewAnalysisComponent', () => {
     expect((component as any).marketingObjective.enabled).toBeTrue();
   });
 
-  it('addFiles caps files to max 25 and attaches format', () => {
+  it('addFiles caps files to max 1999 and attaches format', () => {
     const files: File[] = [];
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 2005; i++) {
       files.push(new File([''], `v${i}.mp4`, {type: 'video/mp4'}));
     }
     const snackSpy = spyOn(snackBar, 'open');
 
     (component as any).addFiles(files);
 
-    expect((component as any).videos().length).toBe(25);
+    expect((component as any).videos().length).toBe(1999);
     expect((component as any).videos()[0].format).toBe('LONG');
     expect(snackSpy).toHaveBeenCalled();
   });

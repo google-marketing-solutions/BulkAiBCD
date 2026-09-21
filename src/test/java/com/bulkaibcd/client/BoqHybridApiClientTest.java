@@ -18,61 +18,128 @@ package com.bulkaibcd.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import com.bulkaibcd.model.UploadStatusResponse;
 import com.bulkaibcd.model.UploadUnlistedVideosRequest;
 import com.bulkaibcd.model.UploadUnlistedVideosResponse;
+import com.bulkaibcd.proto.GetAnalysisProgressRequest;
+import com.bulkaibcd.proto.GetAnalysisProgressResponse;
+import com.bulkaibcd.proto.GetUploadStatusRequest;
+import com.bulkaibcd.proto.GetUploadStatusResponse;
+import com.bulkaibcd.proto.InputServiceGrpc;
+import com.bulkaibcd.proto.UploadStatus;
+import com.bulkaibcd.proto.UploadUnlistedVideosToGcsRequest;
+import com.bulkaibcd.proto.UploadUnlistedVideosToGcsResponse;
+import com.bulkaibcd.proto.VideoUploadStatusInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.auth.oauth2.AccessToken;
-import com.google.auth.oauth2.GoogleCredentials;
+import io.grpc.ManagedChannel;
+import io.grpc.Server;
+import io.grpc.Status;
+import io.grpc.inprocess.InProcessChannelBuilder;
+import io.grpc.inprocess.InProcessServerBuilder;
+import io.grpc.stub.StreamObserver;
 import java.io.IOException;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.Date;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 
 class BoqHybridApiClientTest {
 
-  private HttpClient httpClient;
-  private ObjectMapper objectMapper;
-  private GoogleCredentials credentials;
+  private Server server;
+  private ManagedChannel channel;
   private BoqHybridApiClient client;
+  private TestInputServiceImpl serviceImpl;
+
+  static class TestInputServiceImpl extends InputServiceGrpc.InputServiceImplBase {
+    AtomicReference<UploadUnlistedVideosToGcsRequest> lastUploadRequest = new AtomicReference<>();
+    AtomicReference<GetUploadStatusRequest> lastStatusRequest = new AtomicReference<>();
+    AtomicReference<GetAnalysisProgressRequest> lastProgressRequest = new AtomicReference<>();
+    boolean throwUnavailable = false;
+    boolean throwInternal = false;
+
+    @Override
+    public void uploadUnlistedVideosToGcs(
+        UploadUnlistedVideosToGcsRequest request,
+        StreamObserver<UploadUnlistedVideosToGcsResponse> responseObserver) {
+      lastUploadRequest.set(request);
+      if (throwUnavailable) {
+        responseObserver.onError(Status.UNAVAILABLE.withDescription("Service unavailable").asRuntimeException());
+        return;
+      }
+      UploadUnlistedVideosToGcsResponse response =
+          UploadUnlistedVideosToGcsResponse.newBuilder()
+              .setRequestId("batch-req-123")
+              .setQueuedCount(2)
+              .build();
+      responseObserver.onNext(response);
+      responseObserver.onCompleted();
+    }
+
+    @Override
+    public void getUploadStatus(
+        GetUploadStatusRequest request,
+        StreamObserver<GetUploadStatusResponse> responseObserver) {
+      lastStatusRequest.set(request);
+      if (throwInternal) {
+        responseObserver.onError(Status.INTERNAL.withDescription("Internal error").asRuntimeException());
+        return;
+      }
+      GetUploadStatusResponse response =
+          GetUploadStatusResponse.newBuilder()
+              .setRequestId(request.getRequestId())
+              .setTotalCount(2)
+              .setCompletedCount(2)
+              .setFailedCount(0)
+              .setInProgressCount(0)
+              .setAllCompleted(true)
+              .addVideos(
+                  VideoUploadStatusInfo.newBuilder()
+                      .setVideoId("vid1")
+                      .setUploadStatus(UploadStatus.UPLOAD_COMPLETED)
+                      .build())
+              .build();
+      responseObserver.onNext(response);
+      responseObserver.onCompleted();
+    }
+
+    @Override
+    public void getAnalysisProgress(
+        GetAnalysisProgressRequest request,
+        StreamObserver<GetAnalysisProgressResponse> responseObserver) {
+      lastProgressRequest.set(request);
+      GetAnalysisProgressResponse response =
+          GetAnalysisProgressResponse.newBuilder()
+              .setProgressPercentage(75)
+              .build();
+      responseObserver.onNext(response);
+      responseObserver.onCompleted();
+    }
+  }
 
   @BeforeEach
-  void setUp() {
-    httpClient = mock(HttpClient.class);
-    objectMapper = new ObjectMapper();
-    credentials =
-        GoogleCredentials.create(
-            new AccessToken("test-adc-token", Date.from(Instant.now().plusSeconds(3600))));
-    client =
-        new BoqHybridApiClient(
-            "https://autopush-bulkaibcd.hybrid.sandbox.googleapis.com",
-            objectMapper,
-            httpClient,
-            credentials,
-            () -> "test-helheim-token");
+  void setUp() throws IOException {
+    String serverName = InProcessServerBuilder.generateName();
+    serviceImpl = new TestInputServiceImpl();
+    server = InProcessServerBuilder.forName(serverName).directExecutor().addService(serviceImpl).build().start();
+    channel = InProcessChannelBuilder.forName(serverName).directExecutor().build();
+    InputServiceGrpc.InputServiceBlockingStub stub = InputServiceGrpc.newBlockingStub(channel);
+    client = new BoqHybridApiClient(stub, new ObjectMapper());
+  }
+
+  @AfterEach
+  void tearDown() {
+    if (channel != null) {
+      channel.shutdownNow();
+    }
+    if (server != null) {
+      server.shutdownNow();
+    }
   }
 
   @Test
-  @SuppressWarnings("unchecked")
-  void uploadUnlistedVideosToGcsSendsExpectedPayloadAndParsesResponse() throws Exception {
-    HttpResponse<String> response = mock(HttpResponse.class);
-    when(response.statusCode()).thenReturn(200);
-    when(response.body()).thenReturn("{\"request_id\":\"batch-req-123\"}");
-    when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-        .thenReturn(response);
-
+  void uploadUnlistedVideosToGcsSendsExpectedPayloadAndParsesResponse() {
     UploadUnlistedVideosRequest request =
         UploadUnlistedVideosRequest.builder()
             .unlistedYoutubeVideoIds(List.of("vid1", "vid2"))
@@ -86,76 +153,78 @@ class BoqHybridApiClientTest {
     assertThat(result).isNotNull();
     assertThat(result.getRequestId()).isEqualTo("batch-req-123");
 
-    ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
-    verify(httpClient).send(requestCaptor.capture(), any());
-
-    HttpRequest captured = requestCaptor.getValue();
-    assertThat(captured.uri().toString())
-        .isEqualTo("https://autopush-bulkaibcd.hybrid.sandbox.googleapis.com/bulkaibcd.InputService/UploadUnlistedVideosToGcs");
-    assertThat(captured.headers().firstValue("Content-Type")).contains("application/json");
-    assertThat(captured.headers().firstValue("Authorization")).contains("Bearer test-adc-token");
-    assertThat(captured.headers().firstValue("X-Helheim-Token")).contains("test-helheim-token");
-    assertThat(captured.timeout()).contains(Duration.ofSeconds(60));
+    UploadUnlistedVideosToGcsRequest captured = serviceImpl.lastUploadRequest.get();
+    assertThat(captured).isNotNull();
+    assertThat(captured.getGcsUriPrefix()).isEqualTo("gs://my-bucket/unlisted/");
+    assertThat(captured.getUserId()).isEqualTo("user1");
+    assertThat(captured.getAnalysisName()).isEqualTo("test-analysis");
+    assertThat(captured.getUnlistedYoutubeVideoIdsList()).containsExactly("vid1", "vid2");
   }
 
   @Test
-  @SuppressWarnings("unchecked")
-  void getUploadStatusSendsExpectedPayloadAndParsesResponse() throws Exception {
-    HttpResponse<String> response = mock(HttpResponse.class);
-    when(response.statusCode()).thenReturn(200);
-    String responseJson =
-        "{"
-            + "\"total_count\":2,"
-            + "\"completed_count\":2,"
-            + "\"failed_count\":0,"
-            + "\"in_progress_count\":0,"
-            + "\"all_completed\":true,"
-            + "\"video_upload_statuses\":["
-            + "{\"video_id\":\"vid1\",\"status\":\"UPLOAD_COMPLETED\",\"gcs_path\":\"gs://my-bucket/unlisted/vid1.mp4\"}"
-            + "]"
-            + "}";
-    when(response.body()).thenReturn(responseJson);
-    when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-        .thenReturn(response);
-
+  void getUploadStatusSendsExpectedPayloadAndParsesResponse() {
     UploadStatusResponse result = client.getUploadStatus("batch-req-123");
 
     assertThat(result).isNotNull();
     assertThat(result.isAllCompleted()).isTrue();
     assertThat(result.getTotalCount()).isEqualTo(2);
-    assertThat(result.getVideoUploadStatuses()).hasSize(1);
-    assertThat(result.getVideoUploadStatuses().get(0).getVideoId()).isEqualTo("vid1");
-    assertThat(result.getVideoUploadStatuses().get(0).getGcsPath())
-        .isEqualTo("gs://my-bucket/unlisted/vid1.mp4");
+    assertThat(result.getCompletedCount()).isEqualTo(2);
+
+    GetUploadStatusRequest captured = serviceImpl.lastStatusRequest.get();
+    assertThat(captured).isNotNull();
+    assertThat(captured.getRequestId()).isEqualTo("batch-req-123");
   }
 
   @Test
-  @SuppressWarnings("unchecked")
-  void sendRpcRequestThrowsWhenStatusCodeIsNot200() throws Exception {
-    HttpResponse<String> response = mock(HttpResponse.class);
-    when(response.statusCode()).thenReturn(500);
-    when(response.body()).thenReturn("Internal server error");
-    when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-        .thenReturn(response);
+  void getAnalysisProgressReturnsProgressPercentage() {
+    int progress = client.getAnalysisProgress("analysis-123");
 
+    assertThat(progress).isEqualTo(75);
+
+    GetAnalysisProgressRequest captured = serviceImpl.lastProgressRequest.get();
+    assertThat(captured).isNotNull();
+    assertThat(captured.getAnalysisId()).isEqualTo("analysis-123");
+  }
+
+  @Test
+  void uploadUnlistedVideosToGcsThrowsWhenGrpcErrorOccurs() {
+    serviceImpl.throwUnavailable = true;
+
+    UploadUnlistedVideosRequest request =
+        UploadUnlistedVideosRequest.builder()
+            .unlistedYoutubeVideoIds(List.of("vid1"))
+            .userId("jdoe")
+            .build();
+
+    assertThatThrownBy(() -> client.uploadUnlistedVideosToGcs(request))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining("UNAVAILABLE");
+  }
+
+  /**
+   * The Boq backend attributes its access log to user_id, so a request that cannot name a requester
+   * must never reach the wire.
+   */
+  @Test
+  void uploadUnlistedVideosToGcsRefusesAnUnattributedRequest() {
     UploadUnlistedVideosRequest request =
         UploadUnlistedVideosRequest.builder()
             .unlistedYoutubeVideoIds(List.of("vid1"))
             .build();
 
     assertThatThrownBy(() -> client.uploadUnlistedVideosToGcs(request))
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessageContaining("500");
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("without a requester");
+
+    assertThat(serviceImpl.lastUploadRequest.get()).isNull();
   }
 
   @Test
-  @SuppressWarnings("unchecked")
-  void sendRpcRequestThrowsWhenIoExceptionOccurs() throws Exception {
-    when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-        .thenThrow(new IOException("Connection reset"));
+  void getUploadStatusThrowsWhenGrpcErrorOccurs() {
+    serviceImpl.throwInternal = true;
 
     assertThatThrownBy(() -> client.getUploadStatus("batch-123"))
         .isInstanceOf(IllegalStateException.class)
-        .hasMessageContaining("GetUploadStatus");
+        .hasMessageContaining("INTERNAL");
   }
 }

@@ -18,7 +18,6 @@ package com.bulkaibcd.service.batch;
 
 import com.bulkaibcd.config.AnalysisConstants;
 import com.bulkaibcd.enums.AnalysisStatus;
-import com.bulkaibcd.enums.SourceType;
 import com.bulkaibcd.enums.VideoFormat;
 import com.bulkaibcd.mapper.EntityMapper;
 import com.bulkaibcd.model.AnalysisRequestEntity;
@@ -588,15 +587,6 @@ public class BatchPredictionOrchestrator {
                           metadata.setErrorMessage(outputPrefix.replace("FAILED_", ""));
                         } else {
                           metadata.setStatus(AnalysisStatus.COMPLETED.name());
-                        }
-
-                        if (SourceType.FILE.name().equalsIgnoreCase(input.getSourceType())
-                            && input.getGcsObjectId() != null) {
-                          log.info(
-                              "BatchPredictionOrchestrator: Auto-GC: Deleting temporary raw video"
-                                  + " file bytes: {}",
-                              input.getGcsObjectId());
-                          gcsStorage.deleteGcsObject(input.getGcsObjectId());
                         }
 
                         return videoMetadataRepository.save(metadata);

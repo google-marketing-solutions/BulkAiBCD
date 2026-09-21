@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Copyright 2026 Google LLC
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      https://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<configuration>
+
+  <!--
+    In production every line is emitted as Stackdriver JSON. This is what turns the access log
+    into something queryable: the layout promotes SLF4J MDC entries to top-level jsonPayload
+    fields, so AccessLogFilter's actorLdap becomes jsonPayload.actorLdap in Cloud Logging rather
+    than text buried in a message string. It also emits the logger name as jsonPayload.logger,
+    which is how the audit stream is separated from ordinary application chatter, and correlates
+    entries to Cloud Trace.
+
+    Without this file Cloud Run would capture plain text and none of the above would be true.
+
+    The project id comes from SPRING_CLOUD_GCP_LOGGING_PROJECT_ID, set at deploy time.
+  -->
+  <springProfile name="prod">
+    <include resource="com/google/cloud/spring/logging/logback-json-appender.xml"/>
+    <root level="INFO">
+      <appender-ref ref="CONSOLE_JSON"/>
+    </root>
+  </springProfile>
+
+  <!-- Locally, human-readable output is worth more than machine-parseable output. -->
+  <springProfile name="!prod">
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+    <root level="INFO">
+      <appender-ref ref="CONSOLE"/>
+    </root>
+  </springProfile>
+
+</configuration>

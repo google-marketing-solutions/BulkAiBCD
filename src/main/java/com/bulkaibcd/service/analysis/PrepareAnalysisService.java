@@ -16,15 +16,19 @@
 
 package com.bulkaibcd.service.analysis;
 
+// BEGIN-INTERNAL
 import com.bulkaibcd.client.BoqInputServiceClient;
+// END-INTERNAL
 import com.bulkaibcd.client.CloudTasksQueueClient;
 import com.bulkaibcd.client.GoogleDriveClient;
 import com.bulkaibcd.enums.AnalysisStatus;
 import com.bulkaibcd.enums.SourceType;
 import com.bulkaibcd.mapper.EntityMapper;
 import com.bulkaibcd.model.AnalysisRequestEntity;
+// BEGIN-INTERNAL
 import com.bulkaibcd.model.UploadUnlistedVideosRequest;
 import com.bulkaibcd.model.UploadUnlistedVideosResponse;
+// END-INTERNAL
 import com.bulkaibcd.model.VideoInputEntity;
 import com.bulkaibcd.model.VideoMetadataEntity;
 import com.bulkaibcd.repository.AnalysisRequestRepository;
@@ -40,6 +44,7 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -56,16 +61,27 @@ import reactor.core.scheduler.Schedulers;
 public class PrepareAnalysisService
     implements ApiService<Map<String, String>, ResponseEntity<String>> {
 
+  /**
+   * Placeholder requester written by clients before identity was captured server-side. Analyses
+   * still carrying it cannot be attributed and must not reach the Boq backend.
+   */
+  private static final String LEGACY_REQUESTER_ID = "default-user";
+
   private final VideoInputRepository videoInputRepository;
   private final AnalysisRequestRepository analysisRequestRepository;
   private final VideoMetadataRepository videoMetadataRepository;
   private final BatchPredictionOrchestrator batchPredictionOrchestrator;
   private final CloudTasksQueueClient cloudTasksQueueClient;
-  private final BoqInputServiceClient boqInputServiceClient;
   private final ObjectProvider<GoogleDriveClient> driveIngestServiceProvider;
+
+  // BEGIN-INTERNAL
+  @Autowired(required = false)
+  private BoqInputServiceClient boqInputServiceClient;
+  // END-INTERNAL
 
   @Value("${app.uploads-bucket}")
   private String uploadsBucket;
+
 
   /**
    * Executes the preparation workflow for an analysis job.
@@ -118,11 +134,17 @@ public class PrepareAnalysisService
                   publicVideos.size());
 
               if (!unlistedVideos.isEmpty()) {
-                log.info(
-                    "PrepareAnalysisService: Analysis {}: Routing {} unlisted video(s) to Boq InputService.",
-                    analysisId,
-                    unlistedVideos.size());
-                return initiateUnlistedVideosUpload(analysisId, unlistedVideos);
+                // BEGIN-INTERNAL
+                if (boqInputServiceClient != null) {
+                  log.info(
+                      "PrepareAnalysisService: Analysis {}: Routing {} unlisted video(s) to Boq InputService.",
+                      analysisId,
+                      unlistedVideos.size());
+                  return initiateUnlistedVideosUpload(analysisId, unlistedVideos);
+                }
+                // END-INTERNAL
+                return Mono.just(
+                    ResponseEntity.badRequest().body("Unlisted YouTube videos are not supported."));
               }
 
               return seedMetadata(ingested)
@@ -162,6 +184,7 @@ public class PrepareAnalysisService
             });
   }
 
+  // BEGIN-INTERNAL
   private Mono<ResponseEntity<String>> initiateUnlistedVideosUpload(
       String analysisId, List<VideoInputEntity> unlistedVideos) {
     List<String> unlistedIds = new ArrayList<>();
@@ -185,16 +208,32 @@ public class PrepareAnalysisService
         .findById(analysisId)
         .flatMap(
             parent -> {
-              String userId = parent.getRequesterId() != null ? parent.getRequesterId() : "default-user";
+              String requesterLdap = parent.getRequesterId();
+              if (requesterLdap == null
+                  || requesterLdap.isBlank()
+                  || LEGACY_REQUESTER_ID.equals(requesterLdap)) {
+                // The Boq backend attributes its Gin log entry to this value, so an unattributed
+                // call would record a prod data access against nobody. Fail the job instead.
+                return Mono.error(
+                    new IllegalStateException(
+                        "Refusing unattributed Boq upload for analysisId: " + analysisId));
+              }
               String analysisName = parent.getAnalysisName() != null ? parent.getAnalysisName() : "unlisted_analysis";
+
+              log.info(
+                  "PrepareAnalysisService: Attributing Boq upload for analysisId: {} to requester: {}",
+                  analysisId,
+                  requesterLdap);
 
               UploadUnlistedVideosRequest request =
                   UploadUnlistedVideosRequest.builder()
+                      .requestId(java.util.UUID.randomUUID().toString())
                       .unlistedYoutubeVideoIds(unlistedIds)
                       .gcsUriPrefix(gcsUriPrefix)
-                      .userId(userId)
+                      .userId(requesterLdap)
                       .analysisName(analysisName)
                       .build();
+
 
               return Mono.fromCallable(() -> boqInputServiceClient.uploadUnlistedVideosToGcs(request))
                   .subscribeOn(Schedulers.boundedElastic())
@@ -249,6 +288,7 @@ public class PrepareAnalysisService
                       });
             });
   }
+  // END-INTERNAL
 
   private Mono<List<VideoInputEntity>> ingestDriveVideos(List<VideoInputEntity> videos) {
     return Flux.fromIterable(videos)

@@ -1,0 +1,81 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Copybara configuration for syncing Bulk AiBCD from internal Gerrit to external GitHub.
+# Excludes internal Boq / Hybrid API classes, proto definitions, internal runbooks,
+# and scrubs internal code blocks tagged with BEGIN-INTERNAL / END-INTERNAL.
+
+gob_files = glob(
+    include = ["**"],
+    exclude = [
+        # 1. Internal Boq gRPC Proto definition
+        "src/main/proto/**",
+
+        # 2. Purely internal Boq / Hybrid Java classes
+        "src/main/java/com/bulkaibcd/config/BoqHybridConfig.java",
+        "src/main/java/com/bulkaibcd/client/BoqHybridApiClient.java",
+        "src/main/java/com/bulkaibcd/client/BoqInputServiceClient.java",
+        "src/main/java/com/bulkaibcd/service/batch/CheckUploadStatusService.java",
+        "src/main/java/com/bulkaibcd/model/UploadUnlistedVideosRequest.java",
+        "src/main/java/com/bulkaibcd/model/UploadUnlistedVideosResponse.java",
+        "src/main/java/com/bulkaibcd/model/UploadStatusRequest.java",
+        "src/main/java/com/bulkaibcd/model/UploadStatusResponse.java",
+        "src/main/java/com/bulkaibcd/model/VideoUploadStatusInfo.java",
+
+        # 3. Purely internal Boq unit tests
+        "src/test/java/com/bulkaibcd/client/BoqHybridApiClientTest.java",
+        "src/test/java/com/bulkaibcd/service/batch/CheckUploadStatusServiceTest.java",
+
+    ],
+)
+
+core.workflow(
+    name = "default",
+    origin = git.gerrit_origin(
+        url = "https://professional-services.googlesource.com/solutions/bulkaibcd",
+        ref = "main",
+    ),
+    destination = git.github_destination(
+        url = "https://github.com/google-marketing-solutions/BulkAiBCD",
+        push = "main",
+    ),
+    origin_files = gob_files,
+    mode = "SQUASH",
+    transformations = [
+        # Strip Java / TypeScript internal blocks: // BEGIN-INTERNAL ... // END-INTERNAL
+        core.replace(
+            before = "${block}",
+            after = "",
+            regex_groups = {
+                "block": "(?s)[ \\t]*// BEGIN-INTERNAL.*?// END-INTERNAL[ \\t]*\\r?\\n?",
+            },
+        ),
+        # Strip XML / HTML / Markdown internal blocks: <!-- BEGIN-INTERNAL --> ... <!-- END-INTERNAL -->
+        core.replace(
+            before = "${block}",
+            after = "",
+            regex_groups = {
+                "block": "(?s)[ \\t]*<!-- BEGIN-INTERNAL -->.*?<!-- END-INTERNAL -->[ \\t]*\\r?\\n?",
+            },
+        ),
+        # Strip YAML / Terraform / Shell internal blocks: # BEGIN-INTERNAL ... # END-INTERNAL
+        core.replace(
+            before = "${block}",
+            after = "",
+            regex_groups = {
+                "block": "(?s)[ \\t]*# BEGIN-INTERNAL.*?# END-INTERNAL[ \\t]*\\r?\\n?",
+            },
+        ),
+    ],
+)

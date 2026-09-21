@@ -94,3 +94,14 @@ variable "cors_origins" {
     "http://localhost:8080",
   ]
 }
+
+variable "access_log_retention_days" {
+  description = <<-EOT
+    Retention for the dedicated bulkaibcd-access log bucket, which holds the
+    attributable record of who touched which analysis. Longer than the 30-day
+    Cloud Logging default because an access log is only useful if it outlives the
+    incident that prompts someone to read it.
+  EOT
+  type    = number
+  default = 400
+}

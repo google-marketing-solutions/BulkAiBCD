@@ -72,6 +72,16 @@ public class GoogleApiConfig {
         .build();
   }
 
+  @Bean
+  @org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
+  public com.google.cloud.storage.Storage storage() {
+    try {
+      return com.google.cloud.storage.StorageOptions.getDefaultInstance().getService();
+    } catch (Exception e) {
+      return com.google.cloud.storage.StorageOptions.newBuilder().setProjectId("bulkaibcd-local").build().getService();
+    }
+  }
+
   static HttpTransport transport() throws IOException {
     try {
       return GoogleNetHttpTransport.newTrustedTransport();

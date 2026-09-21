@@ -37,6 +37,14 @@ class YouTubeResolveServiceTest {
   private ObjectMapper objectMapper;
   private YouTubeResolveService service;
 
+  private boolean unlistedSupported = false;
+
+  // BEGIN-INTERNAL
+  {
+    unlistedSupported = true;
+  }
+  // END-INTERNAL
+
   @BeforeEach
   void setUp() {
     httpClient = mock(HttpClient.class);
@@ -90,6 +98,11 @@ class YouTubeResolveServiceTest {
               assertThat(info.getVideoId()).isEqualTo("dQw4w9WgXcQ");
               assertThat(info.getTitle()).isEqualTo("My Unlisted Video");
               assertThat(info.isUnlisted()).isTrue();
+              if (unlistedSupported) {
+                assertThat(info.getErrorMessage()).isNull();
+              } else {
+                assertThat(info.getErrorMessage()).isEqualTo("Unlisted YouTube videos are not supported.");
+              }
             })
         .verifyComplete();
   }
@@ -109,6 +122,52 @@ class YouTubeResolveServiceTest {
             info -> {
               assertThat(info.getVideoId()).isEqualTo("dQw4w9WgXcQ");
               assertThat(info.getTitle()).isEqualTo("Public Video");
+              assertThat(info.isUnlisted()).isFalse();
+              assertThat(info.getErrorMessage()).isNull();
+            })
+        .verifyComplete();
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void resolveVideosDetectsUnlistedFromPlayerApi() throws Exception {
+    HttpResponse<String> response = mock(HttpResponse.class);
+    when(response.statusCode()).thenReturn(200);
+    when(response.body())
+        .thenReturn("{\"videoDetails\":{\"title\":\"Innertube Unlisted Video\"},\"microformat\":{\"playerMicroformatRenderer\":{\"isUnlisted\":true}}}");
+    when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+        .thenReturn(response);
+
+    StepVerifier.create(service.resolveVideos(List.of("https://www.youtube.com/watch?v=dQw4w9WgXcQ")))
+        .assertNext(
+            info -> {
+              assertThat(info.getVideoId()).isEqualTo("dQw4w9WgXcQ");
+              assertThat(info.getTitle()).isEqualTo("Innertube Unlisted Video");
+              assertThat(info.isUnlisted()).isTrue();
+              if (unlistedSupported) {
+                assertThat(info.getErrorMessage()).isNull();
+              } else {
+                assertThat(info.getErrorMessage()).isEqualTo("Unlisted YouTube videos are not supported.");
+              }
+            })
+        .verifyComplete();
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void resolveVideosDetectsPublicFromPlayerApi() throws Exception {
+    HttpResponse<String> response = mock(HttpResponse.class);
+    when(response.statusCode()).thenReturn(200);
+    when(response.body())
+        .thenReturn("{\"videoDetails\":{\"title\":\"Innertube Public Video\"},\"microformat\":{\"playerMicroformatRenderer\":{\"isUnlisted\":false}}}");
+    when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+        .thenReturn(response);
+
+    StepVerifier.create(service.resolveVideos(List.of("https://www.youtube.com/watch?v=dQw4w9WgXcQ")))
+        .assertNext(
+            info -> {
+              assertThat(info.getVideoId()).isEqualTo("dQw4w9WgXcQ");
+              assertThat(info.getTitle()).isEqualTo("Innertube Public Video");
               assertThat(info.isUnlisted()).isFalse();
             })
         .verifyComplete();

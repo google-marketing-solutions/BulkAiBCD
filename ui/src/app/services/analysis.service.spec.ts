@@ -63,7 +63,7 @@ describe('AnalysisService', () => {
     expect(received).toBe('analysis-abc-123');
   });
 
-  it('listAnalyses GETs /input/list/{requesterId}', () => {
+  it('listAnalyses GETs /input/list without a client-supplied requester', () => {
     const rows: AnalysisRequest[] = [
       {
         analysisId: '1',
@@ -74,9 +74,9 @@ describe('AnalysisService', () => {
       },
     ];
     let received: AnalysisRequest[] = [];
-    service.listAnalyses('u').subscribe((r) => (received = r));
+    service.listAnalyses().subscribe((r) => (received = r));
 
-    const req = httpMock.expectOne(`${environment.apiUrl}/input/list/u`);
+    const req = httpMock.expectOne(`${environment.apiUrl}/input/list`);
     expect(req.request.method).toBe('GET');
     req.flush(rows);
     expect(received).toEqual(rows);
@@ -190,10 +190,10 @@ describe('AnalysisService', () => {
 
   it('propagates HTTP errors as Observable errors', () => {
     let error: HttpErrorResponse | undefined;
-    service.listAnalyses('u').subscribe({
+    service.listAnalyses().subscribe({
       error: (err) => (error = err),
     });
-    const req = httpMock.expectOne(`${environment.apiUrl}/input/list/u`);
+    const req = httpMock.expectOne(`${environment.apiUrl}/input/list`);
     req.flush('boom', {status: 500, statusText: 'Server Error'});
     expect(error?.status).toBe(500);
   });

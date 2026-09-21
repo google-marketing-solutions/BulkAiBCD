@@ -32,8 +32,7 @@ import {VideoInputTabsComponent} from './video-input-tabs/video-input-tabs.compo
 import {AnalysisConfigComponent} from './analysis-config/analysis-config.component';
 import {InputQueueComponent} from './input-queue/input-queue.component';
 
-const DEFAULT_REQUESTER_ID = 'default-user';
-const MAX_VIDEOS_PER_ANALYSIS = 25;
+const MAX_VIDEOS_PER_ANALYSIS = 1999;
 
 /**
  * Component for starting a new analysis.
@@ -138,7 +137,6 @@ export class NewAnalysisComponent implements OnInit {
     });
     this.analysisService
       .submitAnalysis({
-        requesterId: DEFAULT_REQUESTER_ID,
         analysisName: this.brandName.value ?? '',
         analysisType: this.analysisType.value ?? 'standard',
         customFeaturesLong: this.customFeatures.value?.long ?? [],
@@ -157,8 +155,12 @@ export class NewAnalysisComponent implements OnInit {
         },
         error: (err) => {
           this.submitting.set(false);
+          const errorMsg =
+            typeof err?.error === 'string' && err.error.trim().length > 0
+              ? err.error
+              : (err?.message ?? 'unknown error');
           this.snackBar.open(
-            `Failed to submit: ${err?.message ?? 'unknown error'}`,
+            `Failed to submit: ${errorMsg}`,
             'Dismiss',
             {duration: 8000},
           );

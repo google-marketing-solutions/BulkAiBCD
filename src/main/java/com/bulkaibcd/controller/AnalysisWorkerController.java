@@ -22,7 +22,9 @@ import com.bulkaibcd.model.TaskRequest;
 import com.bulkaibcd.service.analysis.PrepareAnalysisService;
 import com.bulkaibcd.service.batch.CheckPhase1StatusService;
 import com.bulkaibcd.service.batch.CheckPhase2StatusService;
+// BEGIN-INTERNAL
 import com.bulkaibcd.service.batch.CheckUploadStatusService;
+// END-INTERNAL
 import com.bulkaibcd.service.batch.ProcessPhase1ResultsService;
 import com.bulkaibcd.service.batch.ProcessPhase2ResultsService;
 import com.bulkaibcd.service.batch.StartPhase2Service;
@@ -31,6 +33,7 @@ import com.bulkaibcd.service.worker.FetchScoringMetadataService;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -49,7 +52,6 @@ import reactor.core.publisher.Mono;
 public class AnalysisWorkerController {
 
   private final PrepareAnalysisService prepareAnalysisService;
-  private final CheckUploadStatusService checkUploadStatusService;
   private final FetchScoringMetadataService fetchScoringMetadataService;
   private final ExtractRawMetadataService extractRawMetadataService;
   private final StartPhase2Service startPhase2Service;
@@ -57,6 +59,11 @@ public class AnalysisWorkerController {
   private final CheckPhase1StatusService checkPhase1StatusService;
   private final ProcessPhase2ResultsService processPhase2ResultsService;
   private final ProcessPhase1ResultsService processPhase1ResultsService;
+
+  // BEGIN-INTERNAL
+  @Autowired(required = false)
+  private CheckUploadStatusService checkUploadStatusService;
+  // END-INTERNAL
 
   /**
    * Prepares the analysis job by ingesting Drive videos or initiating unlisted YouTube uploads.
@@ -69,6 +76,7 @@ public class AnalysisWorkerController {
     return prepareAnalysisService.execute(payload);
   }
 
+  // BEGIN-INTERNAL
   /**
    * Polls the status of an ongoing Boq unlisted video batch upload job.
    *
@@ -79,6 +87,7 @@ public class AnalysisWorkerController {
   public Mono<ResponseEntity<String>> checkUploadStatus(@RequestBody Map<String, Object> payload) {
     return checkUploadStatusService.execute(payload);
   }
+  // END-INTERNAL
 
   /**
    * Fetches scoring metadata for an individual video analysis task.

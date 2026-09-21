@@ -42,4 +42,7 @@ public class YouTubeVideoInfoDto {
 
   @JsonProperty("unlisted")
   private boolean unlisted;
+
+  @JsonProperty("error_message")
+  private String errorMessage;
 }

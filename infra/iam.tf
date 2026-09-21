@@ -42,6 +42,16 @@ resource "google_storage_bucket_iam_member" "runtime_uploads_admin" {
   member = "serviceAccount:${google_service_account.runtime.email}"
 }
 
+# BEGIN-INTERNAL
+# ----- Boq Backend SA: bucket-scoped storage admin --------------------------
+
+resource "google_storage_bucket_iam_member" "boq_uploads_admin" {
+  bucket = google_storage_bucket.uploads.name
+  role   = "roles/storage.objectAdmin"
+  member = "serviceAccount:bulkaibcd-backend@gtech-ase-734781.iam.gserviceaccount.com"
+}
+# END-INTERNAL
+
 # ----- Cloud Build / compute SA: deploy permissions ------------------------
 
 locals {
@@ -102,17 +112,18 @@ resource "google_cloud_run_service_iam_member" "runtime_invoker" {
   member   = "serviceAccount:${google_service_account.runtime.email}"
 }
 
-# ----- IAP-gated user access (dormant by default) ---------------------------
-# Creating this binding *enables* IAP on the Cloud Run service. With IAP live,
-# Cloud Tasks' OIDC callbacks to /api/v2/worker/* get blocked by the login
-# gate. Only flip var.enable_iap_gate=true once the LB + URL-map routing for
-# worker endpoints is in place (follow-up).
+# ----- IAP-gated user access -------------------------------------------------
+# IAP *is* live: cloudbuild.yaml deploys the service with `--iap`, and Cloud Tasks
+# reaches the worker endpoints by minting OIDC tokens whose audience is the IAP
+# OAuth client (see CloudTasksQueueClient), so the login gate does not block them.
+# End-user access is granted through roles/iap.httpsResourceAccessor in main.tf.
 
 
-# ----- Plain IAM access (the path actually in use today) --------------------
-# --no-allow-unauthenticated is set on the Cloud Run service. The runtime SA's
-# run.invoker (above) keeps Cloud Tasks working; teammates need run.invoker
-# granted per-user to hit the URL via `gcloud run services proxy`.
+# ----- Plain IAM access ------------------------------------------------------
+# --no-allow-unauthenticated is also set, so the Cloud Run IAM policy remains the
+# inner gate: IAP's service agent and the runtime SA both need run.invoker. The
+# per-user grants below additionally allow `gcloud run services proxy`.
+
 
 resource "google_cloud_run_service_iam_member" "user_invokers" {
   for_each = var.cloud_run_deployed ? toset(var.iap_users) : toset([])

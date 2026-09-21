@@ -94,4 +94,44 @@ describe('UrlInputComponent', () => {
       jasmine.any(Object),
     );
   });
+
+  it('skips unlisted YouTube URLs when backend returns error_message and surfaces a snackbar', async () => {
+    const snackSpy = spyOn(snackBar, 'open');
+    const emitSpy = jasmine.createSpy();
+    component.filesAdded.subscribe(emitSpy);
+
+    analysisService.resolveYouTubeUrls.and.returnValue(
+      of([
+        {
+          videoId: 'dQw4w9WgXcQ',
+          url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+          title: 'Unlisted Video',
+          unlisted: true,
+          error_message: 'Unlisted YouTube videos are not supported.',
+        },
+        {
+          videoId: 'abc12345',
+          url: 'https://youtube.com/shorts/abc12345',
+          title: 'Public Video',
+          unlisted: false,
+        },
+      ]),
+    );
+
+    component.urlsControl.setValue(
+      'https://www.youtube.com/watch?v=dQw4w9WgXcQ\nhttps://youtube.com/shorts/abc12345',
+    );
+
+    await component.addUrls();
+
+    expect(emitSpy).toHaveBeenCalled();
+    const emitted: AnalysisVideoFile[] = emitSpy.calls.mostRecent().args[0];
+    expect(emitted.length).toBe(1);
+    expect(emitted[0].sourceUrl).toBe('https://youtube.com/shorts/abc12345');
+    expect(snackSpy).toHaveBeenCalledWith(
+      'Skipped 1 unlisted video: unlisted videos are not supported.',
+      'Dismiss',
+      jasmine.any(Object),
+    );
+  });
 });

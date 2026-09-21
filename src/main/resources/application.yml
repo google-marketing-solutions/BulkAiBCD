@@ -38,7 +38,23 @@ management:
         enabled: true
       show-details: never
 
+app:
+  identity:
+    # Requester recorded by clients before identity was captured server-side. Analyses still
+    # carrying it stay readable while this grace period is enabled, but can never be attributed
+    # to a real person and are refused by the Boq upload path.
+    legacy-requester-id: default-user
+    allow-legacy-access: true
+  iap:
+    # Audience of the IAP assertion, discovered from the startup log on first deploy. Enforcement
+    # stays off until it has been pinned; see IapJwtConfig for why.
+    expected-audience: ${IAP_AUDIENCE:}
+    enforce-audience: ${IAP_ENFORCE_AUDIENCE:false}
+
 logging:
   level:
     com.bulkaibcd: INFO
     com.google.cloud: WARN
+    # Dedicated audit stream; keep at INFO so every access is recorded.
+    bulkaibcd-access: INFO
+

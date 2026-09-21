@@ -15,11 +15,11 @@
 google:
   cloud:
     project:
-      id: ${GOOGLE_CLOUD_PROJECT}
+      id: ${GOOGLE_CLOUD_PROJECT:}
     location: ${GOOGLE_CLOUD_LOCATION:us-central1}
     tasks:
-      queue: ${CLOUD_TASKS_QUEUE}
-      service-account: ${CLOUD_TASKS_SERVICE_ACCOUNT}
+      queue: ${CLOUD_TASKS_QUEUE:bulkaibcd-queue}
+      service-account: ${CLOUD_TASKS_SERVICE_ACCOUNT:}
     model:
       name: ${GEMINI_MODEL:gemini-2.5-pro}
 
@@ -27,11 +27,27 @@ spring:
   cloud:
     gcp:
       firestore:
-        project-id: ${GOOGLE_CLOUD_PROJECT}
+        project-id: ${GOOGLE_CLOUD_PROJECT:}
 
 app:
-  backend-url: ${APP_BACKEND_URL}
-  uploads-bucket: ${UPLOADS_BUCKET:bulkaibcd-uploads-${GOOGLE_CLOUD_PROJECT}}
+  backend-url: ${APP_BACKEND_URL:}
+  uploads-bucket: ${UPLOADS_BUCKET:}
+  iap:
+    expected-audience: ${IAP_AUDIENCE:}
+    enforce-audience: ${IAP_ENFORCE_AUDIENCE:false}
+  # BEGIN-INTERNAL
   boq:
     hybrid-api-url: ${BOQ_HYBRID_API_URL:https://autopush-bulkaibcd.hybrid.sandbox.googleapis.com}
     hybrid-api-service-name: ${BOQ_HYBRID_API_SERVICE_NAME:staging-bulkaibcd.hybrid.googleapis.com}
+  # END-INTERNAL
+
+
+# Disable external service health indicators from blocking container startup / readiness
+management:
+  health:
+    firestore:
+      enabled: false
+    storage:
+      enabled: false
+    diskspace:
+      enabled: false

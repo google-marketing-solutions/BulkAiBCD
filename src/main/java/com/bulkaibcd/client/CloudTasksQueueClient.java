@@ -33,7 +33,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-/** Client gateway responsible for encapsulating Cloud Tasks API operations. */
+/**
+ * A client gateway responsible for encapsulating Cloud Tasks API operations.
+ */
 @Component
 @Slf4j
 @RequiredArgsConstructor
@@ -56,28 +58,56 @@ public class CloudTasksQueueClient {
 
   private final TaskQueueAdapter taskQueueAdapter;
 
+  /**
+   * Enqueues a task to the specified worker endpoint with the given payload.
+   *
+   * @param endpoint the target endpoint path
+   * @param payload the JSON payload to attach to the task body
+   * @throws IOException if the task cannot be created
+   */
   public void enqueueTask(String endpoint, String payload) throws IOException {
     enqueueTask(endpoint, payload, null, null);
   }
 
+  /**
+   * Enqueues a task to the specified worker endpoint with optional task naming suffix and execution delay.
+   *
+   * @param endpoint the target endpoint path
+   * @param payload the JSON payload to attach to the task body
+   * @param taskSuffix an optional custom suffix for deduplication
+   * @param delaySeconds an optional delay in seconds before task execution
+   * @throws IOException if the task cannot be created
+   */
   public void enqueueTask(String endpoint, String payload, String taskSuffix, Integer delaySeconds)
       throws IOException {
     String queuePath = QueueName.of(projectId, location, queueId).toString();
     String iapClientId = System.getenv("IAP_CLIENT_ID");
 
-    if (iapClientId == null || iapClientId.trim().isEmpty()) {
-      throw new IllegalStateException("IAP_CLIENT_ID environment variable is not set.");
+    String cleanBaseUrl = (backendUrl != null) ? backendUrl.trim() : "";
+    if (cleanBaseUrl.isEmpty() || !cleanBaseUrl.startsWith("http")) {
+      cleanBaseUrl = "https://bulkaibcd-snkjkbyzta-uc.a.run.app";
     }
+    if (cleanBaseUrl.endsWith("/")) {
+      cleanBaseUrl = cleanBaseUrl.substring(0, cleanBaseUrl.length() - 1);
+    }
+
+    String normalizedEndpoint = endpoint.startsWith("/") ? endpoint : "/" + endpoint;
+    String targetUrl = cleanBaseUrl + normalizedEndpoint;
+
+    // When IAP is enabled on Cloud Run, Google IAP requires the OIDC token audience to be IAP_CLIENT_ID.
+    // When IAP is not enabled, the audience is cleanBaseUrl.
+    String audience =
+        (iapClientId != null && !iapClientId.isBlank()) ? iapClientId.trim() : cleanBaseUrl;
 
     HttpRequest.Builder httpRequestBuilder =
         HttpRequest.newBuilder()
-            .setUrl(backendUrl + endpoint)
+            .setUrl(targetUrl)
             .setHttpMethod(HttpMethod.POST)
             .putHeaders("Content-Type", "application/json")
             .setOidcToken(
                 OidcToken.newBuilder()
                     .setServiceAccountEmail(serviceAccountEmail)
-                    .setAudience(iapClientId)
+                    .setAudience(audience)
                     .build());
 
     if (payload != null) {
