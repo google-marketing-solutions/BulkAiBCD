@@ -150,14 +150,11 @@ function toBreakdown(m: VideoMetadata): VideoBreakdown {
   // Real ABCD scores from Gemini. Null when the prompt hasn't landed yet
   // (PROCESSING) or when parsing failed. We map those to -1 and the template
   // renders a dash + a greyed style.
-  const a = m.aScore ?? -1;
-  const b = m.bScore ?? -1;
-  const c = m.cScore ?? -1;
-  const d = m.dScore ?? -1;
-  const present = [a, b, c, d].filter((n) => n >= 0);
-  const avg = present.length === 0
+  const total = m.relevantFeatures?.length ?? 0;
+  const detected = total - (m.notDetected?.length ?? 0);
+  const avg = total === 0
     ? -1
-    : Math.round(present.reduce((s, n) => s + n, 0) / present.length);
+    : Math.round(detected * 100 / total);
 
   const name = m.videoName ?? m.videoId;
   // Prefer the canonical URL recorded at submit time; fall back to videoName

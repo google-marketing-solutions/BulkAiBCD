@@ -40,6 +40,8 @@ describe('VideoBreakdownTableComponent', () => {
       cScore: 92,
       dScore: 60,
       assetName: 'Q3 Spot',
+      relevantFeatures: ['a', 'b', 'c', 'd', 'e'],
+      notDetected: ['a', 'b', 'e'],
     },
     {
       id: 'A_v2',
@@ -76,7 +78,7 @@ describe('VideoBreakdownTableComponent', () => {
     expect(row.b).toBe(70);
     expect(row.c).toBe(92);
     expect(row.d).toBe(60);
-    expect(row.avg).toBe(Math.round((85 + 70 + 92 + 60) / 4));
+    expect(row.avg).toBe(40);
   });
 
   it('maps missing scores to -1 (displayed as dash)', () => {

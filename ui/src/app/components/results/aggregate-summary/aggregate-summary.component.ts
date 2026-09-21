@@ -55,13 +55,10 @@ export class AggregateSummaryComponent {
     let sum = 0;
     let count = 0;
     for (const m of v) {
-      const present: number[] = [];
-      if (m.aScore != null) present.push(m.aScore);
-      if (m.bScore != null) present.push(m.bScore);
-      if (m.cScore != null) present.push(m.cScore);
-      if (m.dScore != null) present.push(m.dScore);
-      if (present.length === 0) continue;
-      sum += present.reduce((s, n) => s + n, 0) / present.length;
+      if (m.relevantFeatures == null) continue;
+      const total = m.relevantFeatures.length;
+      const detected = total - (m.notDetected?.length ?? 0);
+      sum += (detected * 100) / total;
       count++;
     }
     return count === 0 ? 0 : Math.round(sum / count);

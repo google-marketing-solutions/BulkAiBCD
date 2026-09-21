@@ -24,6 +24,8 @@ describe('AggregateSummaryComponent', () => {
       bScore: 90,
       cScore: 70,
       dScore: 80,
+      relevantFeatures: ['a', 'b', 'c', 'd'],
+      notDetected: [],
     },
     {
       id: '2',
@@ -34,6 +36,8 @@ describe('AggregateSummaryComponent', () => {
       bScore: 100,
       cScore: 80,
       dScore: 80,
+      relevantFeatures: ['a', 'b', 'c', 'd'],
+      notDetected: ['a', 'b'],
     },
   ];
 
@@ -63,8 +67,8 @@ describe('AggregateSummaryComponent', () => {
     fixture.componentRef.setInput('videos', mockVideos);
     fixture.detectChanges();
 
-    // v1 avg = 80, v2 avg = 90 -> overall avg = 85
-    expect(component.avgScore()).toBe(85);
+    // v1 avg = 100, v2 avg = 50 -> overall avg = 75
+    expect(component.avgScore()).toBe(75);
   });
 
   it('maps marketing objective to human-readable label', () => {
@@ -126,4 +130,3 @@ describe('AggregateSummaryComponent', () => {
     );
   });
 });
-
