@@ -17,13 +17,22 @@ import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.model.File;
 import com.google.api.services.slides.v1.Slides;
 import com.google.api.services.slides.v1.model.Page;
+import com.google.api.services.slides.v1.model.PageElement;
 import com.google.api.services.slides.v1.model.Presentation;
+import com.google.api.services.slides.v1.model.Shape;
+import com.google.api.services.slides.v1.model.TextContent;
+import com.google.api.services.slides.v1.model.TextElement;
+import com.google.api.services.slides.v1.model.TextRun;
 import com.google.cloud.storage.BlobInfo;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -147,35 +156,18 @@ class GoogleSlidesClientTest {
   void testCalculateAverageScore() {
     VideoMetadataEntity video =
         VideoMetadataEntity.builder()
-            .relevantFeatures(List.of("f1", "f2", "f3", "f4"))
-            .notDetected(List.of("f1", "f2", "f3"))
+            .aScore(80)
+            .bScore(60)
+            .cScore(70)
+            .dScore(90)
             .build();
 
     int score = ReflectionTestUtils.invokeMethod(client, "calculateAverageScore", video);
     assertThat(score).isEqualTo(75);
 
-    // A video with no relevant features must not divide by zero.
-    VideoMetadataEntity empty =
-        VideoMetadataEntity.builder().relevantFeatures(List.of()).notDetected(List.of()).build();
+    VideoMetadataEntity empty = VideoMetadataEntity.builder().build();
     int emptyScore = ReflectionTestUtils.invokeMethod(client, "calculateAverageScore", empty);
     assertThat(emptyScore).isEqualTo(0);
-  }
-
-  /** The score is derived from feature counts now, so the legacy A/B/C/D fields are inert. */
-  @Test
-  void testCalculateAverageScoreIgnoresAbcdScores() {
-    VideoMetadataEntity video =
-        VideoMetadataEntity.builder()
-            .aScore(80)
-            .bScore(60)
-            .cScore(70)
-            .dScore(90)
-            .relevantFeatures(List.of("f1", "f2"))
-            .notDetected(List.of("f1"))
-            .build();
-
-    int score = ReflectionTestUtils.invokeMethod(client, "calculateAverageScore", video);
-    assertThat(score).isEqualTo(50);
   }
 
   @Test
@@ -315,4 +307,120 @@ class GoogleSlidesClientTest {
     assertThat(text).isEmpty();
   }
 
+  // ----- Feature row matching -------------------------------------------------
+
+  /** Builds a bulleted ABCD feature row as the template stores it. */
+  private static PageElement bulletRow(String objectId, String text) {
+    return new PageElement()
+        .setObjectId(objectId)
+        .setShape(
+            new Shape()
+                .setText(
+                    new TextContent()
+                        .setTextElements(
+                            List.of(
+                                new TextElement().setTextRun(new TextRun().setContent(text))))));
+  }
+
+  @SuppressWarnings("unchecked")
+  private Optional<PageElement> findRow(Page slide, String feature, Set<String> claimed) {
+    return (Optional<PageElement>)
+        ReflectionTestUtils.invokeMethod(
+            client, "getPageElementByTextMatch", slide, feature, claimed);
+  }
+
+  /**
+   * The regression: "(B) Brand Visual" is a prefix of five longer rows, and getPageElements()
+   * returns them in z-order, so a startsWith match bound it to a sibling and left its own row
+   * untouched.
+   */
+  @Test
+  void testFeatureRowIgnoresLongerSiblingSharingItsPrefix() {
+    Page slide =
+        new Page()
+            .setPageElements(
+                List.of(
+                    bulletRow("overlaid", "● (B) Brand Visual (Overlaid)"),
+                    bulletRow("last5s", "● (B) Brand Visual (Last 5s)"),
+                    bulletRow("plain", "○ (B) Brand Visual")));
+
+    Optional<PageElement> match = findRow(slide, "(B) Brand Visual", new HashSet<>());
+
+    assertThat(match).isPresent();
+    assertThat(match.get().getObjectId()).isEqualTo("plain");
+  }
+
+  /** Every colliding row must land on its own shape, whatever order the API returns them in. */
+  @Test
+  void testEveryBrandVisualRowBindsToItsOwnShape() {
+    List<String> labels =
+        List.of(
+            "(B) Brand Visual",
+            "(B) Brand Visual (First 5s)",
+            "(B) Brand Visual (Last 5s)",
+            "(B) Brand Visual (Overlaid)",
+            "(B) Brand Visual (In-situation)",
+            "(B) Brand Visual (3+ Times)");
+
+    // Shuffled relative to the iteration order, mimicking real slide z-order.
+    List<PageElement> elements = new ArrayList<>();
+    for (int i : new int[] {3, 2, 0, 5, 1, 4}) {
+      elements.add(bulletRow("id:" + labels.get(i), "○ " + labels.get(i)));
+    }
+    Page slide = new Page().setPageElements(elements);
+
+    Set<String> claimed = new HashSet<>();
+    for (String label : labels) {
+      Optional<PageElement> match = findRow(slide, label, claimed);
+
+      assertThat(match).as("no row bound for '%s'", label).isPresent();
+      assertThat(match.get().getObjectId()).isEqualTo("id:" + label);
+      claimed.add(match.get().getObjectId());
+    }
+  }
+
+  @Test
+  void testFeatureRowSkipsShapesAlreadyClaimed() {
+    Page slide =
+        new Page().setPageElements(List.of(bulletRow("plain", "○ (B) Brand Visual")));
+
+    assertThat(findRow(slide, "(B) Brand Visual", new HashSet<>())).isPresent();
+    assertThat(findRow(slide, "(B) Brand Visual", new HashSet<>(List.of("plain")))).isEmpty();
+  }
+
+  /** Rows are re-read after the glyph has been flipped, so both bullets must resolve. */
+  @Test
+  void testFeatureRowMatchesEitherBulletGlyph() {
+    Page slide =
+        new Page()
+            .setPageElements(
+                List.of(
+                    bulletRow("hollow", "○ (A) Supers"),
+                    bulletRow("filled", "● (A) Supers with Audio")));
+
+    assertThat(findRow(slide, "(A) Supers", new HashSet<>()).get().getObjectId())
+        .isEqualTo("hollow");
+    assertThat(findRow(slide, "(A) Supers with Audio", new HashSet<>()).get().getObjectId())
+        .isEqualTo("filled");
+  }
+
+  /** Token placeholders and titles share the slide, so unbulleted shapes must never match. */
+  @Test
+  void testFeatureRowIgnoresShapesWithoutABullet() {
+    Page slide =
+        new Page()
+            .setPageElements(
+                List.of(
+                    bulletRow("title", "(B) Brand Visual"),
+                    new PageElement().setObjectId("image-only")));
+
+    assertThat(findRow(slide, "(B) Brand Visual", new HashSet<>())).isEmpty();
+  }
+
+  @Test
+  void testFeatureRowReturnsEmptyWhenTemplateHasNoSuchRow() {
+    Page slide = new Page().setPageElements(List.of(bulletRow("plain", "○ (A) Supers")));
+
+    assertThat(findRow(slide, "(D) Call-to-Action (Text)", new HashSet<>())).isEmpty();
+  }
 }

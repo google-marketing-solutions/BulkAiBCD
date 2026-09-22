@@ -89,6 +89,8 @@ export interface VideoMetadata {
   cScore?: number | null;
   dScore?: number | null;
   assetName?: string;
+  relevantFeatures?: string[];
+  notDetected?: string[];
   /** @deprecated — previous metadata-extraction fields, kept for backward compat. */
   brand?: string;
   product?: string;

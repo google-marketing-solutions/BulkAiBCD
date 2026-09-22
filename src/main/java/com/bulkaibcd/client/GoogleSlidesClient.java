@@ -121,6 +121,14 @@ public class GoogleSlidesClient {
   /** Shown in place of the asset URL on every slide, whatever the video's source. */
   private static final String ASSET_LINK_LABEL = "View Video";
 
+  /**
+   * Bullet glyphs prefixing every ABCD feature row in the template. The renderer swaps one for the
+   * other, so both have to be recognised when locating a row.
+   */
+  private static final String BULLET_DETECTED = "●";
+
+  private static final String BULLET_NOT_DETECTED = "○";
+
   private static final RgbColor COLOR_WHITE = createColor(1f, 1f, 1f);
   private static final RgbColor COLOR_DETECTED_GREEN =
       createColor(15f / 255f, 157f / 255f, 88f / 255f);
@@ -556,12 +564,16 @@ public class GoogleSlidesClient {
                 }
               });
 
+      // Reset per slide: object IDs are only unique within a presentation, and each slide has its
+      // own copy of every feature row.
+      Set<String> claimedFeatureRows = new HashSet<>();
       for (String feature : allFeatures) {
-        getPageElementByTextMatch(detailSlide, feature)
+        getPageElementByTextMatch(detailSlide, feature, claimedFeatureRows)
             .ifPresent(
                 el -> {
+                  claimedFeatureRows.add(el.getObjectId());
                   boolean isDetected = detected.contains(feature);
-                  String bullet = isDetected ? "●" : "○";
+                  String bullet = isDetected ? BULLET_DETECTED : BULLET_NOT_DETECTED;
                   RgbColor color = COLOR_GREY;
                   if (relevant.contains(feature)) color = COLOR_DETECTED_GREEN;
                   if (notRelevant.contains(feature)) color = COLOR_NOT_DETECTED_RED;
@@ -700,8 +712,8 @@ public class GoogleSlidesClient {
 
   private int calculateAverageScore(VideoMetadataEntity v) {
     int total = v.getRelevantFeatures().size();
-    int relevant = v.getNotDetected().size();
-    return total == 0 ? 0 : (relevant * 100) / total;
+    int irrelevantFeatures = v.getNotDetectedFeatures().size();
+    return total == 0 ? 0 : ((total - irrelevantFeatures) * 100) / total;
   }
 
   private static String categoryFor(int score) {
@@ -917,24 +929,52 @@ public class GoogleSlidesClient {
         .findFirst();
   }
 
-  private Optional<PageElement> getPageElementByTextMatch(Page page, String textMatch) {
+  /**
+   * Finds the template row belonging to {@code featureName}.
+   *
+   * <p>Feature labels overlap by prefix — {@code "(B) Brand Visual"} is a prefix of five longer
+   * rows such as {@code "(B) Brand Visual (Overlaid)"} — so matching with {@code startsWith} let a
+   * short name bind to a longer sibling's shape and leave its own row untouched. The comparison is
+   * therefore made against the full label with the bullet glyph stripped.
+   *
+   * @param page the slide to search
+   * @param featureName the exact feature label, as persisted in {@code relevantFeatures}
+   * @param claimedObjectIds IDs already bound to an earlier feature on this slide; skipped so a
+   *     single shape is never written twice
+   * @return the matching element, or empty when the template has no row for this feature
+   */
+  private Optional<PageElement> getPageElementByTextMatch(
+      Page page, String featureName, Set<String> claimedObjectIds) {
     if (page.getPageElements() == null) return Optional.empty();
     return page.getPageElements().stream()
-        .filter(
-            el -> {
-              if (el.getShape() != null
-                  && el.getShape().getText() != null
-                  && el.getShape().getText().getTextElements() != null) {
-                String text =
-                    el.getShape().getText().getTextElements().stream()
-                        .filter(te -> te.getTextRun() != null)
-                        .map(te -> te.getTextRun().getContent())
-                        .collect(Collectors.joining())
-                        .trim();
-                return text.startsWith("○ " + textMatch) || text.startsWith("● " + textMatch);
-              }
-              return false;
-            })
+        .filter(el -> !claimedObjectIds.contains(el.getObjectId()))
+        .filter(el -> featureName.equals(featureLabelOf(el)))
         .findFirst();
+  }
+
+  /**
+   * Reads the feature label out of a bulleted template row.
+   *
+   * @param el the page element to inspect
+   * @return the label with its leading bullet glyph removed, or {@code null} when the element is
+   *     not a bulleted feature row
+   */
+  private static String featureLabelOf(PageElement el) {
+    if (el.getShape() == null
+        || el.getShape().getText() == null
+        || el.getShape().getText().getTextElements() == null) {
+      return null;
+    }
+    String text =
+        el.getShape().getText().getTextElements().stream()
+            .filter(te -> te.getTextRun() != null)
+            .map(te -> te.getTextRun().getContent())
+            .collect(Collectors.joining())
+            .trim();
+    if (!text.startsWith(BULLET_DETECTED) && !text.startsWith(BULLET_NOT_DETECTED)) {
+      return null;
+    }
+    // Both glyphs are single BMP chars, so one substring step drops the bullet.
+    return text.substring(1).trim();
   }
 }
