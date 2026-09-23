@@ -171,29 +171,9 @@
       <artifactId>protobuf-java-util</artifactId>
     </dependency>
 
-    <!-- BEGIN-INTERNAL -->
-    <!-- Google Hybrid Connect C2P Authorizer Client (Helheim Token Refresher) -->
-    <dependency>
-      <groupId>com.google.hybrid.connect.c2pauthorizer</groupId>
-      <artifactId>client</artifactId>
-      <version>RELEASE</version>
-    </dependency>
-    <!-- END-INTERNAL -->
   </dependencies>
 
   <repositories>
-    <!-- BEGIN-INTERNAL -->
-    <repository>
-      <id>c2pauthlibs-java-ar</id>
-      <url>artifactregistry://us-central1-maven.pkg.dev/c2pauthorizer-client-libs/c2pauthlibs-java-ar</url>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </repository>
-    <!-- END-INTERNAL -->
     <repository>
       <id>google-maven-central</id>
       <name>Google Maven Central Mirror</name>
@@ -258,55 +238,8 @@
         <artifactId>os-maven-plugin</artifactId>
         <version>${os-maven-plugin.version}</version>
       </extension>
-      <!-- BEGIN-INTERNAL -->
-      <extension>
-        <groupId>com.google.cloud.artifactregistry</groupId>
-        <artifactId>artifactregistry-maven-wagon</artifactId>
-        <version>RELEASE</version>
-      </extension>
-      <!-- END-INTERNAL -->
     </extensions>
     <plugins>
-      <!-- BEGIN-INTERNAL -->
-      <plugin>
-        <groupId>org.xolstice.maven.plugins</groupId>
-        <artifactId>protobuf-maven-plugin</artifactId>
-        <version>${protobuf-maven-plugin.version}</version>
-        <configuration>
-          <protocArtifact>com.google.protobuf:protoc:${protobuf.version}:exe:${os.detected.classifier}</protocArtifact>
-          <pluginId>grpc-java</pluginId>
-          <pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}</pluginArtifact>
-        </configuration>
-        <executions>
-          <execution>
-            <goals>
-              <goal>compile</goal>
-              <goal>compile-custom</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>build-helper-maven-plugin</artifactId>
-        <version>${build-helper-maven-plugin.version}</version>
-        <executions>
-          <execution>
-            <id>add-protobuf-sources</id>
-            <phase>generate-sources</phase>
-            <goals>
-              <goal>add-source</goal>
-            </goals>
-            <configuration>
-              <sources>
-                <source>${project.build.directory}/generated-sources/protobuf/java</source>
-                <source>${project.build.directory}/generated-sources/protobuf/grpc-java</source>
-              </sources>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <!-- END-INTERNAL -->
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>

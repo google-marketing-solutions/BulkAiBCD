@@ -63,31 +63,12 @@ variable "support_email" {
   type        = string
 }
 
-variable "cloud_run_deployed" {
-  description = "Set to true on the second terraform pass — after Cloud Build has created the Cloud Run service — so Cloud Run IAM bindings can attach. install.sh handles this automatically."
-  type        = bool
-  default     = false
-}
-
-variable "iap_client_id" {
-  description = "The OAuth Client ID for IAP. Used as the audience for Cloud Tasks OIDC tokens."
-  type        = string
-  default     = ""
-}
-
-variable "enable_iap_gate" {
-  description = <<-EOT
-    Turn on IAP in front of the Cloud Run service. Default false because enabling IAP
-    blocks Cloud Tasks OIDC callbacks — the worker /api/v2/worker/* paths become
-    unreachable until a load-balancer with URL-map rules routes around IAP. Flip to
-    true only after that LB is in place. See README's "Access control" section.
-  EOT
-  type    = bool
-  default = false
-}
-
 variable "cors_origins" {
-  description = "Origins permitted to PUT to the uploads bucket via signed URL. install.sh seeds this with localhost + the deployed Cloud Run URL."
+  description = <<-EOT
+    Additional origins permitted to PUT to the uploads bucket via signed URL.
+    The deployed Cloud Run URL is appended automatically (see main.tf), so only
+    extra origins such as local dev servers belong here.
+  EOT
   type        = list(string)
   default = [
     "http://localhost:4200",
@@ -102,6 +83,6 @@ variable "access_log_retention_days" {
     Cloud Logging default because an access log is only useful if it outlives the
     incident that prompts someone to read it.
   EOT
-  type    = number
-  default = 400
+  type        = number
+  default     = 400
 }

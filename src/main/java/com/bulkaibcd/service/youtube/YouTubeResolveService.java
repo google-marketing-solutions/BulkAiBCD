@@ -70,11 +70,6 @@ public class YouTubeResolveService {
 
   private boolean unlistedSupported = false;
 
-  // BEGIN-INTERNAL
-  {
-    unlistedSupported = true;
-  }
-  // END-INTERNAL
 
   @Autowired
   public YouTubeResolveService(ObjectMapper objectMapper) {

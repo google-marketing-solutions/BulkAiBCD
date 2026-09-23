@@ -16,7 +16,7 @@
 FROM docker.io/library/eclipse-temurin:17-jre-jammy
 WORKDIR /app
 
-# The jar is now built outside Docker (in Cloud Build) and copied here
+# The jar is now built outside Docker (in Cloud Build) and copied here.
 COPY target/bulkaibcd-0.0.1-SNAPSHOT.jar app.jar
 
 EXPOSE 8080

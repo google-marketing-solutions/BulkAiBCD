@@ -27,9 +27,6 @@ import com.bulkaibcd.model.TaskRequest;
 import com.bulkaibcd.service.analysis.PrepareAnalysisService;
 import com.bulkaibcd.service.batch.CheckPhase1StatusService;
 import com.bulkaibcd.service.batch.CheckPhase2StatusService;
-// BEGIN-INTERNAL
-import com.bulkaibcd.service.batch.CheckUploadStatusService;
-// END-INTERNAL
 import com.bulkaibcd.service.batch.ProcessPhase1ResultsService;
 import com.bulkaibcd.service.batch.ProcessPhase2ResultsService;
 import com.bulkaibcd.service.batch.StartPhase2Service;
@@ -46,9 +43,6 @@ import reactor.test.StepVerifier;
 class AnalysisWorkerControllerTest {
 
   private PrepareAnalysisService prepareAnalysisService;
-  // BEGIN-INTERNAL
-  private CheckUploadStatusService checkUploadStatusService;
-  // END-INTERNAL
   private FetchScoringMetadataService fetchScoringMetadataService;
   private ExtractRawMetadataService extractRawMetadataService;
   private StartPhase2Service startPhase2Service;
@@ -80,10 +74,6 @@ class AnalysisWorkerControllerTest {
             checkPhase1StatusService,
             processPhase2ResultsService,
             processPhase1ResultsService);
-    // BEGIN-INTERNAL
-    checkUploadStatusService = mock(CheckUploadStatusService.class);
-    ReflectionTestUtils.setField(controller, "checkUploadStatusService", checkUploadStatusService);
-    // END-INTERNAL
   }
 
   @Test
@@ -97,18 +87,6 @@ class AnalysisWorkerControllerTest {
     verify(prepareAnalysisService).execute(payload);
   }
 
-  // BEGIN-INTERNAL
-  @Test
-  void checkUploadStatusDelegatesToService() {
-    Map<String, Object> payload = Map.of("analysisId", "ana-1", "requestId", "req-1");
-    when(checkUploadStatusService.execute(payload)).thenReturn(Mono.just(ResponseEntity.ok("upload-checked")));
-
-    StepVerifier.create(controller.checkUploadStatus(payload))
-        .assertNext(resp -> assertThat(resp.getBody()).isEqualTo("upload-checked"))
-        .verifyComplete();
-    verify(checkUploadStatusService).execute(payload);
-  }
-  // END-INTERNAL
 
   @Test
   void fetchMetadataSetsExecutionCountAndDelegates() {

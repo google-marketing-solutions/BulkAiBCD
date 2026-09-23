@@ -13,16 +13,16 @@
 # limitations under the License.
 
 provider "google" {
-  project = var.project_id
-  region  = var.region
-  billing_project = var.project_id
+  project               = var.project_id
+  region                = var.region
+  billing_project       = var.project_id
   user_project_override = true
 }
 
 provider "google-beta" {
-  project = var.project_id
-  region  = var.region
-  billing_project = var.project_id
+  project               = var.project_id
+  region                = var.region
+  billing_project       = var.project_id
   user_project_override = true
 }
 
@@ -110,7 +110,7 @@ resource "google_artifact_registry_repository" "images" {
 # ----- Cloud Tasks queue -----------------------------------------------------
 
 resource "google_cloud_tasks_queue" "worker" {
-  name     = "${var.queue_id}"
+  name     = var.queue_id
   location = var.region
 
   rate_limits {
@@ -154,11 +154,22 @@ resource "google_storage_bucket" "uploads" {
     }
   }
 
+  # The service URL is known at plan time now that Terraform owns the Cloud Run
+  # service, so it no longer has to be threaded in through a variable.
   cors {
-    origin          = var.cors_origins
+    origin          = concat([google_cloud_run_v2_service.app.uri], var.cors_origins)
     method          = ["PUT", "GET", "HEAD", "OPTIONS"]
     response_header = ["Content-Type", "x-goog-resumable"]
     max_age_seconds = 3600
+  }
+
+  lifecycle {
+    # install.sh deliberately widens this policy after deploying, so that direct
+    # browser uploads work from Cloud Shell previews and `gcloud run services
+    # proxy` sessions as well as the canonical URL. Without this, the two would
+    # fight: every apply would narrow the policy back and break uploads until
+    # the installer's CORS step ran again.
+    ignore_changes = [cors]
   }
 
   depends_on = [google_project_service.apis]

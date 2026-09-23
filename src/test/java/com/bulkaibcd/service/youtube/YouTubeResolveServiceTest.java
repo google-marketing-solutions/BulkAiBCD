@@ -39,11 +39,6 @@ class YouTubeResolveServiceTest {
 
   private boolean unlistedSupported = false;
 
-  // BEGIN-INTERNAL
-  {
-    unlistedSupported = true;
-  }
-  // END-INTERNAL
 
   @BeforeEach
   void setUp() {

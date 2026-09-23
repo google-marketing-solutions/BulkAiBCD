@@ -44,17 +44,24 @@ output "firebase_web_config" {
   }
 }
 
+output "cloud_run_url" {
+  description = "Public URL of the Cloud Run service. Known before the first build, because Terraform creates the service."
+  value       = google_cloud_run_v2_service.app.uri
+}
+
 output "next_steps" {
   description = "Commands to run after `terraform apply` succeeds."
   value       = <<EOT
-Image build and Cloud Run revision rollout still happen via Cloud Build:
+Terraform has created the Cloud Run service, but it is still serving the
+placeholder image. Build and roll out the real one:
 
   cd .. && gcloud builds submit --config=cloudbuild.yaml \
-    --substitutions=_REGION=${var.region},_REPO=${var.service_name},_IMAGE=${var.service_name},_SERVICE=${var.service_name},_RUNTIME_SA=${google_service_account.runtime.email},_CLOUD_TASKS_QUEUE=${var.queue_id},_APP_BACKEND_URL=https://<service-url> \
+    --substitutions=_REGION=${var.region},_RUNTIME_SA=${google_service_account.runtime.email},_UPLOADS_BUCKET=${var.uploads_bucket_name},_CLOUD_TASKS_QUEUE=${var.queue_id},_APP_BACKEND_URL=${google_cloud_run_v2_service.app.uri} \
     --project=${var.project_id}
 
-Terraform manages the underlying infra (APIs, SAs, IAM, Firestore index,
-Artifact Registry repo, Cloud Tasks queue, GCS bucket, IAP bindings).
-Image releases are independent of Terraform.
+Terraform owns the surrounding infrastructure (APIs, SAs, IAM, Firestore index,
+Artifact Registry repo, Cloud Tasks queue, GCS bucket, and the existence of the
+Cloud Run service). Cloud Build owns the contents of each revision, so image
+releases remain independent of Terraform.
 EOT
 }

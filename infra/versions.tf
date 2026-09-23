@@ -15,14 +15,21 @@
 terraform {
   required_version = ">= 1.5.0"
 
+  # Pinned to a major version on purpose. A bare lower bound such as
+  # ">= 5.30.0" accepts every future major release, which means a provider
+  # release on Google's side can change or break this deployment with no commit
+  # on ours. Bump this deliberately, and re-test, rather than drifting.
+  #
+  # Keep .terraform.lock.hcl committed alongside this so every deployer resolves
+  # byte-identical providers.
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = ">= 5.30.0"
+      version = "~> 8.3"
     }
     google-beta = {
       source  = "hashicorp/google-beta"
-      version = ">= 5.30.0"
+      version = "~> 8.3"
     }
   }
 

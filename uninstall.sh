@@ -116,8 +116,9 @@ fi
 banner "Terraform destroy"
 # -----------------------------------------------------------------------------
 info "Running terraform destroy to remove infrastructure..."
-# Ensure infra is initialized
-terraform -chdir=infra init -upgrade -input=false >/dev/null
+# Ensure infra is initialized. No -upgrade: provider versions are pinned in
+# versions.tf and locked in .terraform.lock.hcl.
+terraform -chdir=infra init -input=false >/dev/null
 
 QUEUE_ID="bulkaibcd-queue"
 
@@ -132,7 +133,6 @@ support_email        = "${ACTIVE_ACCOUNT}"
 iap_users            = ["${ACTIVE_ACCOUNT}"]
 uploads_bucket_name  = "${UPLOADS_BUCKET}"
 queue_id             = "${QUEUE_ID}"
-cloud_run_deployed   = false
 cors_origins         = []
 EOF
 fi
@@ -148,8 +148,10 @@ info "Removing local state and generated files..."
 
 rm -f ui/src/environments/firebase-config.json
 rm -f infra/terraform.tfvars
+rm -f infra/.install-state
 rm -rf infra/.terraform
-rm -f infra/.terraform.lock.hcl
+# .terraform.lock.hcl is intentionally left alone: it is committed to the repo
+# to pin provider versions, not generated local state.
 rm -f infra/terraform.tfstate
 rm -f infra/terraform.tfstate.backup
 

@@ -2,9 +2,6 @@ package com.bulkaibcd;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// BEGIN-INTERNAL
-import com.google.internal.hybridconnect.c2pauthorizer.v1.GetHelheimTokenRequest;
-// END-INTERNAL
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import org.junit.jupiter.api.Test;
@@ -29,14 +26,4 @@ class BulkAibcdApplicationTest {
     }
   }
 
-  // BEGIN-INTERNAL
-  @Test
-  void protobufRuntimeVersionLoadsSuccessfully() {
-    GetHelheimTokenRequest request = GetHelheimTokenRequest.newBuilder()
-        .setServiceName("staging-bulkaibcd.hybrid.googleapis.com")
-        .build();
-    assertThat(request).isNotNull();
-    assertThat(request.getServiceName()).isEqualTo("staging-bulkaibcd.hybrid.googleapis.com");
-  }
-  // END-INTERNAL
 }

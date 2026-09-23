@@ -42,15 +42,6 @@ resource "google_storage_bucket_iam_member" "runtime_uploads_admin" {
   member = "serviceAccount:${google_service_account.runtime.email}"
 }
 
-# BEGIN-INTERNAL
-# ----- Boq Backend SA: bucket-scoped storage admin --------------------------
-
-resource "google_storage_bucket_iam_member" "boq_uploads_admin" {
-  bucket = google_storage_bucket.uploads.name
-  role   = "roles/storage.objectAdmin"
-  member = "serviceAccount:bulkaibcd-backend@gtech-ase-734781.iam.gserviceaccount.com"
-}
-# END-INTERNAL
 
 # ----- Cloud Build / compute SA: deploy permissions ------------------------
 
@@ -98,18 +89,19 @@ resource "google_service_account_iam_member" "runtime_actas_self" {
 }
 
 # ----- IAP service agent + Cloud Run invokers -------------------------------
-# These IAM bindings target the Cloud Run service — which only exists *after*
-# Cloud Build's first deploy. install.sh runs Terraform twice: first pass with
-# cloud_run_deployed=false (skips these), then Cloud Build submit, then a
-# second pass with cloud_run_deployed=true (creates them).
+# These IAM bindings target the Cloud Run service. It is created by Terraform
+# itself (see run.tf), so they can always attach — there is no longer a pass in
+# which the service is absent. The explicit depends_on pins the ordering, since
+# these resources reference the service by name rather than by attribute.
 
 resource "google_cloud_run_service_iam_member" "runtime_invoker" {
-  count    = var.cloud_run_deployed ? 1 : 0
   location = var.region
   project  = var.project_id
   service  = var.service_name
   role     = "roles/run.invoker"
   member   = "serviceAccount:${google_service_account.runtime.email}"
+
+  depends_on = [google_cloud_run_v2_service.app]
 }
 
 # ----- IAP-gated user access -------------------------------------------------
@@ -126,11 +118,13 @@ resource "google_cloud_run_service_iam_member" "runtime_invoker" {
 
 
 resource "google_cloud_run_service_iam_member" "user_invokers" {
-  for_each = var.cloud_run_deployed ? toset(var.iap_users) : toset([])
+  for_each = toset(var.iap_users)
 
   location = var.region
   project  = var.project_id
   service  = var.service_name
   role     = "roles/run.invoker"
   member   = "user:${each.value}"
+
+  depends_on = [google_cloud_run_v2_service.app]
 }

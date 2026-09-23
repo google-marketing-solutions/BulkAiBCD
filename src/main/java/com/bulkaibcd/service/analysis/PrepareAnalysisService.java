@@ -16,19 +16,12 @@
 
 package com.bulkaibcd.service.analysis;
 
-// BEGIN-INTERNAL
-import com.bulkaibcd.client.BoqInputServiceClient;
-// END-INTERNAL
 import com.bulkaibcd.client.CloudTasksQueueClient;
 import com.bulkaibcd.client.GoogleDriveClient;
 import com.bulkaibcd.enums.AnalysisStatus;
 import com.bulkaibcd.enums.SourceType;
 import com.bulkaibcd.mapper.EntityMapper;
 import com.bulkaibcd.model.AnalysisRequestEntity;
-// BEGIN-INTERNAL
-import com.bulkaibcd.model.UploadUnlistedVideosRequest;
-import com.bulkaibcd.model.UploadUnlistedVideosResponse;
-// END-INTERNAL
 import com.bulkaibcd.model.VideoInputEntity;
 import com.bulkaibcd.model.VideoMetadataEntity;
 import com.bulkaibcd.repository.AnalysisRequestRepository;
@@ -74,10 +67,6 @@ public class PrepareAnalysisService
   private final CloudTasksQueueClient cloudTasksQueueClient;
   private final ObjectProvider<GoogleDriveClient> driveIngestServiceProvider;
 
-  // BEGIN-INTERNAL
-  @Autowired(required = false)
-  private BoqInputServiceClient boqInputServiceClient;
-  // END-INTERNAL
 
   @Value("${app.uploads-bucket}")
   private String uploadsBucket;
@@ -134,15 +123,6 @@ public class PrepareAnalysisService
                   publicVideos.size());
 
               if (!unlistedVideos.isEmpty()) {
-                // BEGIN-INTERNAL
-                if (boqInputServiceClient != null) {
-                  log.info(
-                      "PrepareAnalysisService: Analysis {}: Routing {} unlisted video(s) to Boq InputService.",
-                      analysisId,
-                      unlistedVideos.size());
-                  return initiateUnlistedVideosUpload(analysisId, unlistedVideos);
-                }
-                // END-INTERNAL
                 return Mono.just(
                     ResponseEntity.badRequest().body("Unlisted YouTube videos are not supported."));
               }
@@ -184,111 +164,6 @@ public class PrepareAnalysisService
             });
   }
 
-  // BEGIN-INTERNAL
-  private Mono<ResponseEntity<String>> initiateUnlistedVideosUpload(
-      String analysisId, List<VideoInputEntity> unlistedVideos) {
-    List<String> unlistedIds = new ArrayList<>();
-    for (VideoInputEntity v : unlistedVideos) {
-      String ytId = YouTubeResolveService.extractVideoId(v.getVideoUrl());
-      if (ytId != null) {
-        unlistedIds.add(ytId);
-      } else if (v.getVideoId() != null) {
-        unlistedIds.add(v.getVideoId());
-      }
-    }
-
-    String gcsUriPrefix = String.format("gs://%s/unlisted_%s/", uploadsBucket, analysisId);
-    log.info(
-        "PrepareAnalysisService: Preparing Boq upload request for analysisId: {} with prefix: {} for video IDs: {}",
-        analysisId,
-        gcsUriPrefix,
-        unlistedIds);
-
-    return analysisRequestRepository
-        .findById(analysisId)
-        .flatMap(
-            parent -> {
-              String requesterLdap = parent.getRequesterId();
-              if (requesterLdap == null
-                  || requesterLdap.isBlank()
-                  || LEGACY_REQUESTER_ID.equals(requesterLdap)) {
-                // The Boq backend attributes its Gin log entry to this value, so an unattributed
-                // call would record a prod data access against nobody. Fail the job instead.
-                return Mono.error(
-                    new IllegalStateException(
-                        "Refusing unattributed Boq upload for analysisId: " + analysisId));
-              }
-              String analysisName = parent.getAnalysisName() != null ? parent.getAnalysisName() : "unlisted_analysis";
-
-              log.info(
-                  "PrepareAnalysisService: Attributing Boq upload for analysisId: {} to requester: {}",
-                  analysisId,
-                  requesterLdap);
-
-              UploadUnlistedVideosRequest request =
-                  UploadUnlistedVideosRequest.builder()
-                      .requestId(java.util.UUID.randomUUID().toString())
-                      .unlistedYoutubeVideoIds(unlistedIds)
-                      .gcsUriPrefix(gcsUriPrefix)
-                      .userId(requesterLdap)
-                      .analysisName(analysisName)
-                      .build();
-
-
-              return Mono.fromCallable(() -> boqInputServiceClient.uploadUnlistedVideosToGcs(request))
-                  .subscribeOn(Schedulers.boundedElastic())
-                  .flatMap(
-                      uploadResponse -> {
-                        String requestId = uploadResponse.getRequestId();
-                        log.info(
-                            "PrepareAnalysisService: UploadUnlistedVideosToGcs successfully initiated for analysis: {}. Assigned Boq requestId: {}",
-                            analysisId,
-                            requestId);
-
-                        parent.setUploadRequestId(requestId);
-                        return analysisRequestRepository
-                            .save(parent)
-                            .then(
-                                Flux.fromIterable(unlistedVideos)
-                                    .flatMap(
-                                        uv -> {
-                                          uv.setUploadRequestId(requestId);
-                                          return videoInputRepository.save(uv);
-                                        })
-                                    .then())
-                            .then(
-                                Mono.fromRunnable(
-                                    () -> {
-                                      try {
-                                        String pollerPayload =
-                                            String.format(
-                                                "{\"analysisId\":\"%s\",\"requestId\":\"%s\",\"attemptCount\":1}",
-                                                analysisId, requestId);
-                                        String pollerSuffix =
-                                            String.format("%s_UPLOAD_POLL_attempt_1", analysisId);
-                                        cloudTasksQueueClient.enqueueTask(
-                                            "/api/v2/worker/check-upload-status",
-                                            pollerPayload,
-                                            pollerSuffix,
-                                            15);
-                                        log.info(
-                                            "PrepareAnalysisService: Enqueued Cloud Tasks poller for Boq upload status (analysisId: {}, requestId: {})",
-                                            analysisId,
-                                            requestId);
-                                      } catch (IOException e) {
-                                        log.error(
-                                            "PrepareAnalysisService: Failed to enqueue Boq upload poller task",
-                                            e);
-                                        throw new RuntimeException(e);
-                                      }
-                                    }))
-                            .thenReturn(
-                                ResponseEntity.ok(
-                                    "Analysis prepared and Boq unlisted upload launched"));
-                      });
-            });
-  }
-  // END-INTERNAL
 
   private Mono<List<VideoInputEntity>> ingestDriveVideos(List<VideoInputEntity> videos) {
     return Flux.fromIterable(videos)

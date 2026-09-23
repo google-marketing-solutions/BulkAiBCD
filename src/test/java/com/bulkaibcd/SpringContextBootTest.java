@@ -18,9 +18,6 @@ package com.bulkaibcd;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// BEGIN-INTERNAL
-import com.bulkaibcd.client.BoqHybridApiClient;
-// END-INTERNAL
 import com.bulkaibcd.client.CloudTasksQueueClient;
 import com.bulkaibcd.repository.AnalysisRequestRepository;
 import com.bulkaibcd.repository.GoogleAdsCredentialsRepository;
@@ -47,9 +44,6 @@ import org.springframework.test.context.TestPropertySource;
       "google.cloud.tasks.queue=bulkaibcd-queue",
       "google.cloud.tasks.service-account=dev@test.iam.gserviceaccount.com",
       "app.backend-url=http://localhost:8080",
-      // BEGIN-INTERNAL
-      "app.boq.hybrid-api-service-name=staging-bulkaibcd.hybrid.googleapis.com",
-      // END-INTERNAL
     })
 class SpringContextBootTest {
 
@@ -82,9 +76,6 @@ class SpringContextBootTest {
   void contextLoadsAndAllBeansInstantiate() {
     assertThat(applicationContext).isNotNull();
     assertThat(applicationContext.getBean(YouTubeResolveService.class)).isNotNull();
-    // BEGIN-INTERNAL
-    assertThat(applicationContext.getBean(BoqHybridApiClient.class)).isNotNull();
-    // END-INTERNAL
     assertThat(applicationContext.getBean(com.bulkaibcd.service.analysis.PrepareAnalysisService.class)).isNotNull();
     assertThat(applicationContext.getBean(com.bulkaibcd.controller.InputController.class)).isNotNull();
     assertThat(applicationContext.getBean(com.bulkaibcd.controller.OutputController.class)).isNotNull();

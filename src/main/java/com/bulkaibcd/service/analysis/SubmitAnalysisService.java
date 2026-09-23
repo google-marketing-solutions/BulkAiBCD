@@ -51,11 +51,6 @@ public class SubmitAnalysisService
 
   private boolean unlistedSupported = false;
 
-  // BEGIN-INTERNAL
-  {
-    unlistedSupported = true;
-  }
-  // END-INTERNAL
 
   /**
    * Executes the analysis submission workflow.

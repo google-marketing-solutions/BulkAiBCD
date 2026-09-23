@@ -18,8 +18,17 @@
 #
 # Designed to run inside Cloud Shell (gcloud + terraform pre-installed, user
 # already auth'd). Provisions everything — APIs, Firestore, SA, Cloud Tasks,
-# GCS, IAP brand/client, Firebase project + Google sign-in provider, Cloud Run
-# service — then builds the container and deploys.
+# GCS, IAP, Firebase project + Google sign-in provider, Cloud Run service —
+# then builds the container and deploys.
+#
+# Runs one `terraform apply` and one Cloud Build. Terraform creates the Cloud
+# Run service up front (with a placeholder image) so that its URL is known
+# before the build starts; the build then produces the real image and the final
+# revision. Terraform owns the surrounding infrastructure and the existence of
+# the service, Cloud Build owns the contents of each revision.
+#
+# A first install stops once to ask for an IAP OAuth Client ID, which is then
+# saved to infra/.install-state. Later runs reuse it and need no input at all.
 #
 # Usage:
 #   ./install.sh <PROJECT_ID> [--region us-central1]
@@ -153,50 +162,71 @@ gcloud services enable \
 info "APIs enabled."
 
 # -----------------------------------------------------------------------------
-banner "Terraform — pass 1 (everything except Cloud Run IAM)"
+banner "Terraform"
 # -----------------------------------------------------------------------------
-# Cloud Run IAM bindings + IAP user bindings target a service that doesn't
-# exist yet; var.cloud_run_deployed=false makes Terraform skip them on the
-# first pass. They get applied in pass 2 after Cloud Build creates the service.
+# Terraform creates the Cloud Run service itself (with a placeholder image), so
+# the service URL exists before anything is built. That is what allows a single
+# apply and a single build: previously the URL could only be learned by running
+# a full build first, which forced a second pass of both.
 
 UPLOADS_BUCKET="bulkaibcd-uploads-${PROJECT}"
 QUEUE_ID="bulkaibcd-queue"
+SERVICE_NAME="bulkaibcd"
+STATE_FILE="infra/.install-state"
 
-# Check if Cloud Run service already exists (for redeployments)
-EXISTING_URL="$(gcloud run services describe bulkaibcd --region="${REGION}" --project="${PROJECT}" --format='value(status.url)' 2>/dev/null || true)"
-
-if [[ -n "${EXISTING_URL}" ]]; then
-  info "Found existing Cloud Run service: ${EXISTING_URL}"
-  cat > infra/terraform.tfvars <<EOF
-project_id           = "${PROJECT}"
-region               = "${REGION}"
-support_email        = "${ACTIVE_ACCOUNT}"
-iap_users            = ["${ACTIVE_ACCOUNT}"]
-uploads_bucket_name  = "${UPLOADS_BUCKET}"
-queue_id             = "${QUEUE_ID}"
-cloud_run_deployed   = true
-cors_origins         = ["${EXISTING_URL}", "http://localhost:4200", "http://localhost:8080"]
-EOF
-else
-  cat > infra/terraform.tfvars <<EOF
-project_id           = "${PROJECT}"
-region               = "${REGION}"
-support_email        = "${ACTIVE_ACCOUNT}"
-iap_users            = ["${ACTIVE_ACCOUNT}"]
-uploads_bucket_name  = "${UPLOADS_BUCKET}"
-queue_id             = "${QUEUE_ID}"
-cloud_run_deployed   = false
-cors_origins         = ["http://localhost:4200", "http://localhost:8080"]
-EOF
+# Restore the IAP OAuth Client ID captured on a previous run. This is read
+# *before* terraform.tfvars is rewritten — the previous version of this script
+# stored it in tfvars and then overwrote that file moments later, so the value
+# was always lost and the prompt fired on every single run.
+IAP_CLIENT_ID=""
+if [[ -f "${STATE_FILE}" ]]; then
+  IAP_CLIENT_ID="$(grep -E '^iap_client_id=' "${STATE_FILE}" | head -n1 | cut -d= -f2-)"
+  if [[ -n "${IAP_CLIENT_ID}" ]]; then
+    info "Reusing saved IAP OAuth Client ID."
+  fi
 fi
+
+cat > infra/terraform.tfvars <<EOF
+project_id           = "${PROJECT}"
+region               = "${REGION}"
+support_email        = "${ACTIVE_ACCOUNT}"
+iap_users            = ["${ACTIVE_ACCOUNT}"]
+uploads_bucket_name  = "${UPLOADS_BUCKET}"
+queue_id             = "${QUEUE_ID}"
+EOF
 info "Wrote infra/terraform.tfvars"
 
-terraform -chdir=infra init -upgrade -input=false
+# No -upgrade: provider versions are pinned in versions.tf and locked in
+# .terraform.lock.hcl. Upgrading on every run meant each deploy silently picked
+# up whatever provider Google had released most recently.
+terraform -chdir=infra init -input=false
+
+# A service left behind by an older version of this installer — or by a direct
+# Cloud Build deploy — exists in the project but not in Terraform state, which
+# would make apply fail with "already exists". Adopt it instead.
+if gcloud run services describe "${SERVICE_NAME}" \
+     --region="${REGION}" --project="${PROJECT}" >/dev/null 2>&1; then
+  IN_STATE="$(terraform -chdir=infra state list 2>/dev/null \
+    | grep -Fx 'google_cloud_run_v2_service.app' || true)"
+  if [[ -z "${IN_STATE}" ]]; then
+    info "Existing Cloud Run service found outside Terraform state — importing."
+    terraform -chdir=infra import -input=false \
+      google_cloud_run_v2_service.app \
+      "projects/${PROJECT}/locations/${REGION}/services/${SERVICE_NAME}" >/dev/null \
+      || fail "Could not import the existing '${SERVICE_NAME}' service. Import it manually, or delete the service and re-run."
+    info "Imported."
+  fi
+fi
+
 terraform -chdir=infra apply -auto-approve -input=false
 
 RUNTIME_SA="$(tf_out runtime_service_account)"
 [[ -n "${RUNTIME_SA}" ]] || fail "Terraform didn't surface runtime_service_account output."
 info "Runtime SA: ${RUNTIME_SA}"
+
+CLOUD_RUN_URL="$(tf_out cloud_run_url)"
+[[ -n "${CLOUD_RUN_URL}" ]] || fail "Terraform didn't surface cloud_run_url output."
+info "Cloud Run URL: ${CLOUD_RUN_URL}"
 
 # -----------------------------------------------------------------------------
 banner "Exporting Firebase config for the UI build"
@@ -235,80 +265,62 @@ if [[ -z "${PROVIDER_STATUS}" ]]; then
 fi
 
 # -----------------------------------------------------------------------------
-banner "Cloud Build — first pass (creates the Cloud Run service)"
+banner "Cloud Build"
 # -----------------------------------------------------------------------------
-# APP_BACKEND_URL is unknown until Cloud Run mints it, so this pass leaves it
-# empty. Cloud Tasks OIDC callbacks will fail on this revision; the second pass
-# fixes them.
+# One build, one deploy. APP_BACKEND_URL is already known because Terraform
+# created the service, and IAP_CLIENT_ID is passed too whenever a previous run
+# saved one — in which case this build produces the final, fully-wired revision
+# and nothing below needs to run.
 
 gcloud builds submit \
   --config=cloudbuild.yaml \
   --project="${PROJECT}" \
-  --substitutions="_REGION=${REGION},_RUNTIME_SA=${RUNTIME_SA},_UPLOADS_BUCKET=${UPLOADS_BUCKET},_CLOUD_TASKS_QUEUE=${QUEUE_ID}"
-
-CLOUD_RUN_URL="$(gcloud run services describe bulkaibcd --region="${REGION}" --project="${PROJECT}" --format='value(status.url)' 2>/dev/null || true)"
-[[ -n "${CLOUD_RUN_URL}" ]] || fail "Cloud Run service URL not available after first deploy."
-info "Cloud Run URL: ${CLOUD_RUN_URL}"
+  --substitutions="_REGION=${REGION},_RUNTIME_SA=${RUNTIME_SA},_UPLOADS_BUCKET=${UPLOADS_BUCKET},_CLOUD_TASKS_QUEUE=${QUEUE_ID},_APP_BACKEND_URL=${CLOUD_RUN_URL},_IAP_CLIENT_ID=${IAP_CLIENT_ID}"
 
 # -----------------------------------------------------------------------------
-banner " IAP OAuth"
+banner "IAP OAuth"
 # -----------------------------------------------------------------------------
+# Normally only reached on a first install. IAP must be switched on before the
+# console will mint a Custom OAuth client, and that happens as part of the
+# deploy above, so this prompt cannot come any earlier.
 
-IAP_CLIENT_ID=""
-if [[ -f "infra/terraform.tfvars" ]]; then
-  IAP_CLIENT_ID="$(grep -E '^iap_client_id' infra/terraform.tfvars | head -n1 | cut -d'"' -f2 || true)"
-fi
-
-if [[ -z "${IAP_CLIENT_ID}" ]]; then
-  info "Google sign-in provider is already active."
-    echo
-    echo "   Please generate your Custom OAuth Client ID from IAP:"
-    echo "   1. Open: https://pantheon.corp.google.com/security/iap?referrer=search&project=${PROJECT}"
-    echo "   2. Locate 'bulkaibcd' in the list."
-    echo "   3. Click the 'Hide info panel' / 'Show info panel' button, or click Actions (⋮) > Settings next to the service."
-    echo "   4. Select 'Custom OAuth' > 'Auto-generated credentials'."
-    echo "   5. Copy the Client ID and press 'Save'."
-    echo
-fi
-
-while [[ -z "${IAP_CLIENT_ID}" ]]; do
-  read -r -p "   Please paste your IAP OAuth Client ID here: " IAP_CLIENT_ID
-  [[ -z "${IAP_CLIENT_ID}" ]] && echo "      ❌ Client ID cannot be empty."
-done
-
-if grep -q "^iap_client_id" infra/terraform.tfvars 2>/dev/null; then
-  sed -i.bak -e "s|^iap_client_id.*|iap_client_id = \"${IAP_CLIENT_ID}\"|" infra/terraform.tfvars
+if [[ -n "${IAP_CLIENT_ID}" ]]; then
+  info "IAP OAuth Client ID already configured."
 else
-  echo "iap_client_id = \"${IAP_CLIENT_ID}\"" >> infra/terraform.tfvars
-fi
+  echo
+  echo "   Please generate your Custom OAuth Client ID from IAP:"
+  echo "   1. Open: https://console.cloud.google.com/security/iap?project=${PROJECT}"
+  echo "   2. Locate '${SERVICE_NAME}' in the list."
+  echo "   3. Click Actions (⋮) > Settings next to the service."
+  echo "   4. Select 'Custom OAuth' > 'Auto-generated credentials'."
+  echo "   5. Copy the Client ID and press 'Save'."
+  echo
 
-# -----------------------------------------------------------------------------
-banner "Terraform — pass 2 (IAP + Cloud Run IAM bindings + CORS for the real URL)"
-# -----------------------------------------------------------------------------
+  while [[ -z "${IAP_CLIENT_ID}" ]]; do
+    read -r -p "   Please paste your IAP OAuth Client ID here: " IAP_CLIENT_ID
+    if [[ -z "${IAP_CLIENT_ID}" ]]; then
+      echo "      ❌ Client ID cannot be empty."
+    fi
+  done
 
-# Cleanly rewrite terraform.tfvars with the live Cloud Run URL
-cat > infra/terraform.tfvars <<EOF
-project_id           = "${PROJECT}"
-region               = "${REGION}"
-support_email        = "${ACTIVE_ACCOUNT}"
-iap_users            = ["${ACTIVE_ACCOUNT}"]
-uploads_bucket_name  = "${UPLOADS_BUCKET}"
-queue_id             = "${QUEUE_ID}"
-cloud_run_deployed   = true
-cors_origins         = ["${CLOUD_RUN_URL}", "http://localhost:4200", "http://localhost:8080"]
+  cat > "${STATE_FILE}" <<EOF
+# Written by install.sh so that redeploys do not have to ask again.
+# Safe to delete — you will simply be prompted on the next run.
+iap_client_id=${IAP_CLIENT_ID}
 EOF
-info "Updated infra/terraform.tfvars with live Cloud Run URL"
+  info "Saved to ${STATE_FILE}; future runs will not ask again."
 
-terraform -chdir=infra apply -auto-approve -input=false
-
-# -----------------------------------------------------------------------------
-banner "Cloud Build — second pass (wires APP_BACKEND_URL for Cloud Tasks)"
-# -----------------------------------------------------------------------------
-
-gcloud builds submit \
-  --config=cloudbuild.yaml \
-  --project="${PROJECT}" \
-  --substitutions="_REGION=${REGION},_RUNTIME_SA=${RUNTIME_SA},_UPLOADS_BUCKET=${UPLOADS_BUCKET},_APP_BACKEND_URL=${CLOUD_RUN_URL},_CLOUD_TASKS_QUEUE=${QUEUE_ID},_IAP_CLIENT_ID=${IAP_CLIENT_ID}"
+  # Only an environment variable changed, so update the running service in
+  # place. Rebuilding the identical source to change one variable is what made
+  # the old two-pass installer take roughly twice as long as it needed to.
+  info "Applying IAP_CLIENT_ID to the running service..."
+  gcloud run services update "${SERVICE_NAME}" \
+    --region="${REGION}" \
+    --project="${PROJECT}" \
+    --update-env-vars="IAP_CLIENT_ID=${IAP_CLIENT_ID}" \
+    --quiet >/dev/null
+  info "Applied."
+fi
 
 # -----------------------------------------------------------------------------
 banner "Enforcing CORS on uploads bucket"

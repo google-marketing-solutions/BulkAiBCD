@@ -1,6 +1,8 @@
 .terraform/
-.terraform.lock.hcl
+# .terraform.lock.hcl is deliberately NOT ignored — committing it is what makes
+# provider versions reproducible across deployers. See versions.tf.
 terraform.tfstate
 terraform.tfstate.backup
 *.tfvars
+.install-state
 crash.log

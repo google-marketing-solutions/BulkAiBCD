@@ -98,7 +98,12 @@ steps:
 
 options:
   logging: CLOUD_LOGGING_ONLY
+  # The default worker is 2 vCPU; both the Angular and Maven builds will happily
+  # saturate more than that. A bigger machine costs more per minute but less in
+  # total, because it finishes proportionally sooner.
+  machineType: 'E2_HIGHCPU_8'
 
-images:
-  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_IMAGE}:${BUILD_ID}'
-  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_IMAGE}:latest'
+# There is deliberately no `images:` block. It would push these tags again once
+# all steps finish, but the Deploy step above can only run if they are already
+# in the registry — so the explicit Push step has to come first, which makes
+# `images:` a second, redundant push of identical digests.

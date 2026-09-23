@@ -25,16 +25,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-// BEGIN-INTERNAL
-import com.bulkaibcd.client.BoqInputServiceClient;
-// END-INTERNAL
 import com.bulkaibcd.client.CloudTasksQueueClient;
 import com.bulkaibcd.client.GoogleDriveClient;
 import com.bulkaibcd.model.AnalysisRequestEntity;
-// BEGIN-INTERNAL
-import com.bulkaibcd.model.UploadUnlistedVideosRequest;
-import com.bulkaibcd.model.UploadUnlistedVideosResponse;
-// END-INTERNAL
 import com.bulkaibcd.model.VideoInputEntity;
 import com.bulkaibcd.repository.AnalysisRequestRepository;
 import com.bulkaibcd.repository.VideoInputRepository;
@@ -58,9 +51,6 @@ class PrepareAnalysisServiceTest {
   private VideoMetadataRepository videoMetadataRepo;
   private BatchPredictionOrchestrator batchOrchestrator;
   private CloudTasksQueueClient cloudTasksClient;
-  // BEGIN-INTERNAL
-  private BoqInputServiceClient boqInputServiceClient;
-  // END-INTERNAL
   private ObjectProvider<GoogleDriveClient> driveProvider;
   private GoogleDriveClient driveClient;
   private PrepareAnalysisService service;
@@ -86,10 +76,6 @@ class PrepareAnalysisServiceTest {
             batchOrchestrator,
             cloudTasksClient,
             driveProvider);
-    // BEGIN-INTERNAL
-    boqInputServiceClient = mock(BoqInputServiceClient.class);
-    ReflectionTestUtils.setField(service, "boqInputServiceClient", boqInputServiceClient);
-    // END-INTERNAL
     ReflectionTestUtils.setField(service, "uploadsBucket", "test-bucket");
   }
 
@@ -144,59 +130,9 @@ class PrepareAnalysisServiceTest {
             anyInt());
   }
 
-  // BEGIN-INTERNAL
-  @Test
-  void executeWithUnlistedYouTubeVideosInitiatesBoqUploadAndEnqueuesUploadPoller() throws Exception {
-    AnalysisRequestEntity parent =
-        AnalysisRequestEntity.builder()
-            .analysisId("ana-1")
-            .requesterId("user-1")
-            .analysisName("brand-analysis")
-            .analysisStatus("PENDING")
-            .build();
-    when(analysisRepo.findById("ana-1")).thenReturn(Mono.just(parent));
-    when(analysisRepo.save(any())).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
-
-    VideoInputEntity unlistedVid =
-        VideoInputEntity.builder()
-            .id("ana-1_v1")
-            .analysisId("ana-1")
-            .videoId("v1")
-            .sourceType("YOUTUBE")
-            .videoUrl("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
-            .unlisted(true)
-            .build();
-    when(videoInputRepo.findByAnalysisId("ana-1")).thenReturn(Flux.just(unlistedVid));
-    when(videoInputRepo.save(any())).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
-
-    UploadUnlistedVideosResponse uploadResponse =
-        UploadUnlistedVideosResponse.builder().requestId("boq-req-999").build();
-    when(boqInputServiceClient.uploadUnlistedVideosToGcs(any(UploadUnlistedVideosRequest.class)))
-        .thenReturn(uploadResponse);
-
-    StepVerifier.create(service.execute(Map.of("analysisId", "ana-1")))
-        .assertNext(
-            resp -> {
-              assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
-              assertThat(resp.getBody()).contains("Boq unlisted upload launched");
-            })
-        .verifyComplete();
-
-    verify(boqInputServiceClient).uploadUnlistedVideosToGcs(any(UploadUnlistedVideosRequest.class));
-    verify(cloudTasksClient)
-        .enqueueTask(
-            eq("/api/v2/worker/check-upload-status"),
-            eq("{\"analysisId\":\"ana-1\",\"requestId\":\"boq-req-999\",\"attemptCount\":1}"),
-            eq("ana-1_UPLOAD_POLL_attempt_1"),
-            eq(15));
-  }
-  // END-INTERNAL
 
   @Test
   void executeWithUnlistedVideosWhenBoqClientAbsentReturnsBadRequest() {
-    // BEGIN-INTERNAL
-    ReflectionTestUtils.setField(service, "boqInputServiceClient", null);
-    // END-INTERNAL
     AnalysisRequestEntity parent =
         AnalysisRequestEntity.builder()
             .analysisId("ana-1")

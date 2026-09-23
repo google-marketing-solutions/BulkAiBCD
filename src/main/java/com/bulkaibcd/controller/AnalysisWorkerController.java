@@ -22,9 +22,6 @@ import com.bulkaibcd.model.TaskRequest;
 import com.bulkaibcd.service.analysis.PrepareAnalysisService;
 import com.bulkaibcd.service.batch.CheckPhase1StatusService;
 import com.bulkaibcd.service.batch.CheckPhase2StatusService;
-// BEGIN-INTERNAL
-import com.bulkaibcd.service.batch.CheckUploadStatusService;
-// END-INTERNAL
 import com.bulkaibcd.service.batch.ProcessPhase1ResultsService;
 import com.bulkaibcd.service.batch.ProcessPhase2ResultsService;
 import com.bulkaibcd.service.batch.StartPhase2Service;
@@ -60,10 +57,6 @@ public class AnalysisWorkerController {
   private final ProcessPhase2ResultsService processPhase2ResultsService;
   private final ProcessPhase1ResultsService processPhase1ResultsService;
 
-  // BEGIN-INTERNAL
-  @Autowired(required = false)
-  private CheckUploadStatusService checkUploadStatusService;
-  // END-INTERNAL
 
   /**
    * Prepares the analysis job by ingesting Drive videos or initiating unlisted YouTube uploads.
@@ -76,18 +69,6 @@ public class AnalysisWorkerController {
     return prepareAnalysisService.execute(payload);
   }
 
-  // BEGIN-INTERNAL
-  /**
-   * Polls the status of an ongoing Boq unlisted video batch upload job.
-   *
-   * @param payload map containing analysisId, requestId, and attemptCount
-   * @return a reactive {@link Mono} indicating upload poll status
-   */
-  @PostMapping("/check-upload-status")
-  public Mono<ResponseEntity<String>> checkUploadStatus(@RequestBody Map<String, Object> payload) {
-    return checkUploadStatusService.execute(payload);
-  }
-  // END-INTERNAL
 
   /**
    * Fetches scoring metadata for an individual video analysis task.
