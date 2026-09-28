@@ -156,14 +156,24 @@ class GoogleSlidesClientTest {
   void testCalculateAverageScore() {
     VideoMetadataEntity video =
         VideoMetadataEntity.builder()
-            .aScore(80)
-            .bScore(60)
-            .cScore(70)
-            .dScore(90)
+            .relevantFeatures(List.of("f1", "f2", "f3", "f4"))
+            .notDetectedFeatures(
+                List.of(new com.bulkaibcd.model.NotDetectedFeatureEntity("f1", "r1")))
             .build();
 
     int score = ReflectionTestUtils.invokeMethod(client, "calculateAverageScore", video);
     assertThat(score).isEqualTo(75);
+
+    // 2 out of 3 detected = 66.67% -> rounds up to 67%
+    VideoMetadataEntity roundedUp =
+        VideoMetadataEntity.builder()
+            .relevantFeatures(List.of("f1", "f2", "f3"))
+            .notDetectedFeatures(
+                List.of(new com.bulkaibcd.model.NotDetectedFeatureEntity("f1", "r1")))
+            .build();
+    int roundedUpScore =
+        ReflectionTestUtils.invokeMethod(client, "calculateAverageScore", roundedUp);
+    assertThat(roundedUpScore).isEqualTo(67);
 
     VideoMetadataEntity empty = VideoMetadataEntity.builder().build();
     int emptyScore = ReflectionTestUtils.invokeMethod(client, "calculateAverageScore", empty);

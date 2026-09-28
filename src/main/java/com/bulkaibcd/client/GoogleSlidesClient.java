@@ -711,9 +711,14 @@ public class GoogleSlidesClient {
   }
 
   private int calculateAverageScore(VideoMetadataEntity v) {
-    int total = v.getRelevantFeatures().size();
-    int irrelevantFeatures = v.getNotDetectedFeatures().size();
-    return total == 0 ? 0 : ((total - irrelevantFeatures) * 100) / total;
+    int total = v.getRelevantFeatures() != null ? v.getRelevantFeatures().size() : 0;
+    int irrelevantFeatures =
+        v.getNotDetectedFeatures() != null
+            ? v.getNotDetectedFeatures().size()
+            : (v.getNotDetected() != null ? v.getNotDetected().size() : 0);
+    return total == 0
+        ? 0
+        : (int) Math.round((double) (total - irrelevantFeatures) * 100.0 / total);
   }
 
   private static String categoryFor(int score) {
